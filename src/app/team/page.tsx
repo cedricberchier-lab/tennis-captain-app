@@ -239,14 +239,13 @@ export default function TeamMode() {
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-4 py-8">
-        <header className="flex items-center justify-between mb-8">
-          <Link href="/" className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-            ← Back to Home
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            👥 Team
+        <header className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            👥 Team Roster
           </h1>
-          <div></div>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
+            Manage players, rankings, and track absences
+          </p>
         </header>
 
         {/* Error Display */}

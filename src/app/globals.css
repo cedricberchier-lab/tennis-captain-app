@@ -116,7 +116,68 @@
   * {
     @apply border-border outline-ring/50;
   }
+  
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Mobile-first touch targets */
+  button,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"] {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Ensure minimum touch target size for interactive elements */
+  a,
+  button,
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"],
+  input,
+  select,
+  textarea {
+    @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-500;
+  }
+
+  /* Smooth scrolling for better UX */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Better text rendering on mobile */
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Prevent zoom on input focus on iOS */
+  @media screen and (max-width: 768px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px;
+    }
+  }
+}
+
+@layer components {
+  /* Mobile-optimized card hover states */
+  .mobile-card {
+    @apply transition-all duration-200 active:scale-[0.98] active:opacity-90;
+  }
+
+  /* Improved button styles for mobile */
+  .mobile-button {
+    @apply min-h-[48px] px-4 py-3 text-base font-medium rounded-lg transition-all duration-200;
+    @apply active:scale-[0.98] active:opacity-90;
+  }
+
+  /* Better form controls for mobile */
+  .mobile-input {
+    @apply min-h-[48px] px-4 py-3 text-base rounded-lg border;
+    @apply focus:ring-2 focus:ring-purple-500 focus:border-purple-500;
   }
 }

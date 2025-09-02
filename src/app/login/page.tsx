@@ -70,24 +70,24 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <Card className="shadow-2xl border-4">
-          <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold mb-2">🎾 Tennis Captain</CardTitle>
-            <CardDescription>Sign in to your account</CardDescription>
+      <div className="w-full max-w-sm sm:max-w-md">
+        <Card className="shadow-2xl border-0 sm:border-2">
+          <CardHeader className="text-center px-6 sm:px-8 py-6 sm:py-8">
+            <CardTitle className="text-2xl sm:text-3xl font-bold mb-2">🎾 Tennis Captain</CardTitle>
+            <CardDescription className="text-base">Sign in to your account</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-6 sm:px-8 pb-6 sm:pb-8">
             {error && (
               <Card className="bg-red-50 border-red-200 mb-6">
                 <CardContent className="pt-4">
-                  <p className="text-red-700">{error}</p>
+                  <p className="text-red-700 text-sm">{error}</p>
                 </CardContent>
               </Card>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username" className="text-base font-medium">Username</Label>
                 <Input
                   type="text"
                   id="username"
@@ -95,12 +95,13 @@ export default function LoginPage() {
                   value={credentials.username}
                   onChange={handleChange}
                   placeholder="Enter your username"
+                  className="mobile-input"
                   required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="text-base font-medium">Password</Label>
                 <Input
                   type="password"
                   id="password"
@@ -108,6 +109,7 @@ export default function LoginPage() {
                   value={credentials.password}
                   onChange={handleChange}
                   placeholder="Enter your password"
+                  className="mobile-input"
                   required
                 />
               </div>
@@ -115,7 +117,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full"
+                className="w-full mobile-button"
                 size="lg"
               >
                 {loading ? 'Signing in...' : 'Sign In'}
@@ -123,9 +125,12 @@ export default function LoginPage() {
             </form>
 
             <div className="mt-6 text-center">
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-sm sm:text-base">
                 Don&apos;t have an account?{' '}
-                <Link href="/register" className="text-blue-600 hover:text-blue-800 font-semibold">
+                <Link 
+                  href="/register" 
+                  className="text-blue-600 hover:text-blue-800 font-semibold underline hover:no-underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-1 py-1"
+                >
                   Sign up here
                 </Link>
               </p>
