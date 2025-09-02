@@ -902,14 +902,13 @@ export default function TrainingMode() {
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800">
         <div className="container mx-auto px-4 py-8">
-          <header className="flex items-center justify-between mb-8">
-            <Link href="/" className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-              ← Back to Home
-            </Link>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              🏃‍♂️ Training
+          <header className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              🏃‍♂️ Training Sessions
             </h1>
-            <div></div>
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
+              Manage training schedules and track player attendance
+            </p>
           </header>
 
           {/* Error Display */}
@@ -921,37 +920,56 @@ export default function TrainingMode() {
             </div>
           )}
 
-          {/* Training Controls */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
+          {/* Training Controls - Mobile Optimized */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                 <Button
                   onClick={() => setShowAddForm(true)}
-                  className="bg-purple-600 hover:bg-purple-700"
+                  className="bg-purple-600 hover:bg-purple-700 mobile-button"
+                  size="default"
                 >
                   ➕ Schedule Training
                 </Button>
                 
                 <Button
                   onClick={checkAbsences}
-                  className="bg-orange-600 hover:bg-orange-700"
+                  className="bg-orange-600 hover:bg-orange-700 mobile-button"
                   disabled={trainingsLoading || playersLoading}
+                  size="default"
                 >
                   🔍 Check Absences
                 </Button>
                 
                 <Button 
                   variant="outline" 
-                  className="border-green-500 text-green-700 hover:bg-green-50"
+                  className="border-green-500 text-green-700 hover:bg-green-50 mobile-button"
                   onClick={() => {
                     console.log('Upload Schedule button clicked');
                     setShowUploadDialog(true);
                   }}
+                  size="default"
                 >
                   📤 Upload Schedule
                 </Button>
                 
-                <Dialog open={showUploadDialog} onOpenChange={(open) => {
+              </div>
+              
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+                <Button 
+                  variant="outline"
+                  onClick={generateSampleFile}
+                  className="mobile-button"
+                  size="default"
+                >
+                  📄 Download Sample
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Upload Dialog */}
+          <Dialog open={showUploadDialog} onOpenChange={(open) => {
                   setShowUploadDialog(open);
                   if (!open) resetUploadState();
                 }}>
