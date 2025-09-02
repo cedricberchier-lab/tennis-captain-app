@@ -81,7 +81,7 @@ export default function TrainingMode() {
 
       // Log training participants and check their absence status
       trainings.forEach(training => {
-        const trainingDateStr = training.date.toISOString().split('T')[0];
+        const trainingDateStr = dateToLocalString(training.date);
         console.log(`Training on ${trainingDateStr} (${training.dayName}):`);
         
         training.participants.forEach(participant => {
@@ -129,12 +129,21 @@ export default function TrainingMode() {
   }[]>([]);
   const [pendingTrainingData, setPendingTrainingData] = useState<TrainingUploadData[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [lastAbsenceCheck, setLastAbsenceCheck] = useState(Date.now());
 
   // Get day name from date
   const getDayName = (date: Date | string): string => {
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const dateObj = date instanceof Date ? date : new Date(date);
     return dayNames[dateObj.getDay()];
+  };
+
+  // Timezone-safe date to string conversion (avoids UTC conversion issues)
+  const dateToLocalString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   // Manual absence checking function
@@ -162,7 +171,7 @@ export default function TrainingMode() {
     // Log training participants and check their absence status
     let totalAbsences = 0;
     trainings.forEach(training => {
-      const trainingDateStr = training.date.toISOString().split('T')[0];
+      const trainingDateStr = dateToLocalString(training.date);
       console.log(`Training on ${trainingDateStr} (${training.dayName}):`);
       
       training.participants.forEach(participant => {
@@ -181,12 +190,24 @@ export default function TrainingMode() {
       });
     });
 
-    // Force re-render to apply absence checking
+    // Force multiple re-renders to ensure color changes are applied
+    const checkTime = Date.now();
+    setLastAbsenceCheck(checkTime);
     setRefreshKey(prev => prev + 1);
+    
+    // Additional re-render triggers to ensure React updates the display
+    setTimeout(() => {
+      setRefreshKey(prev => prev + 1);
+    }, 10);
+    
+    setTimeout(() => {
+      setRefreshKey(prev => prev + 1);
+    }, 50);
+    
     console.log(`=== ABSENCE CHECK COMPLETED - Found ${totalAbsences} absences ===`);
     
     // Show success message
-    alert(`Absence check completed! Found ${totalAbsences} player absences. Check console for details.`);
+    alert(`Absence check completed! Found ${totalAbsences} player absences. Colors should update now!`);
   };
 
 
@@ -199,7 +220,7 @@ export default function TrainingMode() {
         return false;
       }
       
-      const trainingDateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+      const trainingDateStr = dateToLocalString(date); // YYYY-MM-DD format (timezone-safe)
       console.log(`Checking absence for player ${player.name} (ID: ${playerId}) on ${trainingDateStr}`);
       console.log(`Player absences:`, player.absences);
       
@@ -221,7 +242,7 @@ export default function TrainingMode() {
       const player = players.find(p => p.id === playerId);
       if (!player) return null;
       
-      const trainingDateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+      const trainingDateStr = dateToLocalString(date); // YYYY-MM-DD format (timezone-safe)
       
       const absence = player.absences.find(absence => {
         const absenceDate = absence.split(' - ')[0]; // Get date part before the reason
@@ -1224,10 +1245,10 @@ export default function TrainingMode() {
                 </button>
               </div>
             ) : (
-              <div className="space-y-4" key={`trainings-${refreshKey}-${players.length}-${JSON.stringify(players.map(p => p.absences)).substring(0, 50)}`}>
+              <div className="space-y-4" key={`trainings-${refreshKey}-${players.length}-${lastAbsenceCheck}`}>
                 {displayableTrainings.map((training) => (
                   <div
-                    key={`${training.id}-${refreshKey}-${players.length}`}
+                    key={`${training.id}-${refreshKey}-${players.length}-${lastAbsenceCheck}`}
                     className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
                     <div className="flex justify-between items-start">
