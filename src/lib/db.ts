@@ -185,7 +185,7 @@ export async function getPlayerById(id: string): Promise<Player | null> {
     email: row.email || '',
     phone: row.phone || '',
     ranking: row.ranking || 0,
-    absences: JSON.parse(row.absences || '[]'),
+    absences: row.absences || [],
     stats: {
       matchesPlayed: row.matches_played || 0,
       wins: row.wins || 0,
@@ -247,7 +247,7 @@ export async function getPlayerByEmail(email: string): Promise<Player | null> {
     email: row.email || '',
     phone: row.phone || '',
     ranking: row.ranking || 0,
-    absences: JSON.parse(row.absences || '[]'),
+    absences: row.absences || [],
     stats: {
       matchesPlayed: row.matches_played || 0,
       wins: row.wins || 0,
