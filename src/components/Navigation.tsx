@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Menu, 
   X, 
-  Home, 
   Users, 
   Trophy, 
   Activity, 
@@ -20,12 +19,6 @@ import {
 
 const navigationItems = [
   {
-    href: "/",
-    label: "Dashboard",
-    icon: Home,
-    description: "Overview & quick access"
-  },
-  {
     href: "/team",
     label: "Team",
     icon: Users,
@@ -35,7 +28,7 @@ const navigationItems = [
     href: "/match",
     label: "Match",
     icon: Trophy,
-    description: "Results & chat"
+    description: "Results & management"
   },
   {
     href: "/training",

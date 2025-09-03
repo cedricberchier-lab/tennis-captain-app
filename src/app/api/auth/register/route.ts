@@ -7,11 +7,11 @@ import { createLocalUser, localUserToUser } from '@/lib/localAuth';
 export async function POST(request: NextRequest) {
   try {
     const body: RegisterData = await request.json();
-    const { username, email, password, role } = body;
+    const { username, email, name, phone, ranking, password, role } = body;
 
-    if (!username || !email || !password) {
+    if (!username || !email || !name || !phone || password === undefined || ranking === undefined) {
       return NextResponse.json(
-        { error: 'Username, email, and password are required' },
+        { error: 'Username, email, name, phone, ranking, and password are required' },
         { status: 400 }
       );
     }
@@ -42,6 +42,9 @@ export async function POST(request: NextRequest) {
         newUser = await createUser({
           username,
           email,
+          name,
+          phone,
+          ranking,
           password,
           role: role || UserRole.CAPTAIN
         });
@@ -59,6 +62,9 @@ export async function POST(request: NextRequest) {
         const localUser = await createLocalUser({
           username,
           email,
+          name,
+          phone,
+          ranking,
           password,
           role: role || UserRole.CAPTAIN
         });
@@ -88,6 +94,9 @@ export async function POST(request: NextRequest) {
       id: newUser.id,
       username: newUser.username,
       email: newUser.email,
+      name: newUser.name,
+      phone: newUser.phone,
+      ranking: newUser.ranking,
       role: newUser.role,
       teamId: newUser.teamId,
       createdAt: newUser.createdAt,

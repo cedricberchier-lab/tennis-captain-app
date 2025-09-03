@@ -1,15 +1,20 @@
 import bcrypt from 'bcryptjs';
-import { User, UserRole } from '@/types';
+import { User, UserRole, Player, PlayerStats } from '@/types';
 import fs from 'fs';
 import path from 'path';
 
 const USERS_STORAGE_KEY = 'tennis-captain-users';
+const PLAYERS_STORAGE_KEY = 'tennis-captain-players';
 const LOCAL_USERS_FILE = path.join(process.cwd(), '.local-users.json');
+const LOCAL_PLAYERS_FILE = path.join(process.cwd(), '.local-players.json');
 
 export interface LocalUser {
   id: string;
   username: string;
   email: string;
+  name: string;
+  phone: string;
+  ranking: number;
   password: string; // hashed
   role: UserRole;
   teamId?: string;
@@ -67,6 +72,9 @@ function saveUsers(users: LocalUser[]): void {
 export async function createLocalUser(userData: {
   username: string;
   email: string;
+  name: string;
+  phone: string;
+  ranking: number;
   password: string;
   role?: UserRole;
 }): Promise<LocalUser> {
@@ -86,6 +94,9 @@ export async function createLocalUser(userData: {
     id: crypto.randomUUID(),
     username: userData.username,
     email: userData.email,
+    name: userData.name,
+    phone: userData.phone,
+    ranking: userData.ranking,
     password: hashedPassword,
     role: userData.role || UserRole.CAPTAIN,
     createdAt: new Date().toISOString(),
@@ -95,6 +106,19 @@ export async function createLocalUser(userData: {
   // Add to users array and save
   users.push(newUser);
   saveUsers(users);
+
+  // Automatically create a player record with the user's information
+  try {
+    createLocalPlayer({
+      name: userData.name,
+      email: userData.email,
+      phone: userData.phone,
+      ranking: userData.ranking
+    });
+  } catch (error) {
+    console.error('Error creating player record for user:', error);
+    // Don't fail the user creation if player creation fails
+  }
 
   return newUser;
 }
@@ -128,6 +152,9 @@ export function localUserToUser(localUser: LocalUser): User {
     id: localUser.id,
     username: localUser.username,
     email: localUser.email,
+    name: localUser.name,
+    phone: localUser.phone,
+    ranking: localUser.ranking,
     password: localUser.password,
     role: localUser.role,
     teamId: localUser.teamId,
@@ -150,4 +177,139 @@ export function clearLocalUsers(): void {
 // Get local users for migration
 export function getLocalUsersForMigration(): LocalUser[] {
   return getStoredUsers();
+}
+
+// Player Management Functions for Local Storage
+
+// Get all players from storage
+function getStoredPlayers(): Player[] {
+  // Server-side: use file storage
+  if (typeof window === 'undefined') {
+    try {
+      if (fs.existsSync(LOCAL_PLAYERS_FILE)) {
+        const fileContent = fs.readFileSync(LOCAL_PLAYERS_FILE, 'utf8');
+        return JSON.parse(fileContent);
+      }
+      return [];
+    } catch (error) {
+      console.error('Error reading players from file:', error);
+      return [];
+    }
+  }
+  
+  // Client-side: use localStorage
+  try {
+    const stored = localStorage.getItem(PLAYERS_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('Error reading players from localStorage:', error);
+    return [];
+  }
+}
+
+// Save players to storage
+function savePlayers(players: Player[]): void {
+  // Server-side: use file storage
+  if (typeof window === 'undefined') {
+    try {
+      fs.writeFileSync(LOCAL_PLAYERS_FILE, JSON.stringify(players, null, 2));
+    } catch (error) {
+      console.error('Error saving players to file:', error);
+    }
+    return;
+  }
+  
+  // Client-side: use localStorage
+  try {
+    localStorage.setItem(PLAYERS_STORAGE_KEY, JSON.stringify(players));
+  } catch (error) {
+    console.error('Error saving players to localStorage:', error);
+  }
+}
+
+// Create a new player locally
+export function createLocalPlayer(playerData: {
+  name: string;
+  email: string;
+  phone: string;
+  ranking: number;
+}): Player {
+  const players = getStoredPlayers();
+  
+  // Create new player with default stats
+  const newPlayer: Player = {
+    id: crypto.randomUUID(),
+    name: playerData.name,
+    email: playerData.email,
+    phone: playerData.phone,
+    ranking: playerData.ranking,
+    absences: [],
+    stats: {
+      matchesPlayed: 0,
+      wins: 0,
+      losses: 0,
+      winsIn2Sets: 0,
+      winsIn3Sets: 0,
+      lossesIn2Sets: 0,
+      lossesIn3Sets: 0,
+      performance: 0,
+      underperformance: 0,
+      trainingAttendance: 0
+    },
+    createdAt: new Date(),
+    updatedAt: new Date()
+  };
+
+  // Add to players array and save
+  players.push(newPlayer);
+  savePlayers(players);
+
+  return newPlayer;
+}
+
+// Get all local players
+export function getAllLocalPlayers(): Player[] {
+  return getStoredPlayers();
+}
+
+// Get player by email locally
+export function getLocalPlayerByEmail(email: string): Player | null {
+  const players = getStoredPlayers();
+  return players.find(p => p.email === email) || null;
+}
+
+// Utility function to ensure all local users have player records
+export function ensureAllLocalUsersHavePlayerRecords(): { created: number; errors: number } {
+  try {
+    const users = getStoredUsers();
+    const players = getStoredPlayers();
+    let created = 0;
+    let errors = 0;
+    
+    for (const user of users) {
+      try {
+        // Check if player exists for this user
+        const existingPlayer = players.find(p => p.email === user.email);
+        
+        if (!existingPlayer) {
+          // Create player record
+          createLocalPlayer({
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            ranking: user.ranking
+          });
+          created++;
+        }
+      } catch (error) {
+        console.error(`Error creating player for user ${user.email}:`, error);
+        errors++;
+      }
+    }
+    
+    return { created, errors };
+  } catch (error) {
+    console.error('Error ensuring all local users have player records:', error);
+    return { created: 0, errors: 1 };
+  }
 }

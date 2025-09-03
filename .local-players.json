@@ -1,0 +1,30 @@
+[
+  {
+    "id": "95978d8b-f455-46c3-952e-2d338456e13d",
+    "name": "Cedric Berchier",
+    "email": "cedric.berchier@gmail.com",
+    "phone": "+41 79 945 78 19",
+    "ranking": 5,
+    "absences": [
+      "2025-09-03 - Testing today",
+      "2025-09-04 - Testing tomorrow",
+      "2025-09-10 - Vacation",
+      "2025-09-15 - Doctor appointment",
+      "2025-09-20 - Work trip"
+    ],
+    "stats": {
+      "matchesPlayed": 0,
+      "wins": 0,
+      "losses": 0,
+      "winsIn2Sets": 0,
+      "winsIn3Sets": 0,
+      "lossesIn2Sets": 0,
+      "lossesIn3Sets": 0,
+      "performance": 0,
+      "underperformance": 0,
+      "trainingAttendance": 0
+    },
+    "createdAt": "2025-09-03T06:00:27.119Z",
+    "updatedAt": "2025-09-03T06:21:58.406Z"
+  }
+]

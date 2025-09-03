@@ -14,6 +14,9 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState<RegisterData>({
     username: '',
     email: '',
+    name: '',
+    phone: '',
+    ranking: 0,
     password: '',
     role: UserRole.CAPTAIN
   });
@@ -77,56 +80,106 @@ export default function RegisterPage() {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [name]: name === 'ranking' ? parseInt(value) || 0 : value
+    }));
+  };
+  
+  // Auto-set username to email when email changes
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const email = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      email: email,
+      username: email // Set username to email by default
     }));
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-500 via-blue-600 to-purple-500 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 border-4 border-gray-200">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">🎾 Tennis Captain</h1>
-            <p className="text-gray-600">Create your account</p>
-          </div>
-
-          {error && (
-            <div className="bg-red-100 border-2 border-red-300 text-red-700 px-4 py-3 rounded-lg mb-6">
-              <p>{error}</p>
-            </div>
-          )}
+      <div className="w-full max-w-lg">
+        <Card className="shadow-2xl border-0 sm:border-2">
+          <CardHeader className="text-center px-6 sm:px-8 py-6 sm:py-8">
+            <CardTitle className="text-2xl sm:text-3xl font-bold mb-2">🎾 Tennis Captain</CardTitle>
+            <CardDescription className="text-base">Create your account</CardDescription>
+          </CardHeader>
+          
+          <CardContent className="px-6 sm:px-8 pb-6 sm:pb-8">
+            {error && (
+              <Card className="bg-red-50 border-red-200 mb-6">
+                <CardContent className="pt-4">
+                  <p className="text-red-700 text-sm">{error}</p>
+                </CardContent>
+              </Card>
+            )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-                Username
-              </label>
-              <input
-                type="text"
-                id="username"
-                name="username"
-                value={formData.username}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Choose a username"
-                required
-              />
-            </div>
-
-            <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                Email
+                Email (used as username)
               </label>
               <input
                 type="email"
                 id="email"
                 name="email"
                 value={formData.email}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                onChange={handleEmailChange}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors mobile-input"
                 placeholder="Enter your email"
+                required
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors mobile-input"
+                  placeholder="Your full name"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors mobile-input"
+                  placeholder="+41 79 123 4567"
+                  required
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label htmlFor="ranking" className="block text-sm font-medium text-gray-700 mb-2">
+                Tennis Ranking
+              </label>
+              <input
+                type="number"
+                id="ranking"
+                name="ranking"
+                value={formData.ranking}
+                onChange={handleChange}
+                min="0"
+                max="9999"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors mobile-input"
+                placeholder="Your tennis ranking (0 if unranked)"
                 required
               />
             </div>
@@ -140,7 +193,7 @@ export default function RegisterPage() {
                 name="role"
                 value={formData.role}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors mobile-input"
               >
                 <option value={UserRole.CAPTAIN}>Team Captain</option>
                 <option value={UserRole.PLAYER}>Player</option>
@@ -148,57 +201,66 @@ export default function RegisterPage() {
               </select>
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                Password
-              </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Enter your password"
-                minLength={6}
-                required
-              />
+            {/* Hidden username field - will be auto-filled with email */}
+            <input type="hidden" name="username" value={formData.username} />
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors mobile-input"
+                  placeholder="Enter your password"
+                  minLength={6}
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors mobile-input"
+                  placeholder="Confirm your password"
+                  required
+                />
+              </div>
             </div>
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                Confirm Password
-              </label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Confirm your password"
-                required
-              />
-            </div>
-
-            <button
+            <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white font-bold py-3 px-6 rounded-lg transition-colors duration-200 border-2 border-green-700"
+              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-300 mobile-button"
             >
               {loading ? 'Creating account...' : 'Create Account'}
-            </button>
+            </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
-              Already have an account?{' '}
-              <Link href="/login" className="text-blue-600 hover:text-blue-800 font-semibold">
-                Sign in here
-              </Link>
-            </p>
-          </div>
-        </div>
+            <div className="mt-6 text-center">
+              <p className="text-gray-600 text-sm sm:text-base">
+                Already have an account?{' '}
+                <Link 
+                  href="/login" 
+                  className="text-blue-600 hover:text-blue-800 font-semibold underline hover:no-underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded px-1 py-1"
+                >
+                  Sign in here
+                </Link>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -3,6 +3,9 @@ export interface User {
   id: string;
   username: string;
   email: string;
+  name: string;
+  phone: string;
+  ranking: number;
   password: string; // hashed
   role: UserRole;
   teamId?: string;
@@ -31,6 +34,9 @@ export interface LoginCredentials {
 export interface RegisterData {
   username: string;
   email: string;
+  name: string;
+  phone: string;
+  ranking: number;
   password: string;
   role?: UserRole;
 }
