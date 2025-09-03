@@ -81,7 +81,7 @@ export default function TrainingMode() {
 
       // Log training participants and check their absence status
       trainings.forEach(training => {
-        const trainingDateStr = dateToLocalString(training.date);
+        const trainingDateStr = training.date.toISOString().split('T')[0];
         console.log(`Training on ${trainingDateStr} (${training.dayName}):`);
         
         training.participants.forEach(participant => {
@@ -129,21 +129,12 @@ export default function TrainingMode() {
   }[]>([]);
   const [pendingTrainingData, setPendingTrainingData] = useState<TrainingUploadData[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [lastAbsenceCheck, setLastAbsenceCheck] = useState(Date.now());
 
   // Get day name from date
   const getDayName = (date: Date | string): string => {
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const dateObj = date instanceof Date ? date : new Date(date);
     return dayNames[dateObj.getDay()];
-  };
-
-  // Timezone-safe date to string conversion (avoids UTC conversion issues)
-  const dateToLocalString = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
   };
 
   // Manual absence checking function
@@ -171,7 +162,7 @@ export default function TrainingMode() {
     // Log training participants and check their absence status
     let totalAbsences = 0;
     trainings.forEach(training => {
-      const trainingDateStr = dateToLocalString(training.date);
+      const trainingDateStr = training.date.toISOString().split('T')[0];
       console.log(`Training on ${trainingDateStr} (${training.dayName}):`);
       
       training.participants.forEach(participant => {
@@ -190,24 +181,12 @@ export default function TrainingMode() {
       });
     });
 
-    // Force multiple re-renders to ensure color changes are applied
-    const checkTime = Date.now();
-    setLastAbsenceCheck(checkTime);
+    // Force re-render to apply absence checking
     setRefreshKey(prev => prev + 1);
-    
-    // Additional re-render triggers to ensure React updates the display
-    setTimeout(() => {
-      setRefreshKey(prev => prev + 1);
-    }, 10);
-    
-    setTimeout(() => {
-      setRefreshKey(prev => prev + 1);
-    }, 50);
-    
     console.log(`=== ABSENCE CHECK COMPLETED - Found ${totalAbsences} absences ===`);
     
     // Show success message
-    alert(`Absence check completed! Found ${totalAbsences} player absences. Colors should update now!`);
+    alert(`Absence check completed! Found ${totalAbsences} player absences. Check console for details.`);
   };
 
 
@@ -220,7 +199,7 @@ export default function TrainingMode() {
         return false;
       }
       
-      const trainingDateStr = dateToLocalString(date); // YYYY-MM-DD format (timezone-safe)
+      const trainingDateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD format
       console.log(`Checking absence for player ${player.name} (ID: ${playerId}) on ${trainingDateStr}`);
       console.log(`Player absences:`, player.absences);
       
@@ -242,7 +221,7 @@ export default function TrainingMode() {
       const player = players.find(p => p.id === playerId);
       if (!player) return null;
       
-      const trainingDateStr = dateToLocalString(date); // YYYY-MM-DD format (timezone-safe)
+      const trainingDateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD format
       
       const absence = player.absences.find(absence => {
         const absenceDate = absence.split(' - ')[0]; // Get date part before the reason
@@ -902,13 +881,14 @@ export default function TrainingMode() {
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800">
         <div className="container mx-auto px-4 py-8">
-          <header className="mb-6 sm:mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              🏃‍♂️ Training Sessions
+          <header className="flex items-center justify-between mb-8">
+            <Link href="/" className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+              ← Back to Home
+            </Link>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              🏃‍♂️ Training
             </h1>
-            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
-              Manage training schedules and track player attendance
-            </p>
+            <div></div>
           </header>
 
           {/* Error Display */}
@@ -920,56 +900,37 @@ export default function TrainingMode() {
             </div>
           )}
 
-          {/* Training Controls - Mobile Optimized */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 sm:p-6 mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+          {/* Training Controls */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
                 <Button
                   onClick={() => setShowAddForm(true)}
-                  className="bg-purple-600 hover:bg-purple-700 mobile-button"
-                  size="default"
+                  className="bg-purple-600 hover:bg-purple-700"
                 >
                   ➕ Schedule Training
                 </Button>
                 
                 <Button
                   onClick={checkAbsences}
-                  className="bg-orange-600 hover:bg-orange-700 mobile-button"
+                  className="bg-orange-600 hover:bg-orange-700"
                   disabled={trainingsLoading || playersLoading}
-                  size="default"
                 >
                   🔍 Check Absences
                 </Button>
                 
                 <Button 
                   variant="outline" 
-                  className="border-green-500 text-green-700 hover:bg-green-50 mobile-button"
+                  className="border-green-500 text-green-700 hover:bg-green-50"
                   onClick={() => {
                     console.log('Upload Schedule button clicked');
                     setShowUploadDialog(true);
                   }}
-                  size="default"
                 >
                   📤 Upload Schedule
                 </Button>
                 
-              </div>
-              
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
-                <Button 
-                  variant="outline"
-                  onClick={generateSampleFile}
-                  className="mobile-button"
-                  size="default"
-                >
-                  📄 Download Sample
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Upload Dialog */}
-          <Dialog open={showUploadDialog} onOpenChange={(open) => {
+                <Dialog open={showUploadDialog} onOpenChange={(open) => {
                   setShowUploadDialog(open);
                   if (!open) resetUploadState();
                 }}>
@@ -1263,10 +1224,10 @@ export default function TrainingMode() {
                 </button>
               </div>
             ) : (
-              <div className="space-y-4" key={`trainings-${refreshKey}-${players.length}-${lastAbsenceCheck}`}>
+              <div className="space-y-4" key={`trainings-${refreshKey}-${players.length}-${JSON.stringify(players.map(p => p.absences)).substring(0, 50)}`}>
                 {displayableTrainings.map((training) => (
                   <div
-                    key={`${training.id}-${refreshKey}-${players.length}-${lastAbsenceCheck}`}
+                    key={`${training.id}-${refreshKey}-${players.length}`}
                     className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
                     <div className="flex justify-between items-start">

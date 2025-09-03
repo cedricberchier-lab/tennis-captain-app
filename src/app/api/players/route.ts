@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPlayer, getAllPlayers, initializeDatabase } from '@/lib/db';
+import { getAllLocalPlayers, createLocalPlayer } from '@/lib/localAuth';
 import { Player } from '@/types';
 
 // Initialize database on first request
@@ -13,9 +14,31 @@ async function ensureDbInitialized() {
 
 export async function GET() {
   try {
-    await ensureDbInitialized();
-    const players = await getAllPlayers();
-    return NextResponse.json({ players });
+    let players: Player[] = [];
+    let isUsingLocalStorage = false;
+
+    // Try database first, fallback to localStorage
+    if (process.env.POSTGRES_URL) {
+      try {
+        await ensureDbInitialized();
+        players = await getAllPlayers();
+      } catch (dbError) {
+        console.warn('Database operation failed, falling back to localStorage:', dbError);
+        isUsingLocalStorage = true;
+      }
+    } else {
+      isUsingLocalStorage = true;
+    }
+
+    // Use localStorage fallback
+    if (isUsingLocalStorage) {
+      players = getAllLocalPlayers();
+    }
+
+    return NextResponse.json({ 
+      players,
+      usingLocalStorage: isUsingLocalStorage 
+    });
   } catch (error) {
     console.error('GET /api/players error:', error);
     return NextResponse.json(

@@ -11,6 +11,9 @@ export async function initializeDatabase() {
         id VARCHAR(255) PRIMARY KEY,
         username VARCHAR(100) UNIQUE NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        phone VARCHAR(255) NOT NULL,
+        ranking INTEGER DEFAULT 0,
         password VARCHAR(255) NOT NULL,
         role VARCHAR(20) DEFAULT 'captain',
         team_id VARCHAR(255),
@@ -232,6 +235,36 @@ export async function deletePlayer(id: string): Promise<boolean> {
   return result.rowCount > 0;
 }
 
+export async function getPlayerByEmail(email: string): Promise<Player | null> {
+  const { rows } = await sql`SELECT * FROM players WHERE email = ${email}`;
+  
+  if (rows.length === 0) return null;
+  
+  const row = rows[0];
+  return {
+    id: row.id,
+    name: row.name,
+    email: row.email || '',
+    phone: row.phone || '',
+    ranking: row.ranking || 0,
+    absences: JSON.parse(row.absences || '[]'),
+    stats: {
+      matchesPlayed: row.matches_played || 0,
+      wins: row.wins || 0,
+      losses: row.losses || 0,
+      winsIn2Sets: row.wins_in_2_sets || 0,
+      winsIn3Sets: row.wins_in_3_sets || 0,
+      lossesIn2Sets: row.losses_in_2_sets || 0,
+      lossesIn3Sets: row.losses_in_3_sets || 0,
+      performance: row.performance || 0,
+      underperformance: row.underperformance || 0,
+      trainingAttendance: row.training_attendance || 0
+    },
+    createdAt: new Date(row.created_at),
+    updatedAt: new Date(row.updated_at)
+  };
+}
+
 // Utility function to migrate from localStorage to database
 export async function migrateFromLocalStorage(): Promise<{ success: boolean; count: number }> {
   try {
@@ -241,6 +274,55 @@ export async function migrateFromLocalStorage(): Promise<{ success: boolean; cou
   } catch (error) {
     console.error('Migration failed:', error);
     return { success: false, count: 0 };
+  }
+}
+
+// Utility function to ensure all users have player records
+export async function ensureAllUsersHavePlayerRecords(): Promise<{ created: number; errors: number }> {
+  try {
+    // Get all users
+    const { rows: userRows } = await sql`SELECT * FROM users`;
+    let created = 0;
+    let errors = 0;
+    
+    for (const userRow of userRows) {
+      try {
+        // Check if player exists for this user
+        const existingPlayer = await getPlayerByEmail(userRow.email);
+        
+        if (!existingPlayer) {
+          // Create player record
+          await createPlayer({
+            name: userRow.name,
+            email: userRow.email,
+            phone: userRow.phone,
+            ranking: userRow.ranking,
+            absences: [],
+            stats: {
+              matchesPlayed: 0,
+              wins: 0,
+              losses: 0,
+              winsIn2Sets: 0,
+              winsIn3Sets: 0,
+              lossesIn2Sets: 0,
+              lossesIn3Sets: 0,
+              performance: 0,
+              underperformance: 0,
+              trainingAttendance: 0
+            }
+          });
+          created++;
+        }
+      } catch (error) {
+        console.error(`Error creating player for user ${userRow.email}:`, error);
+        errors++;
+      }
+    }
+    
+    return { created, errors };
+  } catch (error) {
+    console.error('Error ensuring all users have player records:', error);
+    return { created: 0, errors: 1 };
   }
 }
 
@@ -254,17 +336,46 @@ export async function createUser(userData: Omit<User, 'id' | 'createdAt' | 'upda
 
   await sql`
     INSERT INTO users (
-      id, username, email, password, role, team_id, created_at, updated_at
+      id, username, email, name, phone, ranking, password, role, team_id, created_at, updated_at
     ) VALUES (
-      ${id}, ${userData.username}, ${userData.email}, ${hashedPassword}, 
-      ${userData.role || UserRole.CAPTAIN}, ${userData.teamId || null}, ${now}, ${now}
+      ${id}, ${userData.username}, ${userData.email}, ${userData.name}, ${userData.phone}, ${userData.ranking},
+      ${hashedPassword}, ${userData.role || UserRole.CAPTAIN}, ${userData.teamId || null}, ${now}, ${now}
     )
   `;
+
+  // Automatically create a player record with the user's information
+  try {
+    await createPlayer({
+      name: userData.name,
+      email: userData.email,
+      phone: userData.phone,
+      ranking: userData.ranking,
+      absences: [], // Start with no absences
+      stats: {
+        matchesPlayed: 0,
+        wins: 0,
+        losses: 0,
+        winsIn2Sets: 0,
+        winsIn3Sets: 0,
+        lossesIn2Sets: 0,
+        lossesIn3Sets: 0,
+        performance: 0,
+        underperformance: 0,
+        trainingAttendance: 0
+      }
+    });
+  } catch (error) {
+    console.error('Error creating player record for user:', error);
+    // Don't fail the user creation if player creation fails
+  }
 
   return {
     id,
     username: userData.username,
     email: userData.email,
+    name: userData.name,
+    phone: userData.phone,
+    ranking: userData.ranking,
     password: hashedPassword,
     role: userData.role || UserRole.CAPTAIN,
     teamId: userData.teamId,
@@ -283,6 +394,9 @@ export async function getUserByUsername(username: string): Promise<User | null> 
     id: row.id,
     username: row.username,
     email: row.email,
+    name: row.name,
+    phone: row.phone,
+    ranking: row.ranking,
     password: row.password,
     role: row.role as UserRole,
     teamId: row.team_id || undefined,
@@ -301,6 +415,9 @@ export async function getUserById(id: string): Promise<User | null> {
     id: row.id,
     username: row.username,
     email: row.email,
+    name: row.name,
+    phone: row.phone,
+    ranking: row.ranking,
     password: row.password,
     role: row.role as UserRole,
     teamId: row.team_id || undefined,

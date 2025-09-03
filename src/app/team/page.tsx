@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { CalendarOff } from "lucide-react";
 
 interface AddPlayerFormData {
   name: string;
@@ -228,6 +229,31 @@ export default function TeamMode() {
     setShowExportMenu(false);
   };
 
+  // Helper function to check if player has upcoming absences
+  const hasUpcomingAbsences = (player: Player) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return player.absences.some(absence => {
+      const [dateStr] = absence.split(' - ');
+      const absenceDate = new Date(dateStr);
+      absenceDate.setHours(0, 0, 0, 0);
+      return absenceDate >= today;
+    });
+  };
+  
+  const getUpcomingAbsencesCount = (player: Player) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return player.absences.filter(absence => {
+      const [dateStr] = absence.split(' - ');
+      const absenceDate = new Date(dateStr);
+      absenceDate.setHours(0, 0, 0, 0);
+      return absenceDate >= today;
+    }).length;
+  };
+
   const sortedPlayers = [...players].sort((a, b) => {
     if (a.ranking === 0 && b.ranking === 0) return a.name.localeCompare(b.name);
     if (a.ranking === 0) return 1;
@@ -396,10 +422,23 @@ export default function TeamMode() {
                           <p className="text-sm text-gray-600 dark:text-gray-300">
                             {player.email || "No email"} • {player.phone || "No phone"}
                           </p>
+                          {hasUpcomingAbsences(player) && (
+                            <div className="flex items-center gap-1 mt-1">
+                              <CalendarOff className="h-3 w-3 text-red-500" />
+                              <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
+                                {getUpcomingAbsencesCount(player)} absence{getUpcomingAbsencesCount(player) !== 1 ? 's' : ''}
+                              </Badge>
+                            </div>
+                          )}
                         </div>
                       </div>
                       
                       <div className="flex items-center space-x-4">
+                        {hasUpcomingAbsences(player) && (
+                          <div className="text-xs text-red-600 dark:text-red-400 font-medium">
+                            📅 Unavailable
+                          </div>
+                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
