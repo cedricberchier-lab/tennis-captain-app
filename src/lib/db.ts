@@ -126,7 +126,7 @@ export async function createPlayer(player: Omit<Player, 'id' | 'createdAt' | 'up
       training_attendance, created_at, updated_at
     ) VALUES (
       ${id}, ${player.name}, ${player.email}, ${player.phone}, ${player.ranking},
-      ${JSON.stringify(player.absences)}, ${player.stats.matchesPlayed}, ${player.stats.wins},
+      ARRAY[]::TEXT[], ${player.stats.matchesPlayed}, ${player.stats.wins},
       ${player.stats.losses}, ${player.stats.winsIn2Sets}, ${player.stats.winsIn3Sets},
       ${player.stats.lossesIn2Sets}, ${player.stats.lossesIn3Sets}, ${player.stats.performance},
       ${player.stats.underperformance}, ${player.stats.trainingAttendance}, ${now}, ${now}
@@ -155,7 +155,7 @@ export async function getAllPlayers(): Promise<Player[]> {
     email: row.email || '',
     phone: row.phone || '',
     ranking: row.ranking || 0,
-    absences: JSON.parse(row.absences || '[]'),
+    absences: row.absences || [],
     stats: {
       matchesPlayed: row.matches_played || 0,
       wins: row.wins || 0,
