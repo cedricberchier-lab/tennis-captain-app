@@ -32,7 +32,7 @@ interface ChatMessage {
 
 export default function Home() {
   const { user } = useAuth();
-  const { players, updatePlayer } = usePlayers();
+  const { players, updatePlayer, refreshPlayers } = usePlayers();
   const { trainings } = useTrainings();
   const { matches } = useMatches();
   
@@ -66,6 +66,7 @@ export default function Home() {
     date: '',
     reason: ''
   });
+  const [isAddingAbsence, setIsAddingAbsence] = useState(false);
   
   // Get current user's player record
   const currentPlayer = user?.email ? players.find(p => p.email === user.email) : null;
@@ -98,15 +99,30 @@ export default function Home() {
   
   // Handle adding absence
   const handleAddAbsence = async () => {
-    if (!currentPlayer || !absenceData.date.trim()) return;
+    if (!currentPlayer || !absenceData.date.trim() || isAddingAbsence) return;
     
-    const absenceEntry = `${absenceData.date}${absenceData.reason.trim() ? ` - ${absenceData.reason.trim()}` : ''}`;
-    const updatedAbsences = [...currentPlayer.absences, absenceEntry];
-    
-    const updatedPlayer = await updatePlayer(currentPlayer.id, { absences: updatedAbsences });
-    if (updatedPlayer) {
-      setAbsenceData({ date: '', reason: '' });
-      setShowAbsenceModal(false);
+    setIsAddingAbsence(true);
+    try {
+      const absenceEntry = `${absenceData.date}${absenceData.reason.trim() ? ` - ${absenceData.reason.trim()}` : ''}`;
+      const updatedAbsences = [...currentPlayer.absences, absenceEntry];
+      
+      const updatedPlayer = await updatePlayer(currentPlayer.id, { absences: updatedAbsences });
+      if (updatedPlayer) {
+        // Refresh the players list to update currentPlayer with new absence
+        await refreshPlayers();
+        
+        // Reset form and close modal
+        setAbsenceData({ date: '', reason: '' });
+        setShowAbsenceModal(false);
+      } else {
+        console.error('Failed to update player with absence');
+        alert('Failed to add absence. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error adding absence:', error);
+      alert('Failed to add absence. Please try again.');
+    } finally {
+      setIsAddingAbsence(false);
     }
   };
   
@@ -423,15 +439,16 @@ export default function Home() {
                         <Button
                           variant="outline"
                           onClick={() => setShowAbsenceModal(false)}
+                          disabled={isAddingAbsence}
                         >
                           Cancel
                         </Button>
                         <Button
                           onClick={handleAddAbsence}
-                          disabled={!absenceData.date.trim()}
+                          disabled={!absenceData.date.trim() || isAddingAbsence}
                           className="bg-red-600 hover:bg-red-700"
                         >
-                          Add Absence
+                          {isAddingAbsence ? 'Adding...' : 'Add Absence'}
                         </Button>
                       </div>
                       {currentPlayer && currentPlayer.absences.length > 0 && (
