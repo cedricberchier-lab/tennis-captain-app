@@ -339,48 +339,12 @@ export default function TeamMode() {
               </div>
             </div>
 
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-colors mb-4"
-            >
-              ➕ Add New Player
-            </button>
-
-            {players.length > 0 && (
-              <div className="relative">
-                <button
-                  onClick={() => setShowExportMenu(!showExportMenu)}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors mb-4"
-                >
-                  📤 Export Data
-                </button>
-
-                {showExportMenu && (
-                  <div className="absolute top-12 left-0 right-0 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 z-10">
-                    <div className="p-2">
-                      <button
-                        onClick={handleExportJSON}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-sm"
-                      >
-                        📄 Export as JSON
-                      </button>
-                      <button
-                        onClick={handleExportCSV}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-sm"
-                      >
-                        📊 Export as CSV
-                      </button>
-                      <button
-                        onClick={handleCopyToClipboard}
-                        className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-sm"
-                      >
-                        📋 Copy to Clipboard
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+            <div className="text-center text-gray-500 dark:text-gray-400 mb-4">
+              <p className="text-sm">Player management has been moved to the Setup page</p>
+              <a href="/setup" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline text-sm">
+                Go to Setup →
+              </a>
+            </div>
           </div>
 
           {/* Player Roster */}
