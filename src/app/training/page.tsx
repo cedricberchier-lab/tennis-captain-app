@@ -44,6 +44,17 @@ export default function TrainingMode() {
     comment: ""
   });
   const [participants, setParticipants] = useState<TrainingParticipant[]>([]);
+  const [horizonCount, setHorizonCount] = useState(3);
+
+  // Load custom horizon settings from localStorage
+  useEffect(() => {
+    const savedCustomHorizon = localStorage.getItem('trainingCustomHorizon');
+    const savedHorizonCount = localStorage.getItem('trainingHorizonCount');
+    
+    if (savedCustomHorizon === 'true' && savedHorizonCount) {
+      setHorizonCount(parseInt(savedHorizonCount));
+    }
+  }, []);
 
   // Primary effect: Run absence checking whenever page loads or data changes
   useEffect(() => {
@@ -330,8 +341,8 @@ export default function TrainingMode() {
     setParticipants(updated);
   };
 
-  // Get displayable trainings (always show next 3)
-  const displayableTrainings = getUpcomingTrainings(3);
+  // Get displayable trainings based on custom horizon setting
+  const displayableTrainings = getUpcomingTrainings(horizonCount);
 
 
   return (

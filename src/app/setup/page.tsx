@@ -1066,8 +1066,31 @@ export default function SetupPage() {
                   )}
                 </div>
 
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  Current trainings: {trainings.length}
+                <div className="space-y-2">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    Total trainings: {trainings.length}
+                  </div>
+                  {(() => {
+                    const upcomingTrainings = trainings
+                      .filter(t => new Date(t.date) >= new Date(new Date().setHours(0, 0, 0, 0)))
+                      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                      .slice(0, 5);
+                    
+                    return upcomingTrainings.length > 0 ? (
+                      <div className="text-sm text-gray-600 dark:text-gray-300">
+                        <div className="font-medium mb-1">Next {upcomingTrainings.length} training{upcomingTrainings.length > 1 ? 's' : ''}:</div>
+                        {upcomingTrainings.map((training, index) => (
+                          <div key={training.id} className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                            {index + 1}. {new Date(training.date).toLocaleDateString()} at {training.timeStart} - Court {training.courtNumber} ({training.participants.length} players)
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        No upcoming trainings scheduled
+                      </div>
+                    );
+                  })()}
                 </div>
               </CardContent>
             </Card>
