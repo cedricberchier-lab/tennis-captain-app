@@ -942,14 +942,14 @@ export default function SetupPage() {
                               <div className="flex-1">
                                 <Label className="text-sm">Map to existing player:</Label>
                                 <Select
-                                  value={mapping.mappedPlayerId || ''}
-                                  onValueChange={(value) => updatePlayerMapping(mapping.csvName, value || null)}
+                                  value={mapping.mappedPlayerId || '__unmapped__'}
+                                  onValueChange={(value) => updatePlayerMapping(mapping.csvName, value === '__unmapped__' ? null : value)}
                                 >
                                   <SelectTrigger className="w-full">
                                     <SelectValue placeholder="Select a player or leave unmapped" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="">Leave unmapped (manual entry)</SelectItem>
+                                    <SelectItem value="__unmapped__">Leave unmapped (manual entry)</SelectItem>
                                     
                                     {mapping.suggestions.length > 0 && (
                                       <>
