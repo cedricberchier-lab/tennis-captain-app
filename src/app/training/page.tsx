@@ -170,50 +170,53 @@ export default function TrainingMode() {
   const playerHasAbsenceOnDate = useMemo(() => {
     return (playerId: string, date: Date): boolean => {
       const player = players.find(p => p.id === playerId);
-      if (!player) {
-        console.log(`Player with ID ${playerId} not found in ${players.length} players`);
+      if (!player || !player.absences || player.absences.length === 0) {
         return false;
       }
       
-      const trainingDateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD format
-      console.log(`Checking absence for player ${player.name} (ID: ${playerId}) on ${trainingDateStr}`);
-      console.log(`Player absences:`, player.absences);
+      // Handle timezone issues by using local date string instead of ISO
+      const trainingDate = new Date(date);
+      const year = trainingDate.getFullYear();
+      const month = String(trainingDate.getMonth() + 1).padStart(2, '0');
+      const day = String(trainingDate.getDate()).padStart(2, '0');
+      const trainingDateStr = `${year}-${month}-${day}`;
       
       const hasAbsence = player.absences.some(absence => {
-        const absenceDate = absence.split(' - ')[0]; // Get date part before the reason
-        const matches = absenceDate === trainingDateStr;
-        console.log(`  Comparing absence date '${absenceDate}' with training date '${trainingDateStr}': ${matches}`);
-        return matches;
+        const absenceDate = absence.split(' - ')[0].trim(); // Get date part and trim whitespace
+        return absenceDate === trainingDateStr;
       });
       
-      console.log(`Result: Player ${player.name} has absence on ${trainingDateStr}: ${hasAbsence}`);
       return hasAbsence;
     };
-  }, [players]); // Recalculate when players data changes
+  }, [players, refreshKey]); // Recalculate when players data changes or manual refresh
 
   // Memoized absence reason checking that recalculates when players data changes
   const getAbsenceReason = useMemo(() => {
     return (playerId: string, date: Date): string | null => {
       const player = players.find(p => p.id === playerId);
-      if (!player) return null;
+      if (!player || !player.absences || player.absences.length === 0) return null;
       
-      const trainingDateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+      // Handle timezone issues by using local date string instead of ISO
+      const trainingDate = new Date(date);
+      const year = trainingDate.getFullYear();
+      const month = String(trainingDate.getMonth() + 1).padStart(2, '0');
+      const day = String(trainingDate.getDate()).padStart(2, '0');
+      const trainingDateStr = `${year}-${month}-${day}`;
       
       const absence = player.absences.find(absence => {
-        const absenceDate = absence.split(' - ')[0]; // Get date part before the reason
+        const absenceDate = absence.split(' - ')[0].trim(); // Get date part and trim whitespace
         return absenceDate === trainingDateStr;
       });
       
       if (absence) {
         const parts = absence.split(' - ');
         const reason = parts.length > 1 ? parts.slice(1).join(' - ') : 'No reason provided';
-        console.log(`Found absence reason for ${player.name} on ${trainingDateStr}: "${reason}"`);
         return reason;
       }
       
       return null;
     };
-  }, [players]); // Recalculate when players data changes
+  }, [players, refreshKey]); // Recalculate when players data changes or manual refresh
 
   // Reset form
   const resetForm = () => {
@@ -432,8 +435,10 @@ export default function TrainingMode() {
                             <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Players:</div>
                             <div className="flex flex-wrap gap-2">
                               {training.participants.map((participant, index) => {
-                                const hasAbsence = participant.playerId && playerHasAbsenceOnDate(participant.playerId, training.date);
-                                const absenceReason = participant.playerId ? getAbsenceReason(participant.playerId, training.date) : null;
+                                // Debug info for absence checking
+                                const playerId = participant.playerId || participant.id;
+                                const hasAbsence = playerId && playerHasAbsenceOnDate(playerId, training.date);
+                                const absenceReason = playerId ? getAbsenceReason(playerId, training.date) : null;
                                 
                                 return (
                                   <span
@@ -445,8 +450,8 @@ export default function TrainingMode() {
                                     }`}
                                     title={hasAbsence 
                                       ? `Absent: ${absenceReason}` 
-                                      : participant.playerId 
-                                        ? `Available (Player ID: ${participant.playerId})`
+                                      : playerId 
+                                        ? `Available (Player ID: ${playerId})`
                                         : `Manual Entry (No roster link)`
                                     }
                                   >
