@@ -12,7 +12,6 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { CalendarOff } from "lucide-react";
 
 interface AddPlayerFormData {
   name: string;
@@ -38,8 +37,6 @@ export default function TeamMode() {
   const [showPlayerDetails, setShowPlayerDetails] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [isEditingPlayer, setIsEditingPlayer] = useState(false);
-  const [showAddAbsence, setShowAddAbsence] = useState(false);
-  const [editingAbsenceIndex, setEditingAbsenceIndex] = useState<number | null>(null);
   const [formData, setFormData] = useState<AddPlayerFormData>({
     name: "",
     email: "",
@@ -51,10 +48,6 @@ export default function TeamMode() {
     email: "",
     phone: "",
     ranking: 0
-  });
-  const [absenceData, setAbsenceData] = useState({
-    date: "",
-    reason: ""
   });
 
   // Check for localStorage data on mount and offer migration
@@ -78,7 +71,6 @@ export default function TeamMode() {
       email: formData.email.trim(),
       phone: formData.phone.trim(),
       ranking: formData.ranking || 0,
-      absences: [],
       stats: {
         matchesPlayed: 0,
         wins: 0,
@@ -116,8 +108,6 @@ export default function TeamMode() {
     });
     setShowPlayerDetails(true);
     setIsEditingPlayer(false);
-    setShowAddAbsence(false);
-    setEditingAbsenceIndex(null);
   };
 
   const handleEditPlayer = async () => {
@@ -137,69 +127,11 @@ export default function TeamMode() {
     }
   };
 
-  const handleAddAbsence = async () => {
-    if (!selectedPlayer || !absenceData.date.trim()) return;
-
-    const absenceEntry = `${absenceData.date}${absenceData.reason.trim() ? ` - ${absenceData.reason.trim()}` : ''}`;
-    const updatedAbsences = [...selectedPlayer.absences, absenceEntry];
-    
-    const updatedPlayer = await updatePlayer(selectedPlayer.id, { absences: updatedAbsences });
-    if (updatedPlayer) {
-      setSelectedPlayer(updatedPlayer);
-      setAbsenceData({ date: "", reason: "" });
-      setShowAddAbsence(false);
-    }
-  };
-
-  const handleEditAbsence = (index: number) => {
-    if (!selectedPlayer) return;
-    
-    const absence = selectedPlayer.absences[index];
-    const [date, ...reasonParts] = absence.split(' - ');
-    setAbsenceData({
-      date: date,
-      reason: reasonParts.join(' - ') || ""
-    });
-    setEditingAbsenceIndex(index);
-    setShowAddAbsence(true);
-  };
-
-  const handleUpdateAbsence = async () => {
-    if (!selectedPlayer || editingAbsenceIndex === null || !absenceData.date.trim()) return;
-
-    const absenceEntry = `${absenceData.date}${absenceData.reason.trim() ? ` - ${absenceData.reason.trim()}` : ''}`;
-    const updatedAbsences = [...selectedPlayer.absences];
-    updatedAbsences[editingAbsenceIndex] = absenceEntry;
-
-    const updatedPlayer = await updatePlayer(selectedPlayer.id, { absences: updatedAbsences });
-    if (updatedPlayer) {
-      setSelectedPlayer(updatedPlayer);
-      setAbsenceData({ date: "", reason: "" });
-      setShowAddAbsence(false);
-      setEditingAbsenceIndex(null);
-    }
-  };
-
-  const handleDeleteAbsence = async (index: number) => {
-    if (!selectedPlayer) return;
-    
-    if (confirm("Are you sure you want to remove this absence?")) {
-      const updatedAbsences = selectedPlayer.absences.filter((_, i) => i !== index);
-      
-      const updatedPlayer = await updatePlayer(selectedPlayer.id, { absences: updatedAbsences });
-      if (updatedPlayer) {
-        setSelectedPlayer(updatedPlayer);
-      }
-    }
-  };
 
   const closePlayerDetails = () => {
     setShowPlayerDetails(false);
     setSelectedPlayer(null);
     setIsEditingPlayer(false);
-    setShowAddAbsence(false);
-    setEditingAbsenceIndex(null);
-    setAbsenceData({ date: "", reason: "" });
   };
 
   const handleMigrateData = async () => {
@@ -229,31 +161,6 @@ export default function TeamMode() {
     setShowExportMenu(false);
   };
 
-  // Helper function to check if player has upcoming absences
-  const hasUpcomingAbsences = (player: Player) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    return player.absences.some(absence => {
-      const [dateStr] = absence.split(' - ');
-      const absenceDate = new Date(dateStr);
-      absenceDate.setHours(0, 0, 0, 0);
-      return absenceDate >= today;
-    });
-  };
-  
-  const getUpcomingAbsencesCount = (player: Player) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    return player.absences.filter(absence => {
-      const [dateStr] = absence.split(' - ');
-      const absenceDate = new Date(dateStr);
-      absenceDate.setHours(0, 0, 0, 0);
-      return absenceDate >= today;
-    }).length;
-  };
-
   const sortedPlayers = [...players].sort((a, b) => {
     if (a.ranking === 0 && b.ranking === 0) return a.name.localeCompare(b.name);
     if (a.ranking === 0) return 1;
@@ -270,7 +177,7 @@ export default function TeamMode() {
             👥 Team Roster
           </h1>
           <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
-            Manage players, rankings, and track absences
+            Manage players and rankings
           </p>
         </header>
 
@@ -386,23 +293,10 @@ export default function TeamMode() {
                           <p className="text-sm text-gray-600 dark:text-gray-300">
                             {player.email || "No email"} • {player.phone || "No phone"}
                           </p>
-                          {hasUpcomingAbsences(player) && (
-                            <div className="flex items-center gap-1 mt-1">
-                              <CalendarOff className="h-3 w-3 text-red-500" />
-                              <Badge variant="outline" className="text-xs bg-red-50 text-red-700 border-red-200">
-                                {getUpcomingAbsencesCount(player)} absence{getUpcomingAbsencesCount(player) !== 1 ? 's' : ''}
-                              </Badge>
-                            </div>
-                          )}
                         </div>
                       </div>
                       
                       <div className="flex items-center space-x-4">
-                        {hasUpcomingAbsences(player) && (
-                          <div className="text-xs text-red-600 dark:text-red-400 font-medium">
-                            📅 Unavailable
-                          </div>
-                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -618,117 +512,6 @@ export default function TeamMode() {
                 )}
               </div>
 
-              {/* Absences Section */}
-              <div>
-                <div className="flex justify-between items-center mb-4">
-                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    Absences ({selectedPlayer.absences.length})
-                  </h4>
-                  <button
-                    onClick={() => {
-                      setShowAddAbsence(!showAddAbsence);
-                      setEditingAbsenceIndex(null);
-                      setAbsenceData({ date: "", reason: "" });
-                    }}
-                    className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-3 rounded-lg transition-colors"
-                  >
-                    {showAddAbsence ? "Cancel" : "➕ Add Absence"}
-                  </button>
-                </div>
-
-                {showAddAbsence && (
-                  <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Date *
-                        </label>
-                        <input
-                          type="date"
-                          value={absenceData.date}
-                          onChange={(e) => setAbsenceData({ ...absenceData, date: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                          Reason (optional)
-                        </label>
-                        <input
-                          type="text"
-                          value={absenceData.reason}
-                          onChange={(e) => setAbsenceData({ ...absenceData, reason: e.target.value })}
-                          placeholder="e.g. Vacation, Injury, etc."
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={editingAbsenceIndex !== null ? handleUpdateAbsence : handleAddAbsence}
-                        disabled={!absenceData.date.trim()}
-                        className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                      >
-                        {editingAbsenceIndex !== null ? "Update Absence" : "Add Absence"}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowAddAbsence(false);
-                          setEditingAbsenceIndex(null);
-                          setAbsenceData({ date: "", reason: "" });
-                        }}
-                        className="bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 font-medium py-2 px-4 rounded-lg transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {selectedPlayer.absences.length === 0 ? (
-                  <div className="text-center py-6 text-gray-500 dark:text-gray-400">
-                    No absences recorded
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {selectedPlayer.absences.map((absence, index) => {
-                      const [date, ...reasonParts] = absence.split(' - ');
-                      const reason = reasonParts.join(' - ');
-                      return (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                        >
-                          <div>
-                            <div className="font-medium text-gray-900 dark:text-white">
-                              {new Date(date).toLocaleDateString()}
-                            </div>
-                            {reason && (
-                              <div className="text-sm text-gray-600 dark:text-gray-300">
-                                {reason}
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleEditAbsence(index)}
-                              className="text-blue-600 hover:text-blue-800 text-sm"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteAbsence(index)}
-                              className="text-red-500 hover:text-red-700 text-sm"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         )}
