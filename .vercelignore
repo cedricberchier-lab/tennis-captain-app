@@ -1,0 +1,28 @@
+# Development files
+.env.local
+.env.local.template
+
+# Local storage files
+.local-players.json
+.local-users.json
+.local-trainings.json
+.local-matches.json
+
+# Logs
+*.log
+logs/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+*.test.*
+__tests__/
+
+# Development dependencies (already handled by package.json)
+# node_modules/

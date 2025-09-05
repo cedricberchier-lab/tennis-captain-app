@@ -212,7 +212,7 @@ export async function updatePlayer(id: string, updates: Partial<Player>): Promis
       email = COALESCE(${updates.email}, email),
       phone = COALESCE(${updates.phone}, phone),
       ranking = COALESCE(${updates.ranking}, ranking),
-      absences = COALESCE(${updates.absences ? JSON.stringify(updates.absences) : null}, absences),
+      absences = COALESCE(${updates.absences ? updates.absences : null}, absences),
       matches_played = COALESCE(${updates.stats?.matchesPlayed}, matches_played),
       wins = COALESCE(${updates.stats?.wins}, wins),
       losses = COALESCE(${updates.stats?.losses}, losses),

@@ -97,7 +97,17 @@ export default function AbsencePage() {
   const handleAddAbsence = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!currentPlayer || !formData.date.trim() || isSubmitting) return;
+    if (!currentPlayer) {
+      alert('No player record found. Please ensure you are registered as a player.');
+      return;
+    }
+    
+    if (!formData.date.trim()) {
+      alert('Please select a date.');
+      return;
+    }
+    
+    if (isSubmitting) return;
 
     setIsSubmitting(true);
     try {
@@ -105,16 +115,18 @@ export default function AbsencePage() {
       const updatedAbsences = [...currentPlayer.absences, absenceEntry];
       
       const updatedPlayer = await updatePlayer(currentPlayer.id, { absences: updatedAbsences });
+      
       if (updatedPlayer) {
         await refreshPlayers();
         resetForm();
         setShowAddForm(false);
       } else {
+        console.error('updatePlayer returned null');
         alert('Failed to add absence. Please try again.');
       }
     } catch (error) {
       console.error('Error adding absence:', error);
-      alert('Failed to add absence. Please try again.');
+      alert(`Failed to add absence: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }
