@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Users, Upload, Eye, Database } from 'lucide-react';
+import { Settings, Users, Upload, Eye } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 interface AddPlayerFormData {
@@ -37,17 +37,20 @@ interface TrainingUploadData {
 }
 
 export default function SetupPage() {
-  // Database migration state
-  const [hasLocal, setHasLocal] = useState(false);
-  const [localCount, setLocalCount] = useState(0);
-  const [migrating, setMigrating] = useState(false);
-  const [migrationResult, setMigrationResult] = useState<string>('');
-  const [loading, setLoading] = useState(true);
 
   // Player management state
   const { players, addPlayer, refreshPlayers } = usePlayers();
   const [showAddPlayerDialog, setShowAddPlayerDialog] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
+
+  // Password change state
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordChangeLoading, setPasswordChangeLoading] = useState(false);
   const [playerFormData, setPlayerFormData] = useState<AddPlayerFormData>({
     name: '',
     email: '',
@@ -102,52 +105,50 @@ export default function SetupPage() {
     localStorage.setItem('trainingHorizonCount', count.toString());
   };
 
-  useEffect(() => {
-    // Check for local users via API
-    const checkLocalUsers = async () => {
-      try {
-        const response = await fetch('/api/auth/local-status');
-        const data = await response.json();
-        setHasLocal(data.hasLocalUsers);
-        setLocalCount(data.count);
-      } catch (error) {
-        console.error('Error checking local users:', error);
-        setHasLocal(false);
-        setLocalCount(0);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Password change function
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      alert('Please fill in all password fields');
+      return;
+    }
 
-    checkLocalUsers();
-  }, []);
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      alert('New passwords do not match');
+      return;
+    }
 
-  // Database migration
-  const handleMigration = async () => {
-    setMigrating(true);
-    setMigrationResult('');
+    if (passwordData.newPassword.length < 6) {
+      alert('New password must be at least 6 characters long');
+      return;
+    }
 
+    setPasswordChangeLoading(true);
     try {
-      const response = await fetch('/api/auth/migrate', {
+      const response = await fetch('/api/auth/change-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        })
       });
 
       const result = await response.json();
       
       if (response.ok) {
-        setMigrationResult(`✅ ${result.message}`);
-        if (result.clearedLocalStorage) {
-          setHasLocal(false);
-          setLocalCount(0);
-        }
+        alert('Password changed successfully!');
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        setShowPasswordDialog(false);
       } else {
-        setMigrationResult(`❌ ${result.error || 'Migration failed'}`);
+        alert(result.error || 'Failed to change password');
       }
     } catch (error) {
-      setMigrationResult(`❌ Migration failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      alert('Failed to change password. Please try again.');
+      console.error('Password change error:', error);
     } finally {
-      setMigrating(false);
+      setPasswordChangeLoading(false);
     }
   };
 
@@ -623,32 +624,44 @@ export default function SetupPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800">
-        <div className="container mx-auto px-4 py-8">
-          <header className="flex items-center justify-between mb-8">
-            <Link href="/" className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-              ← Back to Home
-            </Link>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <Settings className="h-8 w-8" />
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 pt-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+          
+          {/* Welcome Header - Mobile Optimized */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <Link href="/" className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex items-center gap-2">
+                ← Back to Home
+              </Link>
+            </div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
+              <Settings className="h-8 w-8 text-blue-600 dark:text-blue-400" />
               Setup & Configuration
             </h1>
-            <div></div>
-          </header>
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
+              Manage players and configure settings
+            </p>
+          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
             
-            {/* Player Management Section */}
-            <Card className="p-6">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Player Management
-                </CardTitle>
-                <CardDescription>
-                  Add new players and export player data
-                </CardDescription>
-              </CardHeader>
+            {/* Main Setup Actions */}
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-4">
+                Setup Actions
+              </h2>
+              
+              {/* Player Management Section */}
+              <Card className="p-4 sm:p-6 transition-all duration-200 hover:shadow-lg border-2 border-transparent hover:border-blue-200 dark:hover:border-blue-700">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                    <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    Player Management
+                  </CardTitle>
+                  <CardDescription>
+                    Add new players and export player data
+                  </CardDescription>
+                </CardHeader>
               <CardContent className="space-y-4">
                 
                 {/* Add Player */}
@@ -766,11 +779,92 @@ export default function SetupPage() {
                   </div>
                 )}
 
+                <div className="border-t pt-4 mt-6">
+                  <h3 className="font-medium text-gray-900 dark:text-white mb-3">Account Settings</h3>
+                  <Button
+                    onClick={() => setShowPasswordDialog(true)}
+                    variant="outline"
+                    className="w-full flex items-center gap-2"
+                  >
+                    🔒 Change Password
+                  </Button>
+                </div>
+
                 <div className="text-sm text-gray-500 dark:text-gray-400">
                   Current players: {players.length}
                 </div>
               </CardContent>
             </Card>
+
+            {/* Password Change Dialog */}
+            <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Change Password</DialogTitle>
+                  <DialogDescription>
+                    Enter your current password and choose a new one
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handlePasswordChange} className="space-y-4">
+                  <div>
+                    <Label htmlFor="current-password">Current Password</Label>
+                    <Input
+                      id="current-password"
+                      type="password"
+                      value={passwordData.currentPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                      className="mt-1"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="new-password">New Password</Label>
+                    <Input
+                      id="new-password"
+                      type="password"
+                      value={passwordData.newPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                      className="mt-1"
+                      minLength={6}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="confirm-password">Confirm New Password</Label>
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                      className="mt-1"
+                      minLength={6}
+                      required
+                    />
+                  </div>
+                  <div className="flex gap-3 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                        setShowPasswordDialog(false);
+                      }}
+                      className="flex-1"
+                      disabled={passwordChangeLoading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="flex-1 bg-blue-600 hover:bg-blue-700"
+                      disabled={passwordChangeLoading}
+                    >
+                      {passwordChangeLoading ? 'Changing...' : 'Change Password'}
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
 
             {/* Training Management Section */}
             <Card className="p-6">
@@ -1094,91 +1188,37 @@ export default function SetupPage() {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Database Setup Section */}
-            <Card className="p-6 lg:col-span-2">
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2">
-                  <Database className="h-5 w-5" />
-                  Database Configuration
-                </CardTitle>
-                <CardDescription>
-                  Set up your database connection and migrate local data
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {loading && (
-                  <div className="bg-gray-50 border-2 border-gray-200 p-4 rounded-lg text-center">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600 mx-auto mb-2"></div>
-                    <p className="text-gray-600">Checking for local users...</p>
+            </div>
+            
+            {/* Sidebar */}
+            <div className="space-y-4 sm:space-y-6">
+              <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-4">
+                Quick Info
+              </h2>
+              
+              {/* Player Stats */}
+              <Card className="p-4 sm:p-6 transition-all duration-200 hover:shadow-lg">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    Team Overview
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 dark:text-gray-300">Total Players:</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{players.length}</span>
                   </div>
-                )}
-
-                {!loading && hasLocal && (
-                  <div className="bg-green-50 border-2 border-green-200 p-4 rounded-lg">
-                    <h3 className="font-bold text-green-800 mb-2">🔄 Local Users Found ({localCount})</h3>
-                    <p className="text-green-700 mb-3">
-                      You have {localCount} local user account{localCount !== 1 ? 's' : ''} that can be migrated to the database once it&apos;s set up.
-                    </p>
-                    <Button
-                      onClick={handleMigration}
-                      disabled={migrating}
-                      className="bg-green-600 hover:bg-green-700 disabled:bg-green-300"
-                    >
-                      {migrating ? '⏳ Migrating...' : '🚀 Migrate to Database'}
-                    </Button>
-                    {migrationResult && (
-                      <p className="mt-3 text-sm font-medium">{migrationResult}</p>
-                    )}
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 dark:text-gray-300">Ranked Players:</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {players.filter(p => p.ranking > 0).length}
+                    </span>
                   </div>
-                )}
+                </CardContent>
+              </Card>
+            </div>
 
-                <div className="bg-yellow-50 border-2 border-yellow-200 p-4 rounded-lg">
-                  <h3 className="font-bold text-yellow-800 mb-2">⚙️ Database Setup</h3>
-                  <p className="text-yellow-700">
-                    {hasLocal ? 
-                      'Set up your database and then migrate your local users above.' :
-                      'The authentication system works locally but setting up a database enables cross-device access and backups.'
-                    }
-                  </p>
-                </div>
-
-                <div className="bg-blue-50 border-2 border-blue-200 p-4 rounded-lg">
-                  <h3 className="font-bold text-blue-800 mb-3">📋 Quick Setup Steps</h3>
-                  <ol className="list-decimal list-inside space-y-2 text-blue-700">
-                    <li>Create a Vercel account and deploy your app</li>
-                    <li>Add a Postgres database in your Vercel project</li>
-                    <li>Copy the database environment variables</li>
-                    <li>Create <code className="bg-blue-100 px-1 rounded">.env.local</code> file in your project root</li>
-                    <li>Paste the database credentials</li>
-                    <li>Restart your development server</li>
-                  </ol>
-                </div>
-
-                <div className="bg-green-50 border-2 border-green-200 p-4 rounded-lg">
-                  <h3 className="font-bold text-green-800 mb-2">📖 Detailed Instructions</h3>
-                  <p className="text-green-700 mb-2">
-                    Follow the complete setup guide in your project:
-                  </p>
-                  <code className="bg-green-100 text-green-800 p-2 rounded block">
-                    README-DATABASE.md
-                  </code>
-                </div>
-
-                <div className="bg-gray-50 border-2 border-gray-200 p-4 rounded-lg">
-                  <h3 className="font-bold text-gray-800 mb-2">🔧 Environment Variables Needed</h3>
-                  <pre className="text-sm text-gray-700 bg-gray-100 p-3 rounded overflow-x-auto">
-{`POSTGRES_URL="postgresql://..."
-POSTGRES_PRISMA_URL="postgresql://..."
-POSTGRES_URL_NON_POOLING="postgresql://..."
-POSTGRES_USER="..."
-POSTGRES_HOST="..."
-POSTGRES_PASSWORD="..."
-POSTGRES_DATABASE="..."`}
-                  </pre>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>

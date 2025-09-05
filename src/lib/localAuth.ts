@@ -49,7 +49,7 @@ function getStoredUsers(): LocalUser[] {
 }
 
 // Save users to file storage (server-side) or localStorage (client-side)
-function saveUsers(users: LocalUser[]): void {
+export function saveUsers(users: LocalUser[]): void {
   // Server-side: use file storage
   if (typeof window === 'undefined') {
     try {
@@ -144,6 +144,11 @@ export function getLocalUserByUsername(username: string): LocalUser | null {
 export function getAllLocalUsers(): Omit<LocalUser, 'password'>[] {
   const users = getStoredUsers();
   return users.map(({ password, ...user }) => user);
+}
+
+// Get all local users (with passwords) - for internal use only
+export function getAllLocalUsersWithPasswords(): LocalUser[] {
+  return getStoredUsers();
 }
 
 // Convert LocalUser to User format
