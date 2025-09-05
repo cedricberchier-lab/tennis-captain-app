@@ -124,7 +124,7 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
+            <div className="mt-6 text-center space-y-3">
               <p className="text-gray-600 text-sm sm:text-base">
                 Don&apos;t have an account?{' '}
                 <Link 
@@ -134,6 +134,15 @@ export default function LoginPage() {
                   Sign up here
                 </Link>
               </p>
+              
+              <div className="border-t pt-3">
+                <Link 
+                  href="/admin/login" 
+                  className="text-red-600 hover:text-red-800 text-sm font-medium underline hover:no-underline focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded px-1 py-1"
+                >
+                  Administrator Login
+                </Link>
+              </div>
             </div>
           </CardContent>
         </Card>

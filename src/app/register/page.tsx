@@ -18,7 +18,7 @@ export default function RegisterPage() {
     phone: '',
     ranking: 0,
     password: '',
-    role: UserRole.CAPTAIN
+    role: UserRole.PLAYER
   });
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');

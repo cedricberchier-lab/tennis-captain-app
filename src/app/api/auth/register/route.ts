@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
           phone,
           ranking,
           password,
-          role: role || UserRole.CAPTAIN
+          role: role || UserRole.PLAYER
         });
       } catch (dbError) {
         console.warn('Database operation failed, falling back to localStorage:', dbError);
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
           phone,
           ranking,
           password,
-          role: role || UserRole.CAPTAIN
+          role: role || UserRole.PLAYER
         });
         newUser = localUserToUser(localUser);
       } catch (localError) {
