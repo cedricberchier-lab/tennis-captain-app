@@ -12,7 +12,8 @@ import {
   Users, 
   Settings,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  CalendarOff
 } from "lucide-react";
 
 const navigationItems = [
@@ -21,6 +22,12 @@ const navigationItems = [
     label: "Team",
     icon: Users,
     description: "Players & rankings"
+  },
+  {
+    href: "/absence",
+    label: "Absence",
+    icon: CalendarOff,
+    description: "Manage absences"
   },
   {
     href: "/setup",

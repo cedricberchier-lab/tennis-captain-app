@@ -7,8 +7,6 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { usePlayers } from "@/hooks/usePlayers";
 import { useTrainings } from "@/hooks/useTrainings";
 import { useMatches } from "@/hooks/useMatches";
@@ -32,7 +30,7 @@ interface ChatMessage {
 
 export default function Home() {
   const { user } = useAuth();
-  const { players, updatePlayer, refreshPlayers } = usePlayers();
+  const { players } = usePlayers();
   const { trainings } = useTrainings();
   const { matches } = useMatches();
   
@@ -60,13 +58,6 @@ export default function Home() {
   const [newMessage, setNewMessage] = useState('');
   const chatMessagesRef = useRef<HTMLDivElement>(null);
   
-  // My Absences State
-  const [showAbsenceModal, setShowAbsenceModal] = useState(false);
-  const [absenceData, setAbsenceData] = useState({
-    date: '',
-    reason: ''
-  });
-  const [isAddingAbsence, setIsAddingAbsence] = useState(false);
   
   // Get current user's player record with better debugging
   const currentPlayer = user?.email ? players.find(p => p.email === user.email) : null;
@@ -106,55 +97,6 @@ export default function Home() {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
   
-  // Handle adding absence
-  const handleAddAbsence = async () => {
-    if (!currentPlayer || !absenceData.date.trim() || isAddingAbsence) return;
-    
-    setIsAddingAbsence(true);
-    try {
-      const absenceEntry = `${absenceData.date}${absenceData.reason.trim() ? ` - ${absenceData.reason.trim()}` : ''}`;
-      const updatedAbsences = [...currentPlayer.absences, absenceEntry];
-      
-      console.log('Adding absence for player:', currentPlayer.name, currentPlayer.id);
-      console.log('New absence:', absenceEntry);
-      console.log('Updated absences:', updatedAbsences);
-      
-      const updatedPlayer = await updatePlayer(currentPlayer.id, { absences: updatedAbsences });
-      if (updatedPlayer) {
-        console.log('Player updated successfully:', updatedPlayer);
-        // Refresh the players list to update currentPlayer with new absence
-        await refreshPlayers();
-        
-        // Reset form and close modal
-        setAbsenceData({ date: '', reason: '' });
-        setShowAbsenceModal(false);
-      } else {
-        console.error('Failed to update player with absence');
-        alert('Failed to add absence. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error adding absence:', error);
-      alert('Failed to add absence. Please try again.');
-    } finally {
-      setIsAddingAbsence(false);
-    }
-  };
-
-  // Handle removing absence
-  const handleRemoveAbsence = async (absenceIndex: number) => {
-    if (!currentPlayer) return;
-    
-    try {
-      const updatedAbsences = currentPlayer.absences.filter((_, index) => index !== absenceIndex);
-      const updatedPlayer = await updatePlayer(currentPlayer.id, { absences: updatedAbsences });
-      if (updatedPlayer) {
-        await refreshPlayers();
-      }
-    } catch (error) {
-      console.error('Error removing absence:', error);
-      alert('Failed to remove absence. Please try again.');
-    }
-  };
   
   // Get user-relevant upcoming events
   const getUserRelevantEvents = () => {
@@ -410,123 +352,29 @@ export default function Home() {
                 </Link>
                 
                 {/* My Absences Action */}
-                <Dialog open={showAbsenceModal} onOpenChange={setShowAbsenceModal}>
-                  <DialogTrigger asChild>
-                    <Card className="p-4 sm:p-6 transition-all duration-200 hover:shadow-lg hover:scale-[1.02] border-2 border-transparent hover:border-red-200 dark:hover:border-red-700 cursor-pointer">
-                      <CardContent className="p-0">
-                        <div className="flex items-center gap-4 mb-3">
-                          <div className="p-3 bg-red-100 dark:bg-red-900 rounded-full">
-                            <CalendarOff className="h-6 w-6 text-red-600 dark:text-red-400" />
-                          </div>
-                          <div>
-                            <CardTitle className="text-lg sm:text-xl">My Absences</CardTitle>
-                            <CardDescription className="text-sm">
-                              Report your availability
-                            </CardDescription>
-                          </div>
+                <Link href="/absence" className="group block">
+                  <Card className="p-4 sm:p-6 transition-all duration-200 hover:shadow-lg hover:scale-[1.02] border-2 border-transparent hover:border-red-200 dark:hover:border-red-700">
+                    <CardContent className="p-0">
+                      <div className="flex items-center gap-4 mb-3">
+                        <div className="p-3 bg-red-100 dark:bg-red-900 rounded-full">
+                          <CalendarOff className="h-6 w-6 text-red-600 dark:text-red-400" />
                         </div>
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                            Add absence dates
-                          </p>
-                          <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200 transition-colors" />
+                        <div>
+                          <CardTitle className="text-lg sm:text-xl">My Absences</CardTitle>
+                          <CardDescription className="text-sm">
+                            Manage your availability
+                          </CardDescription>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle className="flex items-center gap-2">
-                        <CalendarOff className="h-5 w-5 text-red-600" />
-                        Add Absence
-                      </DialogTitle>
-                      <DialogDescription>
-                        Report dates when you won't be available for matches or training.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="absence-date">Date</Label>
-                        <Input
-                          id="absence-date"
-                          type="date"
-                          value={absenceData.date}
-                          onChange={(e) => setAbsenceData(prev => ({ ...prev, date: e.target.value }))}
-                          className="mt-1"
-                        />
                       </div>
-                      <div>
-                        <Label htmlFor="absence-reason">Reason (optional)</Label>
-                        <Input
-                          id="absence-reason"
-                          type="text"
-                          value={absenceData.reason}
-                          onChange={(e) => setAbsenceData(prev => ({ ...prev, reason: e.target.value }))}
-                          placeholder="e.g., Vacation, Work trip, Medical appointment"
-                          className="mt-1"
-                          maxLength={100}
-                        />
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                          {currentPlayer ? `${currentPlayer.absences.length} recorded` : 'Manage absences'}
+                        </p>
+                        <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200 transition-colors" />
                       </div>
-                      <div className="flex items-center justify-between pt-4">
-                        <Button
-                          variant="outline"
-                          onClick={() => setShowAbsenceModal(false)}
-                          disabled={isAddingAbsence}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          onClick={handleAddAbsence}
-                          disabled={!absenceData.date.trim() || isAddingAbsence}
-                          className="bg-red-600 hover:bg-red-700"
-                        >
-                          {isAddingAbsence ? 'Adding...' : 'Add Absence'}
-                        </Button>
-                      </div>
-                      {currentPlayer && (
-                        <div className="border-t pt-4">
-                          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Your Absences ({currentPlayer.absences.length})
-                          </Label>
-                          {currentPlayer.absences.length > 0 ? (
-                            <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
-                              {[...currentPlayer.absences].reverse().map((absence, displayIndex) => {
-                                const [date, ...reasonParts] = absence.split(' - ');
-                                const reason = reasonParts.join(' - ');
-                                const actualIndex = currentPlayer.absences.length - 1 - displayIndex;
-                                return (
-                                  <div key={`${date}-${displayIndex}`} className="flex items-start justify-between text-xs bg-gray-50 dark:bg-gray-700 rounded p-2">
-                                    <div className="flex-1">
-                                      <div className="font-medium">
-                                        {new Date(date).toLocaleDateString()}
-                                      </div>
-                                      {reason && (
-                                        <div className="text-gray-600 dark:text-gray-400 mt-1">
-                                          {reason}
-                                        </div>
-                                      )}
-                                    </div>
-                                    <button
-                                      onClick={() => handleRemoveAbsence(actualIndex)}
-                                      className="text-red-500 hover:text-red-700 ml-2 p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                                      title="Remove absence"
-                                    >
-                                      ✕
-                                    </button>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <div className="mt-2 text-xs text-gray-500 italic">
-                              No absences recorded
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                    </CardContent>
+                  </Card>
+                </Link>
                 </div>
                 
                 {/* Team Chat */}
