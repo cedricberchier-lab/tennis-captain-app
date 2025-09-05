@@ -7,11 +7,11 @@ import { createLocalUser, localUserToUser } from '@/lib/localAuth';
 export async function POST(request: NextRequest) {
   try {
     const body: RegisterData = await request.json();
-    const { username, email, name, phone, ranking, password, role } = body;
+    const { username, email, name, phone, ranking = 0, password, role } = body;
 
-    if (!username || !email || !name || !phone || password === undefined || ranking === undefined) {
+    if (!username || !email || !name || !phone || password === undefined) {
       return NextResponse.json(
-        { error: 'Username, email, name, phone, ranking, and password are required' },
+        { error: 'Username, email, name, phone, and password are required' },
         { status: 400 }
       );
     }

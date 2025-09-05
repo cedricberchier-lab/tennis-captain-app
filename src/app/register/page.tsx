@@ -16,7 +16,7 @@ export default function RegisterPage() {
     email: '',
     name: '',
     phone: '',
-    ranking: 0,
+    ranking: 0, // Default to unranked, will be set in backend
     password: '',
     role: UserRole.PLAYER
   });
@@ -83,7 +83,7 @@ export default function RegisterPage() {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'ranking' ? parseInt(value) || 0 : value
+      [name]: value
     }));
   };
   
@@ -166,40 +166,6 @@ export default function RegisterPage() {
               </div>
             </div>
             
-            <div>
-              <label htmlFor="ranking" className="block text-sm font-medium text-gray-700 mb-2">
-                Tennis Ranking
-              </label>
-              <input
-                type="number"
-                id="ranking"
-                name="ranking"
-                value={formData.ranking}
-                onChange={handleChange}
-                min="0"
-                max="9999"
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors mobile-input"
-                placeholder="Your tennis ranking (0 if unranked)"
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
-                Role
-              </label>
-              <select
-                id="role"
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors mobile-input"
-              >
-                <option value={UserRole.CAPTAIN}>Team Captain</option>
-                <option value={UserRole.PLAYER}>Player</option>
-                <option value={UserRole.ADMIN}>Administrator</option>
-              </select>
-            </div>
 
             {/* Hidden username field - will be auto-filled with email */}
             <input type="hidden" name="username" value={formData.username} />

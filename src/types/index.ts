@@ -36,7 +36,7 @@ export interface RegisterData {
   email: string;
   name: string;
   phone: string;
-  ranking: number;
+  ranking?: number; // Optional, defaults to 0 if not provided
   password: string;
   role?: UserRole;
 }
