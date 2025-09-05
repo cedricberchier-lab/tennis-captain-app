@@ -136,9 +136,14 @@ export default function TeamMode() {
     setIsEditingPlayer(false);
   };
 
-  // Check if current user can edit this player (only their own info)
+  // Check if current user can edit this player (only their own info, not delete)
   const canEditPlayer = (player: Player) => {
     return user && (user.email === player.email || user.name === player.name);
+  };
+
+  // Check if current user is admin (can edit/delete all players)
+  const isAdmin = () => {
+    return user && user.role === 'admin';
   };
 
   const handleEditPlayer = async () => {
@@ -386,14 +391,14 @@ export default function TeamMode() {
                       </div>
                       
                       <div className="flex items-center space-x-4">
-                        {canEditPlayer(player) && (
+                        {isAdmin() && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeletePlayer(player.id);
                             }}
                             className="text-red-500 hover:text-red-700 p-2"
-                            title="Remove your account"
+                            title="Delete player (Admin only)"
                           >
                             🗑️
                           </button>
@@ -514,7 +519,7 @@ export default function TeamMode() {
                   <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
                     Player Information
                   </h4>
-                  {canEditPlayer(selectedPlayer) && (
+                  {(isAdmin() || canEditPlayer(selectedPlayer)) && (
                     <button
                       onClick={() => setIsEditingPlayer(!isEditingPlayer)}
                       className="text-blue-600 hover:text-blue-800 text-sm font-medium"
@@ -524,7 +529,7 @@ export default function TeamMode() {
                   )}
                 </div>
 
-                {isEditingPlayer && canEditPlayer(selectedPlayer) ? (
+                {isEditingPlayer && (isAdmin() || canEditPlayer(selectedPlayer)) ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -608,10 +613,17 @@ export default function TeamMode() {
                       <div><strong>Record:</strong> {selectedPlayer.stats.wins}W - {selectedPlayer.stats.losses}L ({selectedPlayer.stats.matchesPlayed} matches)</div>
                       <div><strong>Joined:</strong> {selectedPlayer.createdAt.toLocaleDateString()}</div>
                     </div>
-                    {!canEditPlayer(selectedPlayer) && (
+                    {!isAdmin() && !canEditPlayer(selectedPlayer) && (
                       <div className="md:col-span-2 mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                         <p className="text-yellow-800 dark:text-yellow-200 text-sm">
                           ℹ️ You can only edit your own player information
+                        </p>
+                      </div>
+                    )}
+                    {isAdmin() && (
+                      <div className="md:col-span-2 mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <p className="text-blue-800 dark:text-blue-200 text-sm">
+                          🔧 Admin: You can edit and delete all player accounts
                         </p>
                       </div>
                     )}
@@ -619,7 +631,7 @@ export default function TeamMode() {
                 )}
               </div>
 
-              {/* Password Change Section - Only for logged user's own account */}
+              {/* Password Change Section - Only for logged user's own account (not admin override) */}
               {canEditPlayer(selectedPlayer) && (
                 <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-600">
                   <div className="flex justify-between items-center mb-4">

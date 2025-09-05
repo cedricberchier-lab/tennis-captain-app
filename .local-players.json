@@ -26,5 +26,27 @@
     },
     "createdAt": "2025-09-03T06:00:27.119Z",
     "updatedAt": "2025-09-03T06:21:58.406Z"
+  },
+  {
+    "id": "0337496c-43b1-4c94-8a22-c0605ee822c4",
+    "name": "Test User",
+    "email": "test@example.com",
+    "phone": "+41 79 123 4567",
+    "ranking": 5,
+    "absences": [],
+    "stats": {
+      "matchesPlayed": 0,
+      "wins": 0,
+      "losses": 0,
+      "winsIn2Sets": 0,
+      "winsIn3Sets": 0,
+      "lossesIn2Sets": 0,
+      "lossesIn3Sets": 0,
+      "performance": 0,
+      "underperformance": 0,
+      "trainingAttendance": 0
+    },
+    "createdAt": "2025-09-05T19:06:06.995Z",
+    "updatedAt": "2025-09-05T19:06:06.995Z"
   }
 ]

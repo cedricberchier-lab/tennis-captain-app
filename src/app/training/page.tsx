@@ -9,6 +9,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AddTrainingFormData {
   date: string;
@@ -45,6 +46,7 @@ export default function TrainingMode() {
   });
   const [participants, setParticipants] = useState<TrainingParticipant[]>([]);
   const [horizonCount, setHorizonCount] = useState(3);
+  const [selectedTrainingId, setSelectedTrainingId] = useState<string>("");
 
   // Load custom horizon settings from localStorage
   useEffect(() => {
@@ -373,7 +375,27 @@ export default function TrainingMode() {
 
           {/* Training Controls */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-6">
-            <div className="flex justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
+              {/* Next Training Dropdown */}
+              {displayableTrainings.length > 0 && (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Next Training:</span>
+                  <Select value={selectedTrainingId} onValueChange={setSelectedTrainingId}>
+                    <SelectTrigger className="w-[280px]">
+                      <SelectValue placeholder="Select upcoming training" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {displayableTrainings.map((training) => (
+                        <SelectItem key={training.id} value={training.id}>
+                          {training.dayName}, {training.date.toLocaleDateString()} - {training.timeStart}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
+              {/* Schedule Training Button */}
               <Button
                 onClick={() => setShowAddForm(true)}
                 className="bg-purple-600 hover:bg-purple-700"

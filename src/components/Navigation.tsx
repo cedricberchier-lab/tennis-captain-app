@@ -115,6 +115,11 @@ export default function Navigation() {
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center space-x-8">
               {navigationItems.map((item) => {
+                // Hide setup page from regular users, only show to admins
+                if (item.href === '/setup' && user?.role !== 'admin') {
+                  return null;
+                }
+                
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
                 return (
@@ -230,6 +235,11 @@ export default function Navigation() {
         <div className="flex-1 overflow-y-auto">
           <nav className="p-6 space-y-2">
             {navigationItems.map((item) => {
+              // Hide setup page from regular users, only show to admins
+              if (item.href === '/setup' && user?.role !== 'admin') {
+                return null;
+              }
+              
               const Icon = item.icon;
               const isActive = pathname === item.href;
               return (
