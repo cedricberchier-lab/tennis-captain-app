@@ -14,7 +14,9 @@ import {
   LogOut,
   ChevronRight,
   CalendarOff,
-  Home
+  Home,
+  Trophy,
+  Activity
 } from "lucide-react";
 
 const navigationItems = [
@@ -23,6 +25,18 @@ const navigationItems = [
     label: "Home",
     icon: Home,
     description: "Dashboard"
+  },
+  {
+    href: "/match",
+    label: "Match",
+    icon: Trophy,
+    description: "Match management"
+  },
+  {
+    href: "/training",
+    label: "Training",
+    icon: Activity,
+    description: "Training sessions"
   },
   {
     href: "/team",

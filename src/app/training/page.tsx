@@ -446,18 +446,17 @@ export default function TrainingMode() {
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <div className="flex items-center gap-4 mb-2">
-                          <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                        <div className="mb-2">
+                          <div className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                             {training.dayName}, {training.date.toLocaleDateString()}
                           </div>
-                          <div className="text-sm bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded">
-                            Court {training.courtNumber}
+                          <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
+                            <div className="text-sm bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded">
+                              Court {training.courtNumber}
+                            </div>
+                            <span>🕐 {training.timeStart} - {training.timeEnd}</span>
+                            <span>👥 {training.participants.length}/4 players</span>
                           </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300 mb-3">
-                          <span>🕐 {training.timeStart} - {training.timeEnd}</span>
-                          <span>👥 {training.participants.length}/4 players</span>
                         </div>
 
                         {training.participants.length > 0 && (
