@@ -13,10 +13,17 @@ import {
   Settings,
   LogOut,
   ChevronRight,
-  CalendarOff
+  CalendarOff,
+  Home
 } from "lucide-react";
 
 const navigationItems = [
+  {
+    href: "/",
+    label: "Home",
+    icon: Home,
+    description: "Dashboard"
+  },
   {
     href: "/team",
     label: "Team",

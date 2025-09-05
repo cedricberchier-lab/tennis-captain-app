@@ -38,7 +38,7 @@ const rankingOptions = [
 ];
 
 export default function TeamMode() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { 
     players, 
     loading, 
@@ -55,6 +55,14 @@ export default function TeamMode() {
   const [showPlayerDetails, setShowPlayerDetails] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [isEditingPlayer, setIsEditingPlayer] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [formData, setFormData] = useState<AddPlayerFormData>({
     name: "",
     email: "",
@@ -155,6 +163,64 @@ export default function TeamMode() {
     setShowPlayerDetails(false);
     setSelectedPlayer(null);
     setIsEditingPlayer(false);
+    setIsChangingPassword(false);
+    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    setPasswordError('');
+    setPasswordSuccess(false);
+  };
+
+  const handlePasswordChange = async () => {
+    setPasswordError('');
+    setPasswordSuccess(false);
+
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      setPasswordError('All password fields are required');
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters long');
+      return;
+    }
+
+    if (!token) {
+      setPasswordError('Authentication required');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setPasswordSuccess(true);
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        setTimeout(() => {
+          setIsChangingPassword(false);
+          setPasswordSuccess(false);
+        }, 2000);
+      } else {
+        setPasswordError(data.error || 'Failed to change password');
+      }
+    } catch (error) {
+      setPasswordError('Network error. Please try again.');
+    }
   };
 
   const handleMigrateData = async () => {
@@ -320,16 +386,18 @@ export default function TeamMode() {
                       </div>
                       
                       <div className="flex items-center space-x-4">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeletePlayer(player.id);
-                          }}
-                          className="text-red-500 hover:text-red-700 p-2"
-                          title="Remove player"
-                        >
-                          🗑️
-                        </button>
+                        {canEditPlayer(player) && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeletePlayer(player.id);
+                            }}
+                            className="text-red-500 hover:text-red-700 p-2"
+                            title="Remove your account"
+                          >
+                            🗑️
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -550,6 +618,106 @@ export default function TeamMode() {
                   </div>
                 )}
               </div>
+
+              {/* Password Change Section - Only for logged user's own account */}
+              {canEditPlayer(selectedPlayer) && (
+                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-600">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      Password Management
+                    </h4>
+                    {!isChangingPassword && (
+                      <button
+                        onClick={() => setIsChangingPassword(true)}
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      >
+                        🔑 Change Password
+                      </button>
+                    )}
+                  </div>
+
+                  {isChangingPassword ? (
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Current Password *
+                        </label>
+                        <input
+                          type="password"
+                          value={passwordData.currentPassword}
+                          onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                          placeholder="Enter current password"
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            New Password *
+                          </label>
+                          <input
+                            type="password"
+                            value={passwordData.newPassword}
+                            onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                            placeholder="New password (min 6 chars)"
+                            minLength={6}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Confirm New Password *
+                          </label>
+                          <input
+                            type="password"
+                            value={passwordData.confirmPassword}
+                            onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                            placeholder="Confirm new password"
+                            minLength={6}
+                          />
+                        </div>
+                      </div>
+                      
+                      {passwordError && (
+                        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                          <p className="text-red-700 dark:text-red-200 text-sm">{passwordError}</p>
+                        </div>
+                      )}
+                      
+                      {passwordSuccess && (
+                        <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                          <p className="text-green-700 dark:text-green-200 text-sm">✅ Password changed successfully!</p>
+                        </div>
+                      )}
+                      
+                      <div className="flex space-x-3">
+                        <button
+                          onClick={handlePasswordChange}
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                        >
+                          Change Password
+                        </button>
+                        <button
+                          onClick={() => {
+                            setIsChangingPassword(false);
+                            setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                            setPasswordError('');
+                            setPasswordSuccess(false);
+                          }}
+                          className="bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 font-medium py-2 px-4 rounded-lg transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Click "Change Password" to update your account password
+                    </p>
+                  )}
+                </div>
+              )}
 
             </div>
           </div>
