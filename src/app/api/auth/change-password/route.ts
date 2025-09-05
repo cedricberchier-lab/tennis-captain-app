@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserById, validateUserCredentials } from '@/lib/db';
+import { getUserById } from '@/lib/db';
 import { getAllLocalUsersWithPasswords, saveUsers } from '@/lib/localAuth';
+import { verifyToken } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
-import { cookies } from 'next/headers';
-import jwt from 'jsonwebtoken';
 
 interface ChangePasswordRequest {
   currentPassword: string;
@@ -28,27 +27,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get current user from JWT token
-    const cookieStore = await cookies();
-    const token = cookieStore.get('auth-token');
-    
-    if (!token) {
+    // Get current user from JWT token in Authorization header
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
 
-    let userId: string;
-    try {
-      const payload = jwt.verify(token.value, process.env.JWT_SECRET || 'fallback-secret') as { userId: string };
-      userId = payload.userId;
-    } catch {
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    const payload = verifyToken(token);
+    
+    if (!payload) {
       return NextResponse.json(
         { error: 'Invalid authentication token' },
         { status: 401 }
       );
     }
+
+    const userId = payload.userId;
 
     let success = false;
     let isUsingLocalStorage = false;

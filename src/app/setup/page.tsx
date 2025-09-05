@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect, useMemo } from 'react';
 import { Player, Training, TrainingParticipant } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
 import { usePlayers } from '@/hooks/usePlayers';
 import { useTrainings } from '@/hooks/useTrainings';
 import { exportPlayersToJSON, exportPlayersToCSV, copyPlayersToClipboard } from '@/utils/dataExport';
@@ -37,6 +38,7 @@ interface TrainingUploadData {
 }
 
 export default function SetupPage() {
+  const { token } = useAuth();
 
   // Player management state
   const { players, addPlayer, refreshPlayers } = usePlayers();
@@ -124,11 +126,19 @@ export default function SetupPage() {
       return;
     }
 
+    if (!token) {
+      alert('Authentication token not found. Please log in again.');
+      return;
+    }
+
     setPasswordChangeLoading(true);
     try {
       const response = await fetch('/api/auth/change-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           currentPassword: passwordData.currentPassword,
           newPassword: passwordData.newPassword
