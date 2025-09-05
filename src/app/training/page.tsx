@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import * as XLSX from 'xlsx';
 
 interface AddTrainingFormData {
   date: string;
@@ -53,6 +54,10 @@ export default function TrainingMode() {
   });
   const [participants, setParticipants] = useState<TrainingParticipant[]>([]);
   const [horizonCount, setHorizonCount] = useState(3);
+  const [activeTab, setActiveTab] = useState<'single' | 'bulk'>('single');
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [csvUploading, setCsvUploading] = useState(false);
+  const [csvResults, setCsvResults] = useState<{success: number, failed: number, errors: string[]} | null>(null);
 
   // Load custom horizon settings from localStorage
   useEffect(() => {
@@ -296,6 +301,140 @@ export default function TrainingMode() {
     }
   };
 
+  // Handle CSV upload
+  const handleCsvUpload = async () => {
+    if (!csvFile) return;
+    
+    setCsvUploading(true);
+    setCsvResults(null);
+    
+    try {
+      const data = await parseCSVFile(csvFile);
+      const results = await processTrainingData(data);
+      setCsvResults(results);
+    } catch (error) {
+      setCsvResults({
+        success: 0,
+        failed: 1,
+        errors: [error instanceof Error ? error.message : 'Failed to process file']
+      });
+    } finally {
+      setCsvUploading(false);
+    }
+  };
+  
+  // Parse CSV file
+  const parseCSVFile = (file: File): Promise<any[]> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        try {
+          let jsonData: any[][];
+          
+          if (file.name.endsWith('.csv')) {
+            const text = e.target?.result as string;
+            const lines = text.split('\n').filter(line => line.trim());
+            jsonData = lines.map(line => line.split(',').map(cell => cell.trim().replace(/^"|"$/g, '')));
+          } else {
+            const data = new Uint8Array(e.target?.result as ArrayBuffer);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 }) as any[][];
+          }
+          
+          // Skip header row and convert to objects
+          const headers = ['date', 'courtNumber', 'timeStart', 'timeEnd', 'player1', 'player2', 'player3', 'player4', 'comment'];
+          const trainings = jsonData.slice(1)
+            .filter(row => row.length >= 4 && row[0] && row[2] && row[3])
+            .map(row => {
+              const training: any = {};
+              headers.forEach((header, index) => {
+                training[header] = row[index] || '';
+              });
+              return training;
+            });
+          
+          resolve(trainings);
+        } catch (err) {
+          reject(new Error('Failed to parse file'));
+        }
+      };
+      
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      
+      if (file.name.endsWith('.csv')) {
+        reader.readAsText(file);
+      } else {
+        reader.readAsArrayBuffer(file);
+      }
+    });
+  };
+  
+  // Process training data and create trainings
+  const processTrainingData = async (data: any[]): Promise<{success: number, failed: number, errors: string[]}> => {
+    let success = 0;
+    let failed = 0;
+    const errors: string[] = [];
+    
+    for (const item of data) {
+      try {
+        // Parse date
+        let trainingDate;
+        if (item.date.includes('/')) {
+          const [month, day, year] = item.date.split('/');
+          trainingDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        } else {
+          trainingDate = new Date(item.date);
+        }
+        
+        if (isNaN(trainingDate.getTime())) {
+          throw new Error(`Invalid date: ${item.date}`);
+        }
+        
+        // Create participants
+        const participants: TrainingParticipant[] = [];
+        [item.player1, item.player2, item.player3, item.player4]
+          .filter(name => name && name.trim())
+          .forEach((name: string) => {
+            // Find matching player in roster
+            const matchedPlayer = players.find(p => 
+              p.name.toLowerCase() === name.trim().toLowerCase() ||
+              p.email.toLowerCase() === name.trim().toLowerCase()
+            );
+            
+            participants.push({
+              id: crypto.randomUUID(),
+              playerId: matchedPlayer?.id,
+              playerName: name.trim(),
+              isManualEntry: !matchedPlayer,
+              email: matchedPlayer?.email || '',
+              phone: matchedPlayer?.phone || ''
+            });
+          });
+        
+        // Create training
+        const trainingData = {
+          date: trainingDate,
+          dayName: trainingDate.toLocaleDateString('en-US', { weekday: 'long' }),
+          timeStart: item.timeStart,
+          timeEnd: item.timeEnd,
+          courtNumber: item.courtNumber,
+          participants,
+          comment: item.comment || ''
+        };
+        
+        await addTraining(trainingData);
+        success++;
+      } catch (error) {
+        failed++;
+        errors.push(`Row ${data.indexOf(item) + 2}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+    
+    return { success, failed, errors };
+  };
+
   // Open edit form
   const openEditForm = (training: Training) => {
     setEditingTraining(training);
@@ -528,10 +667,37 @@ export default function TrainingMode() {
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
-                  Schedule New Training
+                  Schedule Training
                 </h3>
                 
-                <form onSubmit={handleAddTraining} className="space-y-6">
+                {/* Tab Navigation */}
+                <div className="flex mb-6 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
+                  <button
+                    onClick={() => setActiveTab('single')}
+                    className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                      activeTab === 'single'
+                        ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                        : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                    }`}
+                  >
+                    📅 Single Training
+                  </button>
+                  {isAdmin() && (
+                    <button
+                      onClick={() => setActiveTab('bulk')}
+                      className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                        activeTab === 'bulk'
+                          ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                          : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                      }`}
+                    >
+                      📤 CSV Upload
+                    </button>
+                  )}
+                </div>
+                
+                {activeTab === 'single' ? (
+                  <form onSubmit={handleAddTraining} className="space-y-6">
                   {/* Basic Info */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -707,6 +873,67 @@ export default function TrainingMode() {
                     </button>
                   </div>
                 </form>
+                ) : (
+                  /* CSV Upload Section */
+                  <div className="space-y-6">
+                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                      <input
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+                        className="mb-4 w-full"
+                        id="csv-upload"
+                      />
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Supported formats: Excel (.xlsx, .xls) or CSV (.csv)
+                      </p>
+                      {csvFile && (
+                        <p className="text-sm text-green-600 dark:text-green-400 mt-2">
+                          Selected: {csvFile.name}
+                        </p>
+                      )}
+                    </div>
+                    
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                      <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">
+                        📝 CSV Format Requirements:
+                      </h4>
+                      <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
+                        Your file should have these columns in order:
+                      </p>
+                      <div className="text-xs text-blue-600 dark:text-blue-400 font-mono bg-white dark:bg-gray-800 p-2 rounded border">
+                        Date,Court Number,Start Time,End Time,Player 1,Player 2,Player 3,Player 4,Comment
+                      </div>
+                      <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                        • Date format: MM/DD/YYYY or YYYY-MM-DD<br/>
+                        • Time format: HH:MM (24-hour)<br/>
+                        • Player columns: Leave empty if fewer than 4 players
+                      </p>
+                    </div>
+                    
+                    <div className="flex space-x-3 pt-4">
+                      <button
+                        type="button"
+                        onClick={handleCsvUpload}
+                        disabled={!csvFile || csvUploading}
+                        className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                      >
+                        {csvUploading ? 'Importing...' : '📤 Import Training Schedule'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAddForm(false);
+                          setActiveTab('single');
+                          setCsvFile(null);
+                        }}
+                        className="flex-1 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 font-medium py-2 px-4 rounded-lg transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
