@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Match, MatchStatus } from "@/types";
 import { useMatches } from "@/hooks/useMatches";
 import { usePlayers } from "@/hooks/usePlayers";
+import { useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import MatchLineup from "@/components/MatchLineup";
 import MatchResults from "@/components/MatchResults";
@@ -35,6 +36,12 @@ export default function MatchMode() {
   } = useMatches();
   
   const { players, loading: playersLoading, updatePlayer } = usePlayers();
+  const { user } = useAuth();
+  
+  // Check if current user is admin
+  const isAdmin = () => {
+    return user && user.role === 'admin';
+  };
   
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -263,12 +270,15 @@ export default function MatchMode() {
                           {selectedMatch.isHome ? '🏠 Home' : '✈️ Away'}
                         </span>
                       </div>
-                      <button
-                        onClick={() => handleEditMatch(selectedMatch)}
-                        className="bg-yellow-500 hover:bg-yellow-600 text-white mobile-button flex items-center gap-2 justify-center"
-                      >
-                        ✏️ Edit Match
-                      </button>
+                      {isAdmin() && (
+                        <button
+                          onClick={() => handleEditMatch(selectedMatch)}
+                          className="bg-yellow-500 hover:bg-yellow-600 text-white mobile-button flex items-center gap-2 justify-center"
+                          title="Edit match (Admin only)"
+                        >
+                          ✏️ Edit Match
+                        </button>
+                      )}
                     </div>
                     
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -395,12 +405,20 @@ export default function MatchMode() {
               </div>
               
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
-                <button
-                  onClick={() => setShowAddForm(true)}
-                  className="bg-green-600 hover:bg-green-700 mobile-button"
-                >
-                  ➕ Add Match
-                </button>
+                {isAdmin() ? (
+                  <button
+                    onClick={() => setShowAddForm(true)}
+                    className="bg-green-600 hover:bg-green-700 mobile-button"
+                  >
+                    ➕ Add Match
+                  </button>
+                ) : (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-center">
+                    <p className="text-blue-800 dark:text-blue-200 text-sm">
+                      ℹ️ Only administrators can create matches
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -418,12 +436,14 @@ export default function MatchMode() {
                 <div className="text-4xl sm:text-6xl mb-4">🏆</div>
                 <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-2">No matches yet</h3>
                 <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-6">Create your first match to get started</p>
-                <button
-                  onClick={() => setShowAddForm(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white mobile-button"
-                >
-                  Add First Match
-                </button>
+                {isAdmin() && (
+                  <button
+                    onClick={() => setShowAddForm(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white mobile-button"
+                  >
+                    Add First Match
+                  </button>
+                )}
               </div>
             </div>
           ) : (
@@ -475,12 +495,15 @@ export default function MatchMode() {
                         >
                           👁️ View
                         </button>
-                        <button
-                          onClick={() => handleDeleteMatch(match.id)}
-                          className="flex-1 sm:flex-none bg-red-500 hover:bg-red-600 text-white mobile-button text-sm"
-                        >
-                          🗑️ Delete
-                        </button>
+                        {isAdmin() && (
+                          <button
+                            onClick={() => handleDeleteMatch(match.id)}
+                            className="flex-1 sm:flex-none bg-red-500 hover:bg-red-600 text-white mobile-button text-sm"
+                            title="Delete match (Admin only)"
+                          >
+                            🗑️ Delete
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -489,8 +512,8 @@ export default function MatchMode() {
             </div>
           )}
 
-          {/* Add Match Form Modal - Mobile Optimized */}
-          {showAddForm && (
+          {/* Add Match Form Modal - Admin Only */}
+          {isAdmin() && showAddForm && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
               <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl p-4 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center mb-6">
@@ -700,8 +723,8 @@ export default function MatchMode() {
             </div>
           )}
 
-          {/* Edit Match Form Modal - Mobile Optimized */}
-          {showEditForm && editingMatch && (
+          {/* Edit Match Form Modal - Admin Only */}
+          {isAdmin() && showEditForm && editingMatch && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
               <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl p-4 sm:p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center mb-6">

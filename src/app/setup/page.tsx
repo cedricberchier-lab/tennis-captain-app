@@ -38,7 +38,31 @@ interface TrainingUploadData {
 }
 
 export default function SetupPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+
+  // Check if user is admin
+  if (!user || user.role !== 'admin') {
+    return (
+      <ProtectedRoute>
+        <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 pt-4">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+            <div className="text-center py-12">
+              <div className="text-6xl mb-6">🚫</div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+                Access Denied
+              </h1>
+              <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
+                Only administrators can access the setup page.
+              </p>
+              <Link href="/" className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-colors">
+                ← Back to Home
+              </Link>
+            </div>
+          </div>
+        </div>
+      </ProtectedRoute>
+    );
+  }
 
   // Player management state
   const { players, addPlayer, refreshPlayers } = usePlayers();

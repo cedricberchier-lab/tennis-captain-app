@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Training, TrainingParticipant, Player } from "@/types";
 import { useTrainings } from "@/hooks/useTrainings";
 import { usePlayers } from "@/hooks/usePlayers";
+import { useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,12 @@ export default function TrainingMode() {
   } = useTrainings();
   
   const { players, loading: playersLoading, refreshPlayers } = usePlayers();
+  const { user } = useAuth();
+  
+  // Check if current user is admin
+  const isAdmin = () => {
+    return user && user.role === 'admin';
+  };
   
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -46,17 +53,20 @@ export default function TrainingMode() {
   });
   const [participants, setParticipants] = useState<TrainingParticipant[]>([]);
   const [horizonCount, setHorizonCount] = useState(3);
-  const [selectedTrainingId, setSelectedTrainingId] = useState<string>("");
 
   // Load custom horizon settings from localStorage
   useEffect(() => {
-    const savedCustomHorizon = localStorage.getItem('trainingCustomHorizon');
     const savedHorizonCount = localStorage.getItem('trainingHorizonCount');
     
-    if (savedCustomHorizon === 'true' && savedHorizonCount) {
+    if (savedHorizonCount) {
       setHorizonCount(parseInt(savedHorizonCount));
     }
   }, []);
+
+  // Save horizon count to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('trainingHorizonCount', horizonCount.toString());
+  }, [horizonCount]);
 
   // Primary effect: Run absence checking whenever page loads or data changes
   useEffect(() => {
@@ -376,24 +386,22 @@ export default function TrainingMode() {
           {/* Training Controls */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-6">
             <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
-              {/* Next Training Dropdown */}
-              {displayableTrainings.length > 0 && (
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Next Training:</span>
-                  <Select value={selectedTrainingId} onValueChange={setSelectedTrainingId}>
-                    <SelectTrigger className="w-[280px]">
-                      <SelectValue placeholder="Select upcoming training" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {displayableTrainings.map((training) => (
-                        <SelectItem key={training.id} value={training.id}>
-                          {training.dayName}, {training.date.toLocaleDateString()} - {training.timeStart}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              {/* Number of Trainings Dropdown */}
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Show next:</span>
+                <Select value={horizonCount.toString()} onValueChange={(value) => setHorizonCount(parseInt(value))}>
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 training</SelectItem>
+                    <SelectItem value="3">3 trainings</SelectItem>
+                    <SelectItem value="5">5 trainings</SelectItem>
+                    <SelectItem value="10">10 trainings</SelectItem>
+                    <SelectItem value="20">20 trainings</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               
               {/* Schedule Training Button */}
               <Button
@@ -408,7 +416,7 @@ export default function TrainingMode() {
           {/* Training List */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-              Next 3 Training Sessions
+              Next {horizonCount} Training Session{horizonCount !== 1 ? 's' : ''}
             </h2>
             
             {trainingsLoading ? (
@@ -499,12 +507,15 @@ export default function TrainingMode() {
                         >
                           Edit
                         </button>
-                        <button
-                          onClick={() => handleDeleteTraining(training.id)}
-                          className="text-red-500 hover:text-red-700 text-sm px-3 py-1 rounded border border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                        >
-                          Delete
-                        </button>
+                        {isAdmin() && (
+                          <button
+                            onClick={() => handleDeleteTraining(training.id)}
+                            className="text-red-500 hover:text-red-700 text-sm px-3 py-1 rounded border border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            title="Delete training (Admin only)"
+                          >
+                            Delete
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
