@@ -33,6 +33,9 @@ export async function initializeDatabase() {
       )
     `;
 
+    // Migrate existing users table to add missing columns
+    await migrateUsersTableSchema();
+
     // Create matches table for future use
     await sql`
       CREATE TABLE IF NOT EXISTS matches (
@@ -97,6 +100,30 @@ export async function initializeDatabase() {
   } catch (error) {
     console.error('Database initialization failed:', error);
     return { success: false, error };
+  }
+}
+
+// Migrate existing users table to add missing columns
+async function migrateUsersTableSchema() {
+  try {
+    // Add missing columns if they don't exist
+    await sql`
+      ALTER TABLE users 
+      ADD COLUMN IF NOT EXISTS absences TEXT[] DEFAULT ARRAY[]::TEXT[],
+      ADD COLUMN IF NOT EXISTS matches_played INTEGER DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS wins INTEGER DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS losses INTEGER DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS wins_in_2_sets INTEGER DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS wins_in_3_sets INTEGER DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS losses_in_2_sets INTEGER DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS losses_in_3_sets INTEGER DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS performance INTEGER DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS underperformance INTEGER DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS training_attendance INTEGER DEFAULT 0
+    `;
+    console.log('Users table schema migration completed');
+  } catch (error) {
+    console.warn('Users table schema migration failed (columns may already exist):', error);
   }
 }
 

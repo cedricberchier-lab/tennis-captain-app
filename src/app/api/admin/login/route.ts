@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 // Admin credentials - In production, this should be stored securely
 const ADMIN_CREDENTIALS = {
   username: process.env.ADMIN_USERNAME || 'admin',
-  password: process.env.ADMIN_PASSWORD_HASH || '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewGEAw7Bqk8DQWk6' // 'admin123'
+  password: process.env.ADMIN_PASSWORD || 'admin123' // Plain text for development
 };
 
 interface AdminLoginRequest {
@@ -16,7 +16,7 @@ interface AdminLoginRequest {
 export async function POST(request: NextRequest) {
   try {
     const { username, password }: AdminLoginRequest = await request.json();
-
+    
     if (!username || !password) {
       return NextResponse.json(
         { error: 'Username and password are required' },
@@ -32,9 +32,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, ADMIN_CREDENTIALS.password);
-    if (!isValidPassword) {
+    // Verify password (plain text comparison for development)
+    if (password !== ADMIN_CREDENTIALS.password) {
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
