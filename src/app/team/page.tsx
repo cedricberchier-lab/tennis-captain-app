@@ -20,6 +20,22 @@ interface AddPlayerFormData {
   ranking: number;
 }
 
+const rankingOptions = [
+  { value: 0, label: "Unranked" },
+  { value: 1, label: "N1" },
+  { value: 2, label: "N2" },
+  { value: 3, label: "N3" },
+  { value: 4, label: "R1" },
+  { value: 5, label: "R2" },
+  { value: 6, label: "R3" },
+  { value: 7, label: "R4" },
+  { value: 8, label: "R5" },
+  { value: 9, label: "R6" },
+  { value: 10, label: "R7" },
+  { value: 11, label: "R8" },
+  { value: 12, label: "R9" }
+];
+
 export default function TeamMode() {
   const { 
     players, 
@@ -165,7 +181,7 @@ export default function TeamMode() {
     if (a.ranking === 0 && b.ranking === 0) return a.name.localeCompare(b.name);
     if (a.ranking === 0) return 1;
     if (b.ranking === 0) return -1;
-    return a.ranking - b.ranking;
+    return b.ranking - a.ranking; // Higher ranking values first (R9 before R1)
   });
 
   return (
@@ -284,7 +300,7 @@ export default function TeamMode() {
                     >
                       <div className="flex items-center space-x-4">
                         <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                          {player.ranking > 0 ? `R${player.ranking}` : "UR"}
+                          {rankingOptions.find(r => r.value === player.ranking)?.label || "UR"}
                         </div>
                         <div>
                           <h3 className="font-semibold text-gray-900 dark:text-white">
@@ -366,14 +382,17 @@ export default function TeamMode() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Ranking (Swiss Tennis)
                   </label>
-                  <input
-                    type="number"
-                    value={formData.ranking || ""}
-                    onChange={(e) => setFormData({ ...formData, ranking: parseInt(e.target.value) || 0 })}
+                  <select
+                    value={formData.ranking || 0}
+                    onChange={(e) => setFormData({ ...formData, ranking: parseInt(e.target.value) })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="0 = unranked"
-                    min="0"
-                  />
+                  >
+                    {rankingOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex space-x-3 pt-4">
                   <button
@@ -446,13 +465,17 @@ export default function TeamMode() {
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                           Ranking
                         </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={editPlayerData.ranking || ""}
-                          onChange={(e) => setEditPlayerData({ ...editPlayerData, ranking: parseInt(e.target.value) || 0 })}
+                        <select
+                          value={editPlayerData.ranking || 0}
+                          onChange={(e) => setEditPlayerData({ ...editPlayerData, ranking: parseInt(e.target.value) })}
                           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
-                        />
+                        >
+                          {rankingOptions.map(option => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -498,7 +521,7 @@ export default function TeamMode() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <div><strong>Name:</strong> {selectedPlayer.name}</div>
-                      <div><strong>Ranking:</strong> {selectedPlayer.ranking > 0 ? `R${selectedPlayer.ranking}` : "Unranked"}</div>
+                      <div><strong>Ranking:</strong> {rankingOptions.find(r => r.value === selectedPlayer.ranking)?.label || "Unranked"}</div>
                     </div>
                     <div className="space-y-2">
                       <div><strong>Email:</strong> {selectedPlayer.email || "Not provided"}</div>
