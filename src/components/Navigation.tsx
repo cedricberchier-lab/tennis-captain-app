@@ -10,8 +10,6 @@ import {
   Menu, 
   X, 
   Users, 
-  Trophy, 
-  Activity, 
   Settings,
   LogOut,
   ChevronRight
@@ -23,18 +21,6 @@ const navigationItems = [
     label: "Team",
     icon: Users,
     description: "Players & rankings"
-  },
-  {
-    href: "/match",
-    label: "Match",
-    icon: Trophy,
-    description: "Results & management"
-  },
-  {
-    href: "/training",
-    label: "Training",
-    icon: Activity,
-    description: "Schedule & attendance"
   },
   {
     href: "/setup",
