@@ -1,6 +1,5 @@
 'use client';
 
-import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -327,56 +326,8 @@ export default function Home() {
               </h2>
               
               <div className="space-y-6">
-                {/* Match and Training Actions */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-                <Link href="/match" className="group block">
-                  <Card className="p-4 sm:p-6 transition-all duration-200 hover:shadow-lg hover:scale-[1.02] border-2 border-transparent hover:border-blue-200 dark:hover:border-blue-700">
-                    <CardContent className="p-0">
-                      <div className="flex items-center gap-4 mb-3">
-                        <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
-                          <Trophy className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg sm:text-xl">Match</CardTitle>
-                          <CardDescription className="text-sm">
-                            Results & management
-                          </CardDescription>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                          Schedule and track matches
-                        </p>
-                        <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200 transition-colors" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-
-                <Link href="/training" className="group block">
-                  <Card className="p-4 sm:p-6 transition-all duration-200 hover:shadow-lg hover:scale-[1.02] border-2 border-transparent hover:border-purple-200 dark:hover:border-purple-700">
-                    <CardContent className="p-0">
-                      <div className="flex items-center gap-4 mb-3">
-                        <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-full">
-                          <Activity className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg sm:text-xl">Training</CardTitle>
-                          <CardDescription className="text-sm">
-                            Schedule & attendance tracking
-                          </CardDescription>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                          Manage training sessions
-                        </p>
-                        <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200 transition-colors" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-                
+                {/* Quick Actions - My Absences */}
+                <div className="grid grid-cols-1 gap-4 sm:gap-6">
                 {/* My Absences Action */}
                 <Dialog open={showAbsenceModal} onOpenChange={setShowAbsenceModal}>
                   <DialogTrigger asChild>
