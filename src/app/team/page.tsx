@@ -6,6 +6,7 @@ import { Player } from "@/types";
 import { usePlayers } from "@/hooks/usePlayers";
 import { exportPlayersToJSON, exportPlayersToCSV, copyPlayersToClipboard } from "@/utils/dataExport";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,7 @@ const rankingOptions = [
 ];
 
 export default function TeamMode() {
+  const { user } = useAuth();
   const { 
     players, 
     loading, 
@@ -124,6 +126,11 @@ export default function TeamMode() {
     });
     setShowPlayerDetails(true);
     setIsEditingPlayer(false);
+  };
+
+  // Check if current user can edit this player (only their own info)
+  const canEditPlayer = (player: Player) => {
+    return user && (user.email === player.email || user.name === player.name);
   };
 
   const handleEditPlayer = async () => {
@@ -439,15 +446,17 @@ export default function TeamMode() {
                   <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
                     Player Information
                   </h4>
-                  <button
-                    onClick={() => setIsEditingPlayer(!isEditingPlayer)}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  >
-                    {isEditingPlayer ? "Cancel Edit" : "✏️ Edit Info"}
-                  </button>
+                  {canEditPlayer(selectedPlayer) && (
+                    <button
+                      onClick={() => setIsEditingPlayer(!isEditingPlayer)}
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                      {isEditingPlayer ? "Cancel Edit" : "✏️ Edit Info"}
+                    </button>
+                  )}
                 </div>
 
-                {isEditingPlayer ? (
+                {isEditingPlayer && canEditPlayer(selectedPlayer) ? (
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -531,6 +540,13 @@ export default function TeamMode() {
                       <div><strong>Record:</strong> {selectedPlayer.stats.wins}W - {selectedPlayer.stats.losses}L ({selectedPlayer.stats.matchesPlayed} matches)</div>
                       <div><strong>Joined:</strong> {selectedPlayer.createdAt.toLocaleDateString()}</div>
                     </div>
+                    {!canEditPlayer(selectedPlayer) && (
+                      <div className="md:col-span-2 mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                        <p className="text-yellow-800 dark:text-yellow-200 text-sm">
+                          ℹ️ You can only edit your own player information
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

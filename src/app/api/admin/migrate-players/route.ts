@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ensureAllUsersHavePlayerRecords } from '@/lib/db';
+import { migratePlayersToUsers } from '@/lib/db';
 import { ensureAllLocalUsersHavePlayerRecords } from '@/lib/localAuth';
 
 export async function POST(request: NextRequest) {
@@ -10,7 +10,8 @@ export async function POST(request: NextRequest) {
     // Try database first, fallback to localStorage
     if (process.env.POSTGRES_URL) {
       try {
-        result = await ensureAllUsersHavePlayerRecords();
+        const migrationResult = await migratePlayersToUsers();
+        result = { created: migrationResult.migrated, errors: migrationResult.errors };
       } catch (dbError) {
         console.warn('Database operation failed, falling back to localStorage:', dbError);
         isUsingLocalStorage = true;
@@ -26,8 +27,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Migration completed. Created ${result.created} player records with ${result.errors} errors.`,
-      created: result.created,
+      message: `Migration completed. Migrated ${result.created} players to users table with ${result.errors} errors.`,
+      migrated: result.created,
       errors: result.errors,
       usingLocalStorage: isUsingLocalStorage
     });
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
       { 
         success: false,
         error: 'Failed to migrate player records',
-        created: 0,
+        migrated: 0,
         errors: 1
       },
       { status: 500 }

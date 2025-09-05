@@ -10,6 +10,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+const rankingOptions = [
+  { value: 0, label: "Unranked" },
+  { value: 1, label: "N1" },
+  { value: 2, label: "N2" },
+  { value: 3, label: "N3" },
+  { value: 4, label: "R1" },
+  { value: 5, label: "R2" },
+  { value: 6, label: "R3" },
+  { value: 7, label: "R4" },
+  { value: 8, label: "R5" },
+  { value: 9, label: "R6" },
+  { value: 10, label: "R7" },
+  { value: 11, label: "R8" },
+  { value: 12, label: "R9" }
+];
+
 export default function RegisterPage() {
   const [formData, setFormData] = useState<RegisterData>({
     username: '',
@@ -166,6 +182,24 @@ export default function RegisterPage() {
               </div>
             </div>
             
+            <div>
+              <label htmlFor="ranking" className="block text-sm font-medium text-gray-700 mb-2">
+                Tennis Ranking (Swiss Tennis)
+              </label>
+              <select
+                id="ranking"
+                name="ranking"
+                value={formData.ranking || 0}
+                onChange={(e) => setFormData({ ...formData, ranking: parseInt(e.target.value) })}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors mobile-input"
+              >
+                {rankingOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* Hidden username field - will be auto-filled with email */}
             <input type="hidden" name="username" value={formData.username} />

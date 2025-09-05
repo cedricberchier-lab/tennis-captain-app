@@ -1,4 +1,4 @@
-// User Authentication Types
+// User Authentication Types (consolidated with Player data)
 export interface User {
   id: string;
   username: string;
@@ -9,6 +9,8 @@ export interface User {
   password: string; // hashed
   role: UserRole;
   teamId?: string;
+  absences?: string[]; // Array of absence strings
+  stats?: PlayerStats; // Player statistics consolidated into User
   createdAt: Date;
   updatedAt: Date;
 }
