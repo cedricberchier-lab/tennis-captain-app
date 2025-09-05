@@ -26,7 +26,11 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
+      // Check if admin credentials - route to admin endpoint
+      const isAdminLogin = credentials.username === 'admin';
+      const loginEndpoint = isAdminLogin ? '/api/admin/login' : '/api/auth/login';
+      
+      const response = await fetch(loginEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -40,14 +44,18 @@ export default function LoginPage() {
         throw new Error(data.error || 'Login failed');
       }
 
-      if (data.token && data.user) {
-        // Store localStorage usage flag for migration notice
+      // Handle different response formats for admin vs regular login
+      const token = data.token;
+      const user = data.user || data.admin; // Admin login returns 'admin' field instead of 'user'
+      
+      if (token && user) {
+        // Store localStorage usage flag for migration notice (regular users only)
         if (data.usingLocalStorage) {
           localStorage.setItem('authUsingLocalStorage', 'true');
         }
         
         // Use AuthContext login method to update app state
-        login(data.token, data.user);
+        login(token, user);
       } else {
         throw new Error('Invalid response from server');
       }
