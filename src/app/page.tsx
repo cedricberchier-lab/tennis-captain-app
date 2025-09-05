@@ -68,8 +68,17 @@ export default function Home() {
   });
   const [isAddingAbsence, setIsAddingAbsence] = useState(false);
   
-  // Get current user's player record
+  // Get current user's player record with better debugging
   const currentPlayer = user?.email ? players.find(p => p.email === user.email) : null;
+  
+  // Debug logging for player linking issues
+  useEffect(() => {
+    if (user && players.length > 0) {
+      console.log('User email:', user.email);
+      console.log('Available players:', players.map(p => ({ id: p.id, name: p.name, email: p.email })));
+      console.log('Current player found:', currentPlayer ? `${currentPlayer.name} (${currentPlayer.email})` : 'None');
+    }
+  }, [user, players, currentPlayer]);
   
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
@@ -106,8 +115,13 @@ export default function Home() {
       const absenceEntry = `${absenceData.date}${absenceData.reason.trim() ? ` - ${absenceData.reason.trim()}` : ''}`;
       const updatedAbsences = [...currentPlayer.absences, absenceEntry];
       
+      console.log('Adding absence for player:', currentPlayer.name, currentPlayer.id);
+      console.log('New absence:', absenceEntry);
+      console.log('Updated absences:', updatedAbsences);
+      
       const updatedPlayer = await updatePlayer(currentPlayer.id, { absences: updatedAbsences });
       if (updatedPlayer) {
+        console.log('Player updated successfully:', updatedPlayer);
         // Refresh the players list to update currentPlayer with new absence
         await refreshPlayers();
         
@@ -123,6 +137,22 @@ export default function Home() {
       alert('Failed to add absence. Please try again.');
     } finally {
       setIsAddingAbsence(false);
+    }
+  };
+
+  // Handle removing absence
+  const handleRemoveAbsence = async (absenceIndex: number) => {
+    if (!currentPlayer) return;
+    
+    try {
+      const updatedAbsences = currentPlayer.absences.filter((_, index) => index !== absenceIndex);
+      const updatedPlayer = await updatePlayer(currentPlayer.id, { absences: updatedAbsences });
+      if (updatedPlayer) {
+        await refreshPlayers();
+      }
+    } catch (error) {
+      console.error('Error removing absence:', error);
+      alert('Failed to remove absence. Please try again.');
     }
   };
   
@@ -453,34 +483,45 @@ export default function Home() {
                           {isAddingAbsence ? 'Adding...' : 'Add Absence'}
                         </Button>
                       </div>
-                      {currentPlayer && currentPlayer.absences.length > 0 && (
+                      {currentPlayer && (
                         <div className="border-t pt-4">
                           <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Your Current Absences ({currentPlayer.absences.length})
+                            Your Absences ({currentPlayer.absences.length})
                           </Label>
-                          <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
-                            {currentPlayer.absences.slice(-3).map((absence, index) => {
-                              const [date, ...reasonParts] = absence.split(' - ');
-                              const reason = reasonParts.join(' - ');
-                              return (
-                                <div key={index} className="text-xs bg-gray-50 dark:bg-gray-700 rounded p-2">
-                                  <div className="font-medium">
-                                    {new Date(date).toLocaleDateString()}
-                                  </div>
-                                  {reason && (
-                                    <div className="text-gray-600 dark:text-gray-400 mt-1">
-                                      {reason}
+                          {currentPlayer.absences.length > 0 ? (
+                            <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
+                              {[...currentPlayer.absences].reverse().map((absence, displayIndex) => {
+                                const [date, ...reasonParts] = absence.split(' - ');
+                                const reason = reasonParts.join(' - ');
+                                const actualIndex = currentPlayer.absences.length - 1 - displayIndex;
+                                return (
+                                  <div key={`${date}-${displayIndex}`} className="flex items-start justify-between text-xs bg-gray-50 dark:bg-gray-700 rounded p-2">
+                                    <div className="flex-1">
+                                      <div className="font-medium">
+                                        {new Date(date).toLocaleDateString()}
+                                      </div>
+                                      {reason && (
+                                        <div className="text-gray-600 dark:text-gray-400 mt-1">
+                                          {reason}
+                                        </div>
+                                      )}
                                     </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                            {currentPlayer.absences.length > 3 && (
-                              <div className="text-xs text-gray-500 text-center">
-                                ... and {currentPlayer.absences.length - 3} more
-                              </div>
-                            )}
-                          </div>
+                                    <button
+                                      onClick={() => handleRemoveAbsence(actualIndex)}
+                                      className="text-red-500 hover:text-red-700 ml-2 p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                                      title="Remove absence"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="mt-2 text-xs text-gray-500 italic">
+                              No absences recorded
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
