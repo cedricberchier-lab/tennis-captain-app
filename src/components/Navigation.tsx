@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlayers } from "@/hooks/usePlayers";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
@@ -63,6 +64,21 @@ export default function Navigation() {
   const [showLocalStorageNotice, setShowLocalStorageNotice] = useState(false);
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { players } = usePlayers();
+  
+  // Get current player name
+  const getCurrentPlayerName = () => {
+    if (!user) return 'User';
+    if (user.role === 'admin') return 'Administrator';
+    
+    const currentPlayer = players.find(p => 
+      p.email === user.email || 
+      p.id === user.id ||
+      p.name === user.name
+    );
+    
+    return currentPlayer?.name || user.name || user.username || 'User';
+  };
 
   // Close mobile menu when route changes
   useEffect(() => {
@@ -122,7 +138,7 @@ export default function Navigation() {
                 className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
               >
                 <span className="text-2xl">🎾</span>
-                <span className="hidden sm:block">Tennis Captain</span>
+                <span className="hidden sm:block">CourtCrew</span>
               </Link>
             </div>
 
@@ -156,7 +172,7 @@ export default function Navigation() {
             {/* User Menu */}
             <div className="flex items-center gap-3">
               <span className="hidden sm:block text-sm text-gray-600 dark:text-gray-300">
-                {user?.username}
+                {getCurrentPlayerName()}
               </span>
               <Button
                 onClick={logout}
@@ -219,7 +235,7 @@ export default function Navigation() {
             className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white"
           >
             <span className="text-2xl">🎾</span>
-            Tennis Captain
+            CourtCrew
           </Link>
           <button
             onClick={() => setIsOpen(false)}
@@ -239,7 +255,7 @@ export default function Navigation() {
               </span>
             </div>
             <div>
-              <p className="font-medium text-gray-900 dark:text-white">{user?.username}</p>
+              <p className="font-medium text-gray-900 dark:text-white">{getCurrentPlayerName()}</p>
               <p className="text-sm text-gray-500 dark:text-gray-400">Team Captain</p>
             </div>
           </div>

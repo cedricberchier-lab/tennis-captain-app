@@ -34,6 +34,20 @@ export default function Home() {
   const { trainings } = useTrainings();
   const { matches } = useMatches();
   
+  // Get current player name
+  const getCurrentPlayerName = () => {
+    if (!user) return 'User';
+    if (user.role === 'admin') return 'Administrator';
+    
+    const currentPlayer = players.find(p => 
+      p.email === user.email || 
+      p.id === user.id ||
+      p.name === user.name
+    );
+    
+    return currentPlayer?.name || user.name || user.username || 'User';
+  };
+  
   // Team Chat State
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
@@ -80,11 +94,12 @@ export default function Home() {
   
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !user?.username) return;
+    const playerName = getCurrentPlayerName();
+    if (!newMessage.trim() || !playerName) return;
     
     const message: ChatMessage = {
       id: crypto.randomUUID(),
-      username: user.username,
+      username: playerName,
       message: newMessage.trim(),
       timestamp: new Date()
     };
@@ -282,7 +297,7 @@ export default function Home() {
           {/* Welcome Header - Mobile Optimized */}
           <div className="mb-8">
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2">
-              Welcome back, {user?.username}! 👋
+              Welcome back, {getCurrentPlayerName()}! 👋
             </h1>
             <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
               Choose an action to get started
