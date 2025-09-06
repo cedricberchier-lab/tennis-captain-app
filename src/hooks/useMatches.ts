@@ -33,8 +33,27 @@ export function useMatches(): UseMatchesReturn {
       
       const data = await response.json();
       
-      // If we have matches from database, use them
-      if (data.matches && data.matches.length > 0) {
+      // If API indicates we should use localStorage, use it
+      if (data.isUsingLocalStorage) {
+        const localMatches = localStorage.getItem('tennis-captain-matches');
+        if (localMatches) {
+          const parsedMatches = JSON.parse(localMatches).map((match: Record<string, unknown>) => ({
+            ...match,
+            date: new Date(match.date as string),
+            createdAt: new Date(match.createdAt as string),
+            updatedAt: new Date(match.updatedAt as string)
+          }));
+          setMatches(parsedMatches);
+        } else {
+          setMatches([]);
+        }
+        // Set localStorage flag for the UI
+        localStorage.setItem('authUsingLocalStorage', 'true');
+        return;
+      }
+      
+      // Use database matches
+      if (data.matches) {
         const matchesWithDates = data.matches.map((match: Record<string, unknown>) => ({
           ...match,
           date: new Date(match.date as string),
@@ -42,22 +61,13 @@ export function useMatches(): UseMatchesReturn {
           updatedAt: new Date(match.updatedAt as string)
         }));
         setMatches(matchesWithDates);
+        // Clear localStorage flag since we're using database
+        localStorage.removeItem('authUsingLocalStorage');
         return;
       }
       
-      // If database returns empty, check localStorage
-      const localMatches = localStorage.getItem('tennis-captain-matches');
-      if (localMatches) {
-        const parsedMatches = JSON.parse(localMatches).map((match: Record<string, unknown>) => ({
-          ...match,
-          date: new Date(match.date as string),
-          createdAt: new Date(match.createdAt as string),
-          updatedAt: new Date(match.updatedAt as string)
-        }));
-        setMatches(parsedMatches);
-      } else {
-        setMatches([]);
-      }
+      // Fallback to empty array
+      setMatches([]);
     } catch (err: unknown) {
       console.warn('Database not available, using localStorage:', err);
       
@@ -130,16 +140,23 @@ export function useMatches(): UseMatchesReturn {
           const newMatch = {
             ...data.match,
             date: new Date(data.match.date),
-            createdAt: new Date(data.match.createdAt),
-            updatedAt: new Date(data.match.updatedAt)
+            createdAt: new Date(data.match.createdAt || data.match.date),
+            updatedAt: new Date(data.match.updatedAt || data.match.date)
           };
           
           setMatches(prev => {
             const updated = [...prev, newMatch];
-            // Save to localStorage as backup
+            // Always save to localStorage as backup
             localStorage.setItem('tennis-captain-matches', JSON.stringify(updated));
             return updated;
           });
+
+          // Set localStorage flag if API indicated fallback
+          if (data.isUsingLocalStorage) {
+            localStorage.setItem('authUsingLocalStorage', 'true');
+          } else {
+            localStorage.removeItem('authUsingLocalStorage');
+          }
           
           return newMatch;
         }
@@ -189,16 +206,23 @@ export function useMatches(): UseMatchesReturn {
           const updatedMatch = {
             ...data.match,
             date: new Date(data.match.date),
-            createdAt: new Date(data.match.createdAt),
-            updatedAt: new Date(data.match.updatedAt)
+            createdAt: new Date(data.match.createdAt || data.match.date),
+            updatedAt: new Date(data.match.updatedAt || new Date())
           };
           
           setMatches(prev => {
             const updated = prev.map(m => m.id === id ? updatedMatch : m);
-            // Update localStorage
+            // Always save to localStorage as backup
             localStorage.setItem('tennis-captain-matches', JSON.stringify(updated));
             return updated;
           });
+
+          // Set localStorage flag if API indicated fallback
+          if (data.isUsingLocalStorage) {
+            localStorage.setItem('authUsingLocalStorage', 'true');
+          } else {
+            localStorage.removeItem('authUsingLocalStorage');
+          }
           
           return updatedMatch;
         }

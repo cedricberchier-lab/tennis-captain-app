@@ -2,18 +2,38 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createMatch, getAllMatches, initializeDatabase } from '@/lib/db';
 import { authenticateRequest } from '@/lib/auth';
 
+// Initialize database on first request
+let dbInitialized = false;
+async function ensureDbInitialized() {
+  if (!dbInitialized) {
+    await initializeDatabase();
+    dbInitialized = true;
+  }
+}
+
 export async function GET() {
   try {
-    // Try to initialize database and get matches
-    try {
-      await initializeDatabase();
-      const matches = await getAllMatches();
-      return NextResponse.json({ matches });
-    } catch (dbError) {
-      console.warn('Database not available, returning empty matches for client-side fallback:', dbError);
-      // Return empty array so client falls back to localStorage
-      return NextResponse.json({ matches: [] });
+    let matches: any[] = [];
+    let isUsingLocalStorage = false;
+
+    // Try database first, fallback to localStorage
+    if (process.env.POSTGRES_URL) {
+      try {
+        await ensureDbInitialized();
+        matches = await getAllMatches();
+      } catch (dbError) {
+        console.warn('Database operation failed for matches:', dbError);
+        isUsingLocalStorage = true;
+      }
+    } else {
+      console.warn('No database URL configured, using localStorage for matches');
+      isUsingLocalStorage = true;
     }
+
+    return NextResponse.json({ 
+      matches,
+      isUsingLocalStorage 
+    });
   } catch (error) {
     console.error('GET /api/matches error:', error);
     return NextResponse.json(
@@ -25,7 +45,6 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    // Skip authentication for development without database
     const matchData = await request.json();
     
     // Validate required fields
@@ -41,26 +60,45 @@ export async function POST(request: NextRequest) {
       matchData.date = new Date(matchData.date);
     }
 
-    // Try database first with proper initialization
-    try {
-      await initializeDatabase();
-      const match = await createMatch(matchData);
-      console.log('Match created successfully in database:', match.id);
-      return NextResponse.json({ match });
-    } catch (dbError) {
-      console.error('Database operation failed, falling back to mock response:', dbError);
-      // Return a mock successful response so client can handle with localStorage
-      return NextResponse.json({ 
-        match: {
+    let match;
+    let isUsingLocalStorage = false;
+
+    // Try database first
+    if (process.env.POSTGRES_URL) {
+      try {
+        await ensureDbInitialized();
+        match = await createMatch(matchData);
+        console.log('Match created successfully in database:', match.id);
+      } catch (dbError) {
+        console.warn('Database operation failed for match creation:', dbError);
+        isUsingLocalStorage = true;
+        // Create temp match for localStorage
+        match = {
           id: 'temp-' + Date.now(),
           ...matchData,
           roster: { homeLineup: [], opponentLineup: [], homeDoublesLineup: [], opponentDoublesLineup: [] },
           results: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      });
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+      }
+    } else {
+      console.warn('No database URL configured, creating temp match for localStorage');
+      isUsingLocalStorage = true;
+      match = {
+        id: 'temp-' + Date.now(),
+        ...matchData,
+        roster: { homeLineup: [], opponentLineup: [], homeDoublesLineup: [], opponentDoublesLineup: [] },
+        results: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
     }
+
+    return NextResponse.json({ 
+      match,
+      isUsingLocalStorage 
+    });
   } catch (error) {
     console.error('POST /api/matches error:', error);
     return NextResponse.json(

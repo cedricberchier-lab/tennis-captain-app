@@ -40,42 +40,65 @@ export async function PUT(
       updates.date = new Date(updates.date);
     }
     
-    // Try database first with initialization
-    try {
-      // Ensure database is initialized
-      await initializeDatabase();
-      
-      const match = await updateMatch(id, updates);
-      
-      if (!match) {
-        return NextResponse.json(
-          { error: 'Match not found' },
-          { status: 404 }
-        );
-      }
+    let match;
+    let isUsingLocalStorage = false;
 
-      console.log('Match updated successfully in database:', id);
-      return NextResponse.json({ match });
-    } catch (dbError) {
-      console.error('Database operation failed, falling back to mock response:', dbError);
-      // Return a mock successful response with all required fields
-      return NextResponse.json({ 
-        match: {
+    // Try database first
+    if (process.env.POSTGRES_URL) {
+      try {
+        // Ensure database is initialized  
+        await initializeDatabase();
+        
+        match = await updateMatch(id, updates);
+        
+        if (!match) {
+          return NextResponse.json(
+            { error: 'Match not found' },
+            { status: 404 }
+          );
+        }
+
+        console.log('Match updated successfully in database:', id);
+      } catch (dbError) {
+        console.warn('Database operation failed for match update:', dbError);
+        isUsingLocalStorage = true;
+        // Return a mock successful response with all required fields
+        match = {
           id,
           ...updates,
-          updatedAt: new Date().toISOString(),
-          createdAt: updates.createdAt || new Date().toISOString(),
-          // Ensure date is properly formatted as string for JSON response
-          date: updates.date ? (updates.date instanceof Date ? updates.date.toISOString() : updates.date) : new Date().toISOString(),
+          updatedAt: new Date(),
+          createdAt: updates.createdAt || new Date(),
+          // Ensure date is properly formatted
+          date: updates.date ? (updates.date instanceof Date ? updates.date : new Date(updates.date)) : new Date(),
           // Ensure required fields are present
           roster: updates.roster || { homeLineup: [], opponentLineup: [], homeDoublesLineup: [], opponentDoublesLineup: [] },
           results: updates.results || [],
           teamScore: updates.teamScore || { home: 0, away: 0, autoCalculated: false },
           status: updates.status || 'SCHEDULED',
           validation: updates.validation || { captainAConfirmed: false, captainBConfirmed: false }
-        }
-      });
+        };
+      }
+    } else {
+      console.warn('No database URL configured, using mock response for match update');
+      isUsingLocalStorage = true;
+      match = {
+        id,
+        ...updates,
+        updatedAt: new Date(),
+        createdAt: updates.createdAt || new Date(),
+        date: updates.date ? (updates.date instanceof Date ? updates.date : new Date(updates.date)) : new Date(),
+        roster: updates.roster || { homeLineup: [], opponentLineup: [], homeDoublesLineup: [], opponentDoublesLineup: [] },
+        results: updates.results || [],
+        teamScore: updates.teamScore || { home: 0, away: 0, autoCalculated: false },
+        status: updates.status || 'SCHEDULED',
+        validation: updates.validation || { captainAConfirmed: false, captainBConfirmed: false }
+      };
     }
+
+    return NextResponse.json({ 
+      match,
+      isUsingLocalStorage 
+    });
   } catch (error) {
     console.error(`PUT /api/matches/${(await params).id} error:`, error);
     return NextResponse.json(
