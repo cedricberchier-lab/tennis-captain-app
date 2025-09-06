@@ -880,21 +880,28 @@ export default function TrainingMode() {
                   /* CSV Upload Section */
                   <div className="space-y-6">
                     <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
-                      <input
-                        type="file"
-                        accept=".xlsx,.xls,.csv"
-                        onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
-                        className="mb-4 w-full"
-                        id="csv-upload"
-                      />
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                      <div className="relative">
+                        <input
+                          type="file"
+                          accept=".xlsx,.xls,.csv"
+                          onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          id="csv-upload"
+                        />
+                        <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-700 rounded-lg p-4 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+                          <div className="text-blue-600 dark:text-blue-400 mb-2">
+                            📁 {csvFile ? 'Choose a file' : 'Click here to select a file'}
+                          </div>
+                          {csvFile && (
+                            <p className="text-sm text-green-600 dark:text-green-400">
+                              Selected: {csvFile.name}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
                         Supported formats: Excel (.xlsx, .xls) or CSV (.csv)
                       </p>
-                      {csvFile && (
-                        <p className="text-sm text-green-600 dark:text-green-400 mt-2">
-                          Selected: {csvFile.name}
-                        </p>
-                      )}
                     </div>
                     
                     <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
@@ -925,7 +932,7 @@ export default function TrainingMode() {
                             ? 'text-green-800 dark:text-green-200' 
                             : 'text-red-800 dark:text-red-200'
                         }`}>
-                          🎉 Upload Results:
+                          {csvResults.success > 0 ? '🎉 Training uploaded!' : '⚠️ Upload Results:'}
                         </h4>
                         <p className={`text-sm ${
                           csvResults.success > 0 
