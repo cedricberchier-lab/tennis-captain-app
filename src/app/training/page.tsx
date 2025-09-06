@@ -682,18 +682,16 @@ export default function TrainingMode() {
                   >
                     📅 Single Training
                   </button>
-                  {isAdmin() && (
-                    <button
-                      onClick={() => setActiveTab('bulk')}
-                      className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                        activeTab === 'bulk'
-                          ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
-                          : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-                      }`}
-                    >
-                      📤 CSV Upload
-                    </button>
-                  )}
+                  <button
+                    onClick={() => setActiveTab('bulk')}
+                    className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                      activeTab === 'bulk'
+                        ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
+                        : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                    }`}
+                  >
+                    📤 CSV Upload
+                  </button>
                 </div>
                 
                 {activeTab === 'single' ? (
