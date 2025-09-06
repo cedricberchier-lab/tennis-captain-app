@@ -312,6 +312,11 @@ export default function TrainingMode() {
       const data = await parseCSVFile(csvFile);
       const results = await processTrainingData(data);
       setCsvResults(results);
+      
+      // Refresh training list if any trainings were successfully created
+      if (results.success > 0) {
+        await refreshTrainings();
+      }
     } catch (error) {
       setCsvResults({
         success: 0,
@@ -909,6 +914,40 @@ export default function TrainingMode() {
                       </p>
                     </div>
                     
+                    {csvResults && (
+                      <div className={`p-4 rounded-lg ${
+                        csvResults.success > 0 
+                          ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                          : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                      }`}>
+                        <h4 className={`font-medium mb-2 ${
+                          csvResults.success > 0 
+                            ? 'text-green-800 dark:text-green-200' 
+                            : 'text-red-800 dark:text-red-200'
+                        }`}>
+                          🎉 Upload Results:
+                        </h4>
+                        <p className={`text-sm ${
+                          csvResults.success > 0 
+                            ? 'text-green-700 dark:text-green-300' 
+                            : 'text-red-700 dark:text-red-300'
+                        }`}>
+                          ✅ Success: {csvResults.success} training session{csvResults.success !== 1 ? 's' : ''} created<br/>
+                          {csvResults.failed > 0 && `❌ Failed: ${csvResults.failed} training session${csvResults.failed !== 1 ? 's' : ''}`}
+                        </p>
+                        {csvResults.errors.length > 0 && (
+                          <div className="mt-2">
+                            <p className="text-sm text-red-700 dark:text-red-300 font-medium">Errors:</p>
+                            <ul className="text-xs text-red-600 dark:text-red-400 mt-1 max-h-32 overflow-y-auto">
+                              {csvResults.errors.map((error, index) => (
+                                <li key={index}>• {error}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
                     <div className="flex space-x-3 pt-4">
                       <button
                         type="button"
@@ -918,17 +957,33 @@ export default function TrainingMode() {
                       >
                         {csvUploading ? 'Importing...' : '📤 Import Training Schedule'}
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowAddForm(false);
-                          setActiveTab('single');
-                          setCsvFile(null);
-                        }}
-                        className="flex-1 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 font-medium py-2 px-4 rounded-lg transition-colors"
-                      >
-                        Cancel
-                      </button>
+                      {csvResults && csvResults.success > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAddForm(false);
+                            setActiveTab('single');
+                            setCsvFile(null);
+                            setCsvResults(null);
+                          }}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                        >
+                          ✅ Close & View Trainings
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAddForm(false);
+                            setActiveTab('single');
+                            setCsvFile(null);
+                            setCsvResults(null);
+                          }}
+                          className="flex-1 bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 font-medium py-2 px-4 rounded-lg transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}
