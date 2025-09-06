@@ -13,6 +13,26 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import * as XLSX from 'xlsx';
 
+// Helper function to convert numeric ranking to proper tennis ranking display
+const formatTennisRanking = (ranking: number): string => {
+  const rankingMap: { [key: number]: string } = {
+    0: "Unranked",
+    1: "N1",
+    2: "N2", 
+    3: "N3",
+    4: "R1",
+    5: "R2",
+    6: "R3",
+    7: "R4",
+    8: "R5",
+    9: "R6",
+    10: "R7",
+    11: "R8",
+    12: "R9"
+  };
+  return rankingMap[ranking] || `R${ranking}`;
+};
+
 interface AddTrainingFormData {
   date: string;
   timeStart: string;
@@ -812,7 +832,7 @@ export default function TrainingMode() {
                               !participants.some((p, i) => i !== index && p.playerId === player.id)
                             ).map(player => (
                               <option key={player.id} value={player.id}>
-                                {player.name} {player.ranking > 0 && `(R${player.ranking})`}
+                                {player.name} {player.ranking > 0 && `(${formatTennisRanking(player.ranking)})`}
                               </option>
                             ))}
                           </select>
@@ -1118,7 +1138,7 @@ export default function TrainingMode() {
                               !participants.some((p, i) => i !== index && p.playerId === player.id)
                             ).map(player => (
                               <option key={player.id} value={player.id}>
-                                {player.name} {player.ranking > 0 && `(R${player.ranking})`}
+                                {player.name} {player.ranking > 0 && `(${formatTennisRanking(player.ranking)})`}
                               </option>
                             ))}
                           </select>
