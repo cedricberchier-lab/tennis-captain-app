@@ -14,15 +14,11 @@ interface AddMatchFormData {
   season: string;
   category: string;
   group: string;
-  matchId: string;
   date: string;
   time: string;
   location: string;
   isHome: boolean;
   opponentTeamName: string;
-  opponentCaptainName: string;
-  opponentCaptainEmail: string;
-  opponentCaptainPhone: string;
 }
 
 export default function MatchMode() {
@@ -54,15 +50,11 @@ export default function MatchMode() {
     season: "2024-25",
     category: "NC 55",
     group: "Group A",
-    matchId: "",
     date: "",
     time: "14:00",
     location: "",
     isHome: true,
-    opponentTeamName: "",
-    opponentCaptainName: "",
-    opponentCaptainEmail: "",
-    opponentCaptainPhone: ""
+    opponentTeamName: ""
   });
 
   const handleAddMatch = async (e: React.FormEvent) => {
@@ -74,7 +66,7 @@ export default function MatchMode() {
       season: formData.season.trim(),
       category: formData.category.trim(),
       group: formData.group.trim(),
-      matchId: formData.matchId.trim() || `${formData.category}-${formData.group}-${Date.now()}`,
+      matchId: `${formData.category}-${formData.group}-${Date.now()}`,
       date: new Date(formData.date),
       time: formData.time,
       location: formData.location.trim(),
@@ -82,9 +74,9 @@ export default function MatchMode() {
       opponentTeam: {
         name: formData.opponentTeamName.trim(),
         captain: {
-          name: formData.opponentCaptainName.trim(),
-          email: formData.opponentCaptainEmail.trim(),
-          phone: formData.opponentCaptainPhone.trim()
+          name: "",
+          email: "",
+          phone: ""
         }
       },
       teamScore: {
@@ -105,15 +97,11 @@ export default function MatchMode() {
         season: "2024-25",
         category: "NC 55",
         group: "Group A",
-        matchId: "",
         date: "",
         time: "14:00",
         location: "",
         isHome: true,
-        opponentTeamName: "",
-        opponentCaptainName: "",
-        opponentCaptainEmail: "",
-        opponentCaptainPhone: ""
+        opponentTeamName: ""
       });
       setShowAddForm(false);
     }
@@ -144,15 +132,11 @@ export default function MatchMode() {
       season: match.season || '',
       category: match.category || '',
       group: match.group || '',
-      matchId: match.matchId || '',
       date: match.date ? (match.date instanceof Date ? match.date.toISOString().split('T')[0] : new Date(match.date).toISOString().split('T')[0]) : '',
       time: match.time || '',
       location: match.location || '',
       isHome: match.isHome || false,
-      opponentTeamName: match.opponentTeam?.name || '',
-      opponentCaptainName: match.opponentTeam?.captain?.name || '',
-      opponentCaptainEmail: match.opponentTeam?.captain?.email || '',
-      opponentCaptainPhone: match.opponentTeam?.captain?.phone || ''
+      opponentTeamName: match.opponentTeam?.name || ''
     };
     setFormData(formDataToSet);
     setShowEditForm(true);
@@ -167,17 +151,17 @@ export default function MatchMode() {
       season: formData.season.trim(),
       category: formData.category.trim(),
       group: formData.group.trim(),
-      matchId: formData.matchId.trim() || editingMatch.matchId,
+      matchId: editingMatch.matchId,
       date: new Date(formData.date),
       time: formData.time,
       location: formData.location.trim(),
       isHome: formData.isHome,
       opponentTeam: {
         name: formData.opponentTeamName.trim(),
-        captain: {
-          name: formData.opponentCaptainName.trim(),
-          email: formData.opponentCaptainEmail.trim(),
-          phone: formData.opponentCaptainPhone.trim()
+        captain: editingMatch.opponentTeam?.captain || {
+          name: "",
+          email: "",
+          phone: ""
         }
       },
       teamScore: editingMatch.teamScore,
@@ -221,10 +205,10 @@ export default function MatchMode() {
                 </button>
               </div>
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2">
-                {selectedMatch.matchId}
+                {selectedMatch.category} vs {selectedMatch.opponentTeam.name}
               </h1>
               <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
-                {selectedMatch.category} - {selectedMatch.group}
+                {selectedMatch.date.toLocaleDateString()} at {selectedMatch.time}
               </p>
             </header>
 
@@ -544,31 +528,17 @@ export default function MatchMode() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Group
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.group}
-                        onChange={(e) => setFormData({...formData, group: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white mobile-input"
-                        placeholder="Group A"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Match ID
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.matchId}
-                        onChange={(e) => setFormData({...formData, matchId: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white mobile-input"
-                        placeholder="Auto-generated"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Group
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.group}
+                      onChange={(e) => setFormData({...formData, group: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white mobile-input"
+                      placeholder="Group A"
+                    />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -644,50 +614,10 @@ export default function MatchMode() {
                       type="text"
                       value={formData.opponentTeamName}
                       onChange={(e) => setFormData({...formData, opponentTeamName: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white mobile-input"
                       placeholder="TC Lausanne"
                       required
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Opponent Captain
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.opponentCaptainName}
-                      onChange={(e) => setFormData({...formData, opponentCaptainName: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Captain Name"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Captain Email
-                      </label>
-                      <input
-                        type="email"
-                        value={formData.opponentCaptainEmail}
-                        onChange={(e) => setFormData({...formData, opponentCaptainEmail: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white mobile-input"
-                        placeholder="captain@email.com"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Captain Phone
-                      </label>
-                      <input
-                        type="tel"
-                        value={formData.opponentCaptainPhone}
-                        onChange={(e) => setFormData({...formData, opponentCaptainPhone: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white mobile-input"
-                        placeholder="+41 79 123 4567"
-                      />
-                    </div>
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-3 pt-4">
@@ -758,31 +688,17 @@ export default function MatchMode() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Group
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.group}
-                        onChange={(e) => setFormData({...formData, group: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white mobile-input"
-                        placeholder="Group A"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Match ID
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.matchId}
-                        onChange={(e) => setFormData({...formData, matchId: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white mobile-input"
-                        placeholder="Auto-generated"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Group
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.group}
+                      onChange={(e) => setFormData({...formData, group: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white mobile-input"
+                      placeholder="Group A"
+                    />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -819,7 +735,7 @@ export default function MatchMode() {
                       type="text"
                       value={formData.location}
                       onChange={(e) => setFormData({...formData, location: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white mobile-input"
                       placeholder="Tennis Club Name"
                     />
                   </div>
@@ -858,50 +774,10 @@ export default function MatchMode() {
                       type="text"
                       value={formData.opponentTeamName}
                       onChange={(e) => setFormData({...formData, opponentTeamName: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white mobile-input"
                       placeholder="TC Lausanne"
                       required
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Opponent Captain
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.opponentCaptainName}
-                      onChange={(e) => setFormData({...formData, opponentCaptainName: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Captain Name"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Captain Email
-                      </label>
-                      <input
-                        type="email"
-                        value={formData.opponentCaptainEmail}
-                        onChange={(e) => setFormData({...formData, opponentCaptainEmail: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white mobile-input"
-                        placeholder="captain@email.com"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Captain Phone
-                      </label>
-                      <input
-                        type="tel"
-                        value={formData.opponentCaptainPhone}
-                        onChange={(e) => setFormData({...formData, opponentCaptainPhone: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white mobile-input"
-                        placeholder="+41 79 123 4567"
-                      />
-                    </div>
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-3 pt-4">
