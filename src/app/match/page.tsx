@@ -173,7 +173,10 @@ export default function MatchMode() {
     };
 
     try {
+      console.log('Updating match with data:', matchData);
       const updatedMatch = await updateMatch(editingMatch.id, matchData);
+      console.log('Update result:', updatedMatch);
+      
       if (updatedMatch) {
         setShowEditForm(false);
         setEditingMatch(null);
@@ -181,11 +184,14 @@ export default function MatchMode() {
         if (selectedMatch && selectedMatch.id === editingMatch.id) {
           setSelectedMatch(updatedMatch);
         }
+        console.log('Match updated successfully');
       } else {
         console.error('Failed to update match - updateMatch returned null');
+        alert('Failed to update match. Please check the console for details.');
       }
     } catch (error) {
       console.error('Error updating match:', error);
+      alert(`Error updating match: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

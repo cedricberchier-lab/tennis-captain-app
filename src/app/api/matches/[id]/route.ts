@@ -54,12 +54,21 @@ export async function PUT(
       return NextResponse.json({ match });
     } catch (dbError) {
       console.warn('Database not available, returning success for client-side handling:', dbError);
-      // Return a mock successful response
+      // Return a mock successful response with all required fields
       return NextResponse.json({ 
         match: {
           id,
           ...updates,
-          updatedAt: new Date().toISOString()
+          updatedAt: new Date().toISOString(),
+          createdAt: updates.createdAt || new Date().toISOString(),
+          // Ensure date is properly formatted as string for JSON response
+          date: updates.date ? (updates.date instanceof Date ? updates.date.toISOString() : updates.date) : new Date().toISOString(),
+          // Ensure required fields are present
+          roster: updates.roster || { homeLineup: [], opponentLineup: [], homeDoublesLineup: [], opponentDoublesLineup: [] },
+          results: updates.results || [],
+          teamScore: updates.teamScore || { home: 0, away: 0, autoCalculated: false },
+          status: updates.status || 'SCHEDULED',
+          validation: updates.validation || { captainAConfirmed: false, captainBConfirmed: false }
         }
       });
     }
