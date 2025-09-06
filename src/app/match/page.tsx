@@ -147,7 +147,7 @@ export default function MatchMode() {
     
     if (!editingMatch || !formData.season.trim() || !formData.category.trim() || !formData.date || !formData.opponentTeamName.trim()) return;
 
-    const matchData = {
+    const matchData: Partial<Match> = {
       season: formData.season.trim(),
       category: formData.category.trim(),
       group: formData.group.trim(),
@@ -166,17 +166,26 @@ export default function MatchMode() {
       },
       teamScore: editingMatch.teamScore,
       status: editingMatch.status,
-      validation: editingMatch.validation
+      validation: editingMatch.validation,
+      roster: editingMatch.roster,
+      results: editingMatch.results,
+      updatedAt: new Date()
     };
 
-    const updatedMatch = await updateMatch(editingMatch.id, matchData);
-    if (updatedMatch) {
-      setShowEditForm(false);
-      setEditingMatch(null);
-      // If this match is currently selected in details view, update it
-      if (selectedMatch && selectedMatch.id === editingMatch.id) {
-        setSelectedMatch(updatedMatch);
+    try {
+      const updatedMatch = await updateMatch(editingMatch.id, matchData);
+      if (updatedMatch) {
+        setShowEditForm(false);
+        setEditingMatch(null);
+        // If this match is currently selected in details view, update it
+        if (selectedMatch && selectedMatch.id === editingMatch.id) {
+          setSelectedMatch(updatedMatch);
+        }
+      } else {
+        console.error('Failed to update match - updateMatch returned null');
       }
+    } catch (error) {
+      console.error('Error updating match:', error);
     }
   };
 

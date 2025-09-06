@@ -3,6 +3,26 @@
 import { useState, useEffect } from "react";
 import { Match, LineupPlayer, Player } from "@/types";
 
+// Helper function to convert numeric ranking to proper tennis ranking display
+const formatTennisRanking = (ranking: number): string => {
+  const rankingMap: { [key: number]: string } = {
+    0: "Unranked",
+    1: "N1",
+    2: "N2", 
+    3: "N3",
+    4: "R1",
+    5: "R2",
+    6: "R3",
+    7: "R4",
+    8: "R5",
+    9: "R6",
+    10: "R7",
+    11: "R8",
+    12: "R9"
+  };
+  return rankingMap[ranking] || `R${ranking}`;
+};
+
 interface MatchLineupProps {
   match: Match;
   players: Player[];
@@ -132,7 +152,7 @@ function PlayerSlot({ position, lineupPlayer, availablePlayers, isOpponent, isDo
               </span>
               {lineupPlayer.ranking > 0 && (
                 <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-0.5 rounded text-xs font-medium">
-                  R{lineupPlayer.ranking}
+                  {formatTennisRanking(lineupPlayer.ranking)}
                 </span>
               )}
               {lineupPlayer.isManualEntry && (
@@ -212,7 +232,7 @@ function PlayerSlot({ position, lineupPlayer, availablePlayers, isOpponent, isDo
               <option value="">Choose a player...</option>
               {availablePlayers.map(player => (
                 <option key={player.id} value={player.id}>
-                  {player.name} {player.ranking > 0 && `(R${player.ranking})`}
+                  {player.name} {player.ranking > 0 && `(${formatTennisRanking(player.ranking)})`}
                 </option>
               ))}
             </select>
@@ -450,7 +470,7 @@ function DoublesSlot({ position, lineupPlayers, availablePlayers, singlesPlayers
                   </span>
                   {player.ranking > 0 && (
                     <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-0.5 rounded text-xs font-medium">
-                      R{player.ranking}
+                      {formatTennisRanking(player.ranking)}
                     </span>
                   )}
                   {player.isManualEntry && (
@@ -542,7 +562,7 @@ function DoublesSlot({ position, lineupPlayers, availablePlayers, singlesPlayers
                 <option value="">Choose player 1...</option>
                 {doublesAvailablePlayers.filter(p => p.id !== formData.player2Id).map(player => (
                   <option key={player.id} value={player.id}>
-                    {player.name} {player.ranking > 0 && `(R${player.ranking})`}
+                    {player.name} {player.ranking > 0 && `(${formatTennisRanking(player.ranking)})`}
                   </option>
                 ))}
               </select>
@@ -559,7 +579,7 @@ function DoublesSlot({ position, lineupPlayers, availablePlayers, singlesPlayers
                 <option value="">Choose player 2...</option>
                 {doublesAvailablePlayers.filter(p => p.id !== formData.player1Id).map(player => (
                   <option key={player.id} value={player.id}>
-                    {player.name} {player.ranking > 0 && `(R${player.ranking})`}
+                    {player.name} {player.ranking > 0 && `(${formatTennisRanking(player.ranking)})`}
                   </option>
                 ))}
               </select>
