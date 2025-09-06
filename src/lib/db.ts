@@ -75,9 +75,15 @@ export async function initializeDatabase() {
         phone VARCHAR(255),
         is_opponent BOOLEAN NOT NULL,
         is_manual_entry BOOLEAN NOT NULL,
+        player_type VARCHAR(20) DEFAULT 'singles',
+        partner_id VARCHAR(255),
+        partner_name VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `;
+
+    // Migrate existing match_lineup table to add missing columns
+    await migrateMatchLineupTableSchema();
 
     // Create match_results table
     await sql`
@@ -124,6 +130,22 @@ async function migrateUsersTableSchema() {
     console.log('Users table schema migration completed');
   } catch (error) {
     console.warn('Users table schema migration failed (columns may already exist):', error);
+  }
+}
+
+// Migrate existing match_lineup table to add missing columns
+async function migrateMatchLineupTableSchema() {
+  try {
+    // Add missing columns if they don't exist
+    await sql`
+      ALTER TABLE match_lineup 
+      ADD COLUMN IF NOT EXISTS player_type VARCHAR(20) DEFAULT 'singles',
+      ADD COLUMN IF NOT EXISTS partner_id VARCHAR(255),
+      ADD COLUMN IF NOT EXISTS partner_name VARCHAR(255)
+    `;
+    console.log('Match lineup table schema migration completed');
+  } catch (error) {
+    console.warn('Match lineup table schema migration failed (columns may already exist):', error);
   }
 }
 
@@ -630,8 +652,9 @@ export async function getAllMatches(): Promise<Match[]> {
       ORDER BY position ASC
     `;
     
+    // Separate lineups by type and opponent status
     const homeLineup = lineupRows.rows
-      .filter(lineup => !lineup.is_opponent)
+      .filter(lineup => !lineup.is_opponent && (lineup.player_type === 'singles' || !lineup.player_type))
       .map(lineup => ({
         id: lineup.id,
         position: lineup.position,
@@ -641,11 +664,14 @@ export async function getAllMatches(): Promise<Match[]> {
         email: lineup.email || undefined,
         phone: lineup.phone || undefined,
         isOpponent: lineup.is_opponent,
-        isManualEntry: lineup.is_manual_entry
+        isManualEntry: lineup.is_manual_entry,
+        type: (lineup.player_type || 'singles') as 'singles' | 'doubles',
+        partnerId: lineup.partner_id || undefined,
+        partnerName: lineup.partner_name || undefined
       }));
       
     const opponentLineup = lineupRows.rows
-      .filter(lineup => lineup.is_opponent)
+      .filter(lineup => lineup.is_opponent && (lineup.player_type === 'singles' || !lineup.player_type))
       .map(lineup => ({
         id: lineup.id,
         position: lineup.position,
@@ -655,7 +681,44 @@ export async function getAllMatches(): Promise<Match[]> {
         email: lineup.email || undefined,
         phone: lineup.phone || undefined,
         isOpponent: lineup.is_opponent,
-        isManualEntry: lineup.is_manual_entry
+        isManualEntry: lineup.is_manual_entry,
+        type: (lineup.player_type || 'singles') as 'singles' | 'doubles',
+        partnerId: lineup.partner_id || undefined,
+        partnerName: lineup.partner_name || undefined
+      }));
+
+    const homeDoublesLineup = lineupRows.rows
+      .filter(lineup => !lineup.is_opponent && lineup.player_type === 'doubles')
+      .map(lineup => ({
+        id: lineup.id,
+        position: lineup.position,
+        playerId: lineup.player_id || undefined,
+        playerName: lineup.player_name,
+        ranking: lineup.ranking,
+        email: lineup.email || undefined,
+        phone: lineup.phone || undefined,
+        isOpponent: lineup.is_opponent,
+        isManualEntry: lineup.is_manual_entry,
+        type: 'doubles' as 'singles' | 'doubles',
+        partnerId: lineup.partner_id || undefined,
+        partnerName: lineup.partner_name || undefined
+      }));
+
+    const opponentDoublesLineup = lineupRows.rows
+      .filter(lineup => lineup.is_opponent && lineup.player_type === 'doubles')
+      .map(lineup => ({
+        id: lineup.id,
+        position: lineup.position,
+        playerId: lineup.player_id || undefined,
+        playerName: lineup.player_name,
+        ranking: lineup.ranking,
+        email: lineup.email || undefined,
+        phone: lineup.phone || undefined,
+        isOpponent: lineup.is_opponent,
+        isManualEntry: lineup.is_manual_entry,
+        type: 'doubles' as 'singles' | 'doubles',
+        partnerId: lineup.partner_id || undefined,
+        partnerName: lineup.partner_name || undefined
       }));
       
     const results = resultsRows.rows.map(result => ({
@@ -689,7 +752,9 @@ export async function getAllMatches(): Promise<Match[]> {
       },
       roster: {
         homeLineup,
-        opponentLineup
+        opponentLineup,
+        homeDoublesLineup,
+        opponentDoublesLineup
       },
       results,
       teamScore: {
@@ -731,8 +796,9 @@ export async function getMatchById(id: string): Promise<Match | null> {
     ORDER BY position ASC
   `;
   
+  // Separate lineups by type and opponent status  
   const homeLineup = lineupRows.rows
-    .filter(lineup => !lineup.is_opponent)
+    .filter(lineup => !lineup.is_opponent && (lineup.player_type === 'singles' || !lineup.player_type))
     .map(lineup => ({
       id: lineup.id,
       position: lineup.position,
@@ -742,11 +808,14 @@ export async function getMatchById(id: string): Promise<Match | null> {
       email: lineup.email || undefined,
       phone: lineup.phone || undefined,
       isOpponent: lineup.is_opponent,
-      isManualEntry: lineup.is_manual_entry
+      isManualEntry: lineup.is_manual_entry,
+      type: (lineup.player_type || 'singles') as 'singles' | 'doubles',
+      partnerId: lineup.partner_id || undefined,
+      partnerName: lineup.partner_name || undefined
     }));
     
   const opponentLineup = lineupRows.rows
-    .filter(lineup => lineup.is_opponent)
+    .filter(lineup => lineup.is_opponent && (lineup.player_type === 'singles' || !lineup.player_type))
     .map(lineup => ({
       id: lineup.id,
       position: lineup.position,
@@ -756,7 +825,44 @@ export async function getMatchById(id: string): Promise<Match | null> {
       email: lineup.email || undefined,
       phone: lineup.phone || undefined,
       isOpponent: lineup.is_opponent,
-      isManualEntry: lineup.is_manual_entry
+      isManualEntry: lineup.is_manual_entry,
+      type: (lineup.player_type || 'singles') as 'singles' | 'doubles',
+      partnerId: lineup.partner_id || undefined,
+      partnerName: lineup.partner_name || undefined
+    }));
+
+  const homeDoublesLineup = lineupRows.rows
+    .filter(lineup => !lineup.is_opponent && lineup.player_type === 'doubles')
+    .map(lineup => ({
+      id: lineup.id,
+      position: lineup.position,
+      playerId: lineup.player_id || undefined,
+      playerName: lineup.player_name,
+      ranking: lineup.ranking,
+      email: lineup.email || undefined,
+      phone: lineup.phone || undefined,
+      isOpponent: lineup.is_opponent,
+      isManualEntry: lineup.is_manual_entry,
+      type: 'doubles' as 'singles' | 'doubles',
+      partnerId: lineup.partner_id || undefined,
+      partnerName: lineup.partner_name || undefined
+    }));
+
+  const opponentDoublesLineup = lineupRows.rows
+    .filter(lineup => lineup.is_opponent && lineup.player_type === 'doubles')
+    .map(lineup => ({
+      id: lineup.id,
+      position: lineup.position,
+      playerId: lineup.player_id || undefined,
+      playerName: lineup.player_name,
+      ranking: lineup.ranking,
+      email: lineup.email || undefined,
+      phone: lineup.phone || undefined,
+      isOpponent: lineup.is_opponent,
+      isManualEntry: lineup.is_manual_entry,
+      type: 'doubles' as 'singles' | 'doubles',
+      partnerId: lineup.partner_id || undefined,
+      partnerName: lineup.partner_name || undefined
     }));
     
   const results = resultsRows.rows.map(result => ({
@@ -790,7 +896,9 @@ export async function getMatchById(id: string): Promise<Match | null> {
     },
     roster: {
       homeLineup,
-      opponentLineup
+      opponentLineup,
+      homeDoublesLineup,
+      opponentDoublesLineup
     },
     results,
     teamScore: {
@@ -853,37 +961,32 @@ export async function deleteMatch(id: string): Promise<boolean> {
 }
 
 // Lineup management functions
-export async function saveMatchLineup(matchId: string, lineup: { homeLineup: LineupPlayer[], opponentLineup: LineupPlayer[] }): Promise<void> {
+export async function saveMatchLineup(matchId: string, roster: { homeLineup: LineupPlayer[], opponentLineup: LineupPlayer[], homeDoublesLineup?: LineupPlayer[], opponentDoublesLineup?: LineupPlayer[] }): Promise<void> {
   // Clear existing lineup
   await sql`DELETE FROM match_lineup WHERE match_id = ${matchId}`;
   
-  // Save home lineup
-  for (const player of lineup.homeLineup) {
-    await sql`
-      INSERT INTO match_lineup (
-        id, match_id, position, player_id, player_name, ranking, email, phone, 
-        is_opponent, is_manual_entry, created_at
-      ) VALUES (
-        ${crypto.randomUUID()}, ${matchId}, ${player.position}, ${player.playerId}, 
-        ${player.playerName}, ${player.ranking}, ${player.email}, ${player.phone},
-        ${false}, ${player.isManualEntry}, ${new Date()}
-      )
-    `;
-  }
+  // Helper function to save lineup players
+  const saveLineupPlayers = async (players: LineupPlayer[], isOpponent: boolean) => {
+    for (const player of players) {
+      await sql`
+        INSERT INTO match_lineup (
+          id, match_id, position, player_id, player_name, ranking, email, phone, 
+          is_opponent, is_manual_entry, player_type, partner_id, partner_name, created_at
+        ) VALUES (
+          ${crypto.randomUUID()}, ${matchId}, ${player.position}, ${player.playerId || null}, 
+          ${player.playerName}, ${player.ranking}, ${player.email || null}, ${player.phone || null},
+          ${isOpponent}, ${player.isManualEntry}, ${player.type || 'singles'}, 
+          ${player.partnerId || null}, ${player.partnerName || null}, ${new Date()}
+        )
+      `;
+    }
+  };
   
-  // Save opponent lineup
-  for (const player of lineup.opponentLineup) {
-    await sql`
-      INSERT INTO match_lineup (
-        id, match_id, position, player_id, player_name, ranking, email, phone, 
-        is_opponent, is_manual_entry, created_at
-      ) VALUES (
-        ${crypto.randomUUID()}, ${matchId}, ${player.position}, ${player.playerId}, 
-        ${player.playerName}, ${player.ranking}, ${player.email}, ${player.phone},
-        ${true}, ${player.isManualEntry}, ${new Date()}
-      )
-    `;
-  }
+  // Save all lineup data
+  await saveLineupPlayers(roster.homeLineup || [], false);
+  await saveLineupPlayers(roster.opponentLineup || [], true);
+  await saveLineupPlayers(roster.homeDoublesLineup || [], false);
+  await saveLineupPlayers(roster.opponentDoublesLineup || [], true);
 }
 
 // Results management functions  

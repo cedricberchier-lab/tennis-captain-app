@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { initializeDatabase } from '@/lib/db';
+import { initializeDatabase, getAllMatches, getAllPlayers } from '@/lib/db';
 
 export async function POST() {
   try {
@@ -22,7 +22,34 @@ export async function POST() {
   } catch (error) {
     console.error('Database initialization error:', error);
     return NextResponse.json(
-      { error: 'Failed to initialize database' },
+      { error: 'Failed to initialize database', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET() {
+  try {
+    // Check database connection by trying to fetch data
+    const matches = await getAllMatches();
+    const players = await getAllPlayers();
+    
+    return NextResponse.json({ 
+      message: 'Database is connected and operational',
+      status: 'healthy',
+      data: {
+        matchCount: matches.length,
+        playerCount: players.length
+      }
+    });
+  } catch (error) {
+    console.error('Database health check failed:', error);
+    return NextResponse.json(
+      { 
+        message: 'Database connection failed',
+        status: 'unhealthy',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

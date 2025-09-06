@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getMatchById, updateMatch, deleteMatch } from '@/lib/db';
+import { getMatchById, updateMatch, deleteMatch, initializeDatabase } from '@/lib/db';
 import { authenticateRequest } from '@/lib/auth';
 
 export async function GET(
@@ -40,8 +40,11 @@ export async function PUT(
       updates.date = new Date(updates.date);
     }
     
-    // Try database first
+    // Try database first with initialization
     try {
+      // Ensure database is initialized
+      await initializeDatabase();
+      
       const match = await updateMatch(id, updates);
       
       if (!match) {
@@ -51,9 +54,10 @@ export async function PUT(
         );
       }
 
+      console.log('Match updated successfully in database:', id);
       return NextResponse.json({ match });
     } catch (dbError) {
-      console.warn('Database not available, returning success for client-side handling:', dbError);
+      console.error('Database operation failed, falling back to mock response:', dbError);
       // Return a mock successful response with all required fields
       return NextResponse.json({ 
         match: {

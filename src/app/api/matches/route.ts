@@ -41,19 +41,20 @@ export async function POST(request: NextRequest) {
       matchData.date = new Date(matchData.date);
     }
 
-    // Try database first
+    // Try database first with proper initialization
     try {
       await initializeDatabase();
       const match = await createMatch(matchData);
+      console.log('Match created successfully in database:', match.id);
       return NextResponse.json({ match });
     } catch (dbError) {
-      console.warn('Database not available, returning success for client-side handling:', dbError);
+      console.error('Database operation failed, falling back to mock response:', dbError);
       // Return a mock successful response so client can handle with localStorage
       return NextResponse.json({ 
         match: {
           id: 'temp-' + Date.now(),
           ...matchData,
-          roster: { homeLineup: [], opponentLineup: [] },
+          roster: { homeLineup: [], opponentLineup: [], homeDoublesLineup: [], opponentDoublesLineup: [] },
           results: [],
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
