@@ -1,12 +1,10 @@
 'use client';
 
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { usePlayers } from "@/hooks/usePlayers";
 import { useTrainings } from "@/hooks/useTrainings";
 import { 
@@ -15,17 +13,9 @@ import {
   Clock,
   MapPin,
   ChevronRight,
-  MessageCircle,
-  Send,
   CalendarOff
 } from "lucide-react";
 
-interface ChatMessage {
-  id: string;
-  username: string;
-  message: string;
-  timestamp: Date;
-}
 
 export default function Home() {
   const { user } = useAuth();
@@ -46,29 +36,6 @@ export default function Home() {
     return currentPlayer?.name || user.name || user.username || 'User';
   };
   
-  // Team Chat State
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    {
-      id: '1',
-      username: 'Captain Mike',
-      message: 'Welcome to the team chat! 🎾',
-      timestamp: new Date(Date.now() - 3600000) // 1 hour ago
-    },
-    {
-      id: '2', 
-      username: 'Sarah',
-      message: 'Looking forward to tomorrow\'s match! 💪',
-      timestamp: new Date(Date.now() - 1800000) // 30 minutes ago
-    },
-    {
-      id: '3',
-      username: 'Alex',
-      message: 'Don\'t forget to bring extra water bottles ⚡',
-      timestamp: new Date(Date.now() - 900000) // 15 minutes ago
-    }
-  ]);
-  const [newMessage, setNewMessage] = useState('');
-  const chatMessagesRef = useRef<HTMLDivElement>(null);
   
   
   // Get current user's player record with better debugging
@@ -83,32 +50,8 @@ export default function Home() {
     }
   }, [user, players, currentPlayer]);
   
-  // Auto-scroll to bottom when new messages are added
-  useEffect(() => {
-    if (chatMessagesRef.current) {
-      chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight;
-    }
-  }, [chatMessages]);
   
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    const playerName = getCurrentPlayerName();
-    if (!newMessage.trim() || !playerName) return;
-    
-    const message: ChatMessage = {
-      id: crypto.randomUUID(),
-      username: playerName,
-      message: newMessage.trim(),
-      timestamp: new Date()
-    };
-    
-    setChatMessages(prev => [...prev, message]);
-    setNewMessage('');
-  };
   
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
   
   
   // Get user-relevant upcoming events
@@ -303,75 +246,6 @@ export default function Home() {
                   </Card>
                 </Link>
                 </div>
-                
-                {/* Team Chat */}
-                <Card className="p-4 sm:p-6 border-2 border-transparent hover:border-green-200 dark:hover:border-green-700 transition-all duration-200">
-                  <CardContent className="p-0">
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="p-3 bg-green-100 dark:bg-green-900 rounded-full">
-                        <MessageCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg sm:text-xl">Team Chat</CardTitle>
-                        <CardDescription className="text-sm">
-                          Stay connected with your team
-                        </CardDescription>
-                      </div>
-                    </div>
-                    
-                    {/* Chat Messages */}
-                    <div ref={chatMessagesRef} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4 max-h-64 overflow-y-auto space-y-3" id="chat-messages">
-                      {chatMessages.length === 0 ? (
-                        <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-                          <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">No messages yet. Start the conversation! 💬</p>
-                        </div>
-                      ) : (
-                        chatMessages.map((message) => (
-                          <div key={message.id} className="flex flex-col space-y-1">
-                            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                              <span className="font-semibold text-green-600 dark:text-green-400">{message.username}</span>
-                              <span>•</span>
-                              <span>{formatTime(message.timestamp)}</span>
-                            </div>
-                            <div className="text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-600 rounded-lg p-3 shadow-sm break-words">
-                              {message.message}
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                    
-                    {/* Chat Input */}
-                    <div className="space-y-2">
-                      <form onSubmit={handleSendMessage} className="flex gap-2">
-                        <div className="flex-1 relative">
-                          <Input
-                            type="text"
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            placeholder="Type your message... 😊 👍 🎾"
-                            className="mobile-input pr-16"
-                            maxLength={200}
-                          />
-                          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-400">
-                            {newMessage.length}/200
-                          </div>
-                        </div>
-                        <Button
-                          type="submit"
-                          disabled={!newMessage.trim()}
-                          className="bg-green-600 hover:bg-green-700 disabled:bg-gray-300 mobile-button px-4"
-                        >
-                          <Send className="h-4 w-4" />
-                        </Button>
-                      </form>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        💡 Use emojis to express yourself: 😊 👍 🎾 💪 🔥 ⚡ 🏆
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
             </div>
 
