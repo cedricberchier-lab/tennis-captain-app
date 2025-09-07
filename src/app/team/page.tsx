@@ -266,14 +266,6 @@ export default function TeamMode() {
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-4 py-8">
-        <header className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            👥 Team Roster
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
-            Manage players and rankings
-          </p>
-        </header>
 
         {/* Error Display */}
         {error && (
@@ -319,37 +311,10 @@ export default function TeamMode() {
             <p className="text-gray-600 dark:text-gray-300">Loading players...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div>
           {/* Team Stats Overview */}
-          <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-6">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                Team Overview
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 dark:text-gray-300">Total Players:</span>
-                  <span className="font-semibold text-gray-900 dark:text-white">{players.length}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600 dark:text-gray-300">Ranked Players:</span>
-                  <span className="font-semibold text-gray-900 dark:text-white">
-                    {players.filter(p => p.ranking > 0).length}
-                  </span>
-                </div>
-              </div>
-            </div>
 
-            <div className="text-center text-gray-500 dark:text-gray-400 mb-4">
-              <p className="text-sm">Player management has been moved to the Setup page</p>
-              <a href="/setup" className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 underline text-sm">
-                Go to Setup →
-              </a>
-            </div>
-          </div>
-
-          {/* Player Roster */}
-          <div className="lg:col-span-2">
+          <div>
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
                 Team Players
