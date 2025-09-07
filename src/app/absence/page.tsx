@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlayers } from "@/hooks/usePlayers";
@@ -157,15 +156,7 @@ export default function AbsencePage() {
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800">
         <div className="container mx-auto px-4 py-8">
-          <header className="flex items-center justify-between mb-8">
-            <Link href="/" className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-              ← Back to Home
-            </Link>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-              <CalendarOff className="h-8 w-8 text-red-600 dark:text-red-400" />
-              Absence Management
-            </h1>
-          </header>
+          <div className="mb-8"></div>
 
           {/* Quick Add Button */}
           <div className="mb-6">

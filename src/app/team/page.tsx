@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Player } from "@/types";
 import { usePlayers } from "@/hooks/usePlayers";
