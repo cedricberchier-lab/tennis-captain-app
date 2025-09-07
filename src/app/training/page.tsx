@@ -34,12 +34,44 @@ const formatTennisRanking = (ranking: number): string => {
 
 interface AddTrainingFormData {
   date: string;
-  timeStart: string;
-  timeEnd: string;
+  startHour: string;
+  startMinute: string;
+  duration: string; // "1" or "2" for hours
   courtNumber: string;
   comment: string;
 }
 
+
+// Time selection options
+const hourOptions = [
+  { value: "07", label: "7:30 AM" },
+  { value: "08", label: "8:30 AM" },
+  { value: "09", label: "9:30 AM" },
+  { value: "10", label: "10:30 AM" },
+  { value: "11", label: "11:30 AM" },
+  { value: "12", label: "12:30 PM" },
+  { value: "13", label: "1:30 PM" },
+  { value: "14", label: "2:30 PM" },
+  { value: "15", label: "3:30 PM" },
+  { value: "16", label: "4:30 PM" },
+  { value: "17", label: "5:30 PM" },
+  { value: "18", label: "6:30 PM" },
+  { value: "19", label: "7:30 PM" },
+  { value: "20", label: "8:30 PM" },
+  { value: "21", label: "9:30 PM" }
+];
+
+const minuteOptions = [
+  { value: "00", label: "00" },
+  { value: "15", label: "15" },
+  { value: "30", label: "30" },
+  { value: "45", label: "45" }
+];
+
+const durationOptions = [
+  { value: "1", label: "1 hour" },
+  { value: "2", label: "2 hours" }
+];
 
 export default function TrainingMode() {
   const { 
@@ -66,8 +98,9 @@ export default function TrainingMode() {
   const [editingTraining, setEditingTraining] = useState<Training | null>(null);
   const [formData, setFormData] = useState<AddTrainingFormData>({
     date: "",
-    timeStart: "",
-    timeEnd: "",
+    startHour: "19", // Default to 7 PM
+    startMinute: "00",
+    duration: "1", // Default to 1 hour
     courtNumber: "",
     comment: ""
   });
@@ -254,12 +287,35 @@ export default function TrainingMode() {
     };
   }, [players, refreshKey]); // Recalculate when players data changes or manual refresh
 
+  // Calculate end time based on start time and duration
+  const calculateEndTime = (startHour: string, startMinute: string, duration: string) => {
+    const startHourNum = parseInt(startHour);
+    const startMinuteNum = parseInt(startMinute);
+    const durationHours = parseInt(duration);
+    
+    let endHour = startHourNum + durationHours;
+    let endMinute = startMinuteNum;
+    
+    // Handle overflow (though shouldn't happen with our constraints)
+    if (endHour >= 24) {
+      endHour = endHour - 24;
+    }
+    
+    return `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+  };
+
+  // Get formatted start time
+  const getFormattedStartTime = (startHour: string, startMinute: string) => {
+    return `${startHour.padStart(2, '0')}:${startMinute.padStart(2, '0')}`;
+  };
+
   // Reset form
   const resetForm = () => {
     setFormData({
       date: "",
-      timeStart: "",
-      timeEnd: "",
+      startHour: "19",
+      startMinute: "00",
+      duration: "1",
       courtNumber: "",
       comment: ""
     });
@@ -270,13 +326,16 @@ export default function TrainingMode() {
   const handleAddTraining = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.date || !formData.timeStart || !formData.timeEnd) return;
+    if (!formData.date || !formData.startHour || !formData.startMinute) return;
+
+    const startTime = getFormattedStartTime(formData.startHour, formData.startMinute);
+    const endTime = calculateEndTime(formData.startHour, formData.startMinute, formData.duration);
 
     const trainingData = {
       date: new Date(formData.date),
       dayName: getDayName(formData.date),
-      timeStart: formData.timeStart,
-      timeEnd: formData.timeEnd,
+      timeStart: startTime,
+      timeEnd: endTime,
       courtNumber: formData.courtNumber,
       participants: participants,
       comment: formData.comment
@@ -293,13 +352,16 @@ export default function TrainingMode() {
   const handleEditTraining = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!editingTraining || !formData.date || !formData.timeStart || !formData.timeEnd) return;
+    if (!editingTraining || !formData.date || !formData.startHour || !formData.startMinute) return;
+
+    const startTime = getFormattedStartTime(formData.startHour, formData.startMinute);
+    const endTime = calculateEndTime(formData.startHour, formData.startMinute, formData.duration);
 
     const updates = {
       date: new Date(formData.date),
       dayName: getDayName(formData.date),
-      timeStart: formData.timeStart,
-      timeEnd: formData.timeEnd,
+      timeStart: startTime,
+      timeEnd: endTime,
       courtNumber: formData.courtNumber,
       participants: participants,
       comment: formData.comment
@@ -469,10 +531,21 @@ export default function TrainingMode() {
     const day = String(training.date.getDate()).padStart(2, '0');
     const localDateString = `${year}-${month}-${day}`;
     
+    // Parse existing start time to extract hour and minute
+    const [startHour, startMinute] = training.timeStart.split(':');
+    
+    // Calculate duration from start and end times
+    const [endHour, endMinute] = training.timeEnd.split(':');
+    const startTotalMinutes = parseInt(startHour) * 60 + parseInt(startMinute);
+    const endTotalMinutes = parseInt(endHour) * 60 + parseInt(endMinute);
+    const durationMinutes = endTotalMinutes - startTotalMinutes;
+    const durationHours = Math.round(durationMinutes / 60).toString();
+    
     setFormData({
       date: localDateString,
-      timeStart: training.timeStart,
-      timeEnd: training.timeEnd,
+      startHour: startHour,
+      startMinute: startMinute,
+      duration: durationHours,
       courtNumber: training.courtNumber,
       comment: training.comment
     });
@@ -741,29 +814,69 @@ export default function TrainingMode() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Start Time *
+                        Start Hour *
                       </label>
-                      <input
-                        type="time"
-                        value={formData.timeStart}
-                        onChange={(e) => setFormData({ ...formData, timeStart: e.target.value })}
+                      <select
+                        value={formData.startHour}
+                        onChange={(e) => setFormData({ ...formData, startHour: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
                         required
-                      />
+                      >
+                        {hourOptions.map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        End Time *
+                        Minute *
                       </label>
-                      <input
-                        type="time"
-                        value={formData.timeEnd}
-                        onChange={(e) => setFormData({ ...formData, timeEnd: e.target.value })}
+                      <select
+                        value={formData.startMinute}
+                        onChange={(e) => setFormData({ ...formData, startMinute: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
                         required
+                      >
+                        {minuteOptions.map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Duration *
+                      </label>
+                      <select
+                        value={formData.duration}
+                        onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                        required
+                      >
+                        {durationOptions.map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Training Time (Auto-calculated)
+                      </label>
+                      <input
+                        type="text"
+                        value={`${getFormattedStartTime(formData.startHour, formData.startMinute)} - ${calculateEndTime(formData.startHour, formData.startMinute, formData.duration)}`}
+                        disabled
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-gray-400"
                       />
                     </div>
                   </div>
@@ -1047,29 +1160,69 @@ export default function TrainingMode() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Start Time *
+                        Start Hour *
                       </label>
-                      <input
-                        type="time"
-                        value={formData.timeStart}
-                        onChange={(e) => setFormData({ ...formData, timeStart: e.target.value })}
+                      <select
+                        value={formData.startHour}
+                        onChange={(e) => setFormData({ ...formData, startHour: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
                         required
-                      />
+                      >
+                        {hourOptions.map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        End Time *
+                        Minute *
                       </label>
-                      <input
-                        type="time"
-                        value={formData.timeEnd}
-                        onChange={(e) => setFormData({ ...formData, timeEnd: e.target.value })}
+                      <select
+                        value={formData.startMinute}
+                        onChange={(e) => setFormData({ ...formData, startMinute: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
                         required
+                      >
+                        {minuteOptions.map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Duration *
+                      </label>
+                      <select
+                        value={formData.duration}
+                        onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                        required
+                      >
+                        {durationOptions.map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Training Time (Auto-calculated)
+                      </label>
+                      <input
+                        type="text"
+                        value={`${getFormattedStartTime(formData.startHour, formData.startMinute)} - ${calculateEndTime(formData.startHour, formData.startMinute, formData.duration)}`}
+                        disabled
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-gray-400"
                       />
                     </div>
                   </div>
