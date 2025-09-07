@@ -34,38 +34,72 @@ const formatTennisRanking = (ranking: number): string => {
 
 interface AddTrainingFormData {
   date: string;
-  startHour: string;
-  startMinute: string;
+  startTime: string; // "HH:MM" format
   duration: string; // "1" or "2" for hours
   courtNumber: string;
   comment: string;
 }
 
 
-// Time selection options
-const hourOptions = [
-  { value: "07", label: "7:30 AM" },
-  { value: "08", label: "8:30 AM" },
-  { value: "09", label: "9:30 AM" },
-  { value: "10", label: "10:30 AM" },
-  { value: "11", label: "11:30 AM" },
-  { value: "12", label: "12:30 PM" },
-  { value: "13", label: "1:30 PM" },
-  { value: "14", label: "2:30 PM" },
-  { value: "15", label: "3:30 PM" },
-  { value: "16", label: "4:30 PM" },
-  { value: "17", label: "5:30 PM" },
-  { value: "18", label: "6:30 PM" },
-  { value: "19", label: "7:30 PM" },
-  { value: "20", label: "8:30 PM" },
-  { value: "21", label: "9:30 PM" }
-];
-
-const minuteOptions = [
-  { value: "00", label: "00" },
-  { value: "15", label: "15" },
-  { value: "30", label: "30" },
-  { value: "45", label: "45" }
+// Time selection options with 15-minute increments
+const timeOptions = [
+  { value: "07:30", label: "7:30 AM" },
+  { value: "07:45", label: "7:45 AM" },
+  { value: "08:00", label: "8:00 AM" },
+  { value: "08:15", label: "8:15 AM" },
+  { value: "08:30", label: "8:30 AM" },
+  { value: "08:45", label: "8:45 AM" },
+  { value: "09:00", label: "9:00 AM" },
+  { value: "09:15", label: "9:15 AM" },
+  { value: "09:30", label: "9:30 AM" },
+  { value: "09:45", label: "9:45 AM" },
+  { value: "10:00", label: "10:00 AM" },
+  { value: "10:15", label: "10:15 AM" },
+  { value: "10:30", label: "10:30 AM" },
+  { value: "10:45", label: "10:45 AM" },
+  { value: "11:00", label: "11:00 AM" },
+  { value: "11:15", label: "11:15 AM" },
+  { value: "11:30", label: "11:30 AM" },
+  { value: "11:45", label: "11:45 AM" },
+  { value: "12:00", label: "12:00 PM" },
+  { value: "12:15", label: "12:15 PM" },
+  { value: "12:30", label: "12:30 PM" },
+  { value: "12:45", label: "12:45 PM" },
+  { value: "13:00", label: "1:00 PM" },
+  { value: "13:15", label: "1:15 PM" },
+  { value: "13:30", label: "1:30 PM" },
+  { value: "13:45", label: "1:45 PM" },
+  { value: "14:00", label: "2:00 PM" },
+  { value: "14:15", label: "2:15 PM" },
+  { value: "14:30", label: "2:30 PM" },
+  { value: "14:45", label: "2:45 PM" },
+  { value: "15:00", label: "3:00 PM" },
+  { value: "15:15", label: "3:15 PM" },
+  { value: "15:30", label: "3:30 PM" },
+  { value: "15:45", label: "3:45 PM" },
+  { value: "16:00", label: "4:00 PM" },
+  { value: "16:15", label: "4:15 PM" },
+  { value: "16:30", label: "4:30 PM" },
+  { value: "16:45", label: "4:45 PM" },
+  { value: "17:00", label: "5:00 PM" },
+  { value: "17:15", label: "5:15 PM" },
+  { value: "17:30", label: "5:30 PM" },
+  { value: "17:45", label: "5:45 PM" },
+  { value: "18:00", label: "6:00 PM" },
+  { value: "18:15", label: "6:15 PM" },
+  { value: "18:30", label: "6:30 PM" },
+  { value: "18:45", label: "6:45 PM" },
+  { value: "19:00", label: "7:00 PM" },
+  { value: "19:15", label: "7:15 PM" },
+  { value: "19:30", label: "7:30 PM" },
+  { value: "19:45", label: "7:45 PM" },
+  { value: "20:00", label: "8:00 PM" },
+  { value: "20:15", label: "8:15 PM" },
+  { value: "20:30", label: "8:30 PM" },
+  { value: "20:45", label: "8:45 PM" },
+  { value: "21:00", label: "9:00 PM" },
+  { value: "21:15", label: "9:15 PM" },
+  { value: "21:30", label: "9:30 PM" }
 ];
 
 const durationOptions = [
@@ -98,8 +132,7 @@ export default function TrainingMode() {
   const [editingTraining, setEditingTraining] = useState<Training | null>(null);
   const [formData, setFormData] = useState<AddTrainingFormData>({
     date: "",
-    startHour: "19", // Default to 7 PM
-    startMinute: "00",
+    startTime: "19:00", // Default to 7:00 PM
     duration: "1", // Default to 1 hour
     courtNumber: "",
     comment: ""
@@ -288,7 +321,8 @@ export default function TrainingMode() {
   }, [players, refreshKey]); // Recalculate when players data changes or manual refresh
 
   // Calculate end time based on start time and duration
-  const calculateEndTime = (startHour: string, startMinute: string, duration: string) => {
+  const calculateEndTime = (startTime: string, duration: string) => {
+    const [startHour, startMinute] = startTime.split(':');
     const startHourNum = parseInt(startHour);
     const startMinuteNum = parseInt(startMinute);
     const durationHours = parseInt(duration);
@@ -304,17 +338,11 @@ export default function TrainingMode() {
     return `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
   };
 
-  // Get formatted start time
-  const getFormattedStartTime = (startHour: string, startMinute: string) => {
-    return `${startHour.padStart(2, '0')}:${startMinute.padStart(2, '0')}`;
-  };
-
   // Reset form
   const resetForm = () => {
     setFormData({
       date: "",
-      startHour: "19",
-      startMinute: "00",
+      startTime: "19:00",
       duration: "1",
       courtNumber: "",
       comment: ""
@@ -326,15 +354,14 @@ export default function TrainingMode() {
   const handleAddTraining = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.date || !formData.startHour || !formData.startMinute) return;
+    if (!formData.date || !formData.startTime) return;
 
-    const startTime = getFormattedStartTime(formData.startHour, formData.startMinute);
-    const endTime = calculateEndTime(formData.startHour, formData.startMinute, formData.duration);
+    const endTime = calculateEndTime(formData.startTime, formData.duration);
 
     const trainingData = {
       date: new Date(formData.date),
       dayName: getDayName(formData.date),
-      timeStart: startTime,
+      timeStart: formData.startTime,
       timeEnd: endTime,
       courtNumber: formData.courtNumber,
       participants: participants,
@@ -352,15 +379,14 @@ export default function TrainingMode() {
   const handleEditTraining = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!editingTraining || !formData.date || !formData.startHour || !formData.startMinute) return;
+    if (!editingTraining || !formData.date || !formData.startTime) return;
 
-    const startTime = getFormattedStartTime(formData.startHour, formData.startMinute);
-    const endTime = calculateEndTime(formData.startHour, formData.startMinute, formData.duration);
+    const endTime = calculateEndTime(formData.startTime, formData.duration);
 
     const updates = {
       date: new Date(formData.date),
       dayName: getDayName(formData.date),
-      timeStart: startTime,
+      timeStart: formData.startTime,
       timeEnd: endTime,
       courtNumber: formData.courtNumber,
       participants: participants,
@@ -531,10 +557,8 @@ export default function TrainingMode() {
     const day = String(training.date.getDate()).padStart(2, '0');
     const localDateString = `${year}-${month}-${day}`;
     
-    // Parse existing start time to extract hour and minute
-    const [startHour, startMinute] = training.timeStart.split(':');
-    
     // Calculate duration from start and end times
+    const [startHour, startMinute] = training.timeStart.split(':');
     const [endHour, endMinute] = training.timeEnd.split(':');
     const startTotalMinutes = parseInt(startHour) * 60 + parseInt(startMinute);
     const endTotalMinutes = parseInt(endHour) * 60 + parseInt(endMinute);
@@ -543,8 +567,7 @@ export default function TrainingMode() {
     
     setFormData({
       date: localDateString,
-      startHour: startHour,
-      startMinute: startMinute,
+      startTime: training.timeStart,
       duration: durationHours,
       courtNumber: training.courtNumber,
       comment: training.comment
@@ -814,35 +837,18 @@ export default function TrainingMode() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Start Hour *
+                        Start Time *
                       </label>
                       <select
-                        value={formData.startHour}
-                        onChange={(e) => setFormData({ ...formData, startHour: e.target.value })}
+                        value={formData.startTime}
+                        onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
                         required
                       >
-                        {hourOptions.map(option => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Minute *
-                      </label>
-                      <select
-                        value={formData.startMinute}
-                        onChange={(e) => setFormData({ ...formData, startMinute: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
-                        required
-                      >
-                        {minuteOptions.map(option => (
+                        {timeOptions.map(option => (
                           <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
@@ -874,7 +880,7 @@ export default function TrainingMode() {
                       </label>
                       <input
                         type="text"
-                        value={`${getFormattedStartTime(formData.startHour, formData.startMinute)} - ${calculateEndTime(formData.startHour, formData.startMinute, formData.duration)}`}
+                        value={`${formData.startTime} - ${calculateEndTime(formData.startTime, formData.duration)}`}
                         disabled
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-gray-400"
                       />
@@ -1160,35 +1166,18 @@ export default function TrainingMode() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Start Hour *
+                        Start Time *
                       </label>
                       <select
-                        value={formData.startHour}
-                        onChange={(e) => setFormData({ ...formData, startHour: e.target.value })}
+                        value={formData.startTime}
+                        onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
                         required
                       >
-                        {hourOptions.map(option => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Minute *
-                      </label>
-                      <select
-                        value={formData.startMinute}
-                        onChange={(e) => setFormData({ ...formData, startMinute: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
-                        required
-                      >
-                        {minuteOptions.map(option => (
+                        {timeOptions.map(option => (
                           <option key={option.value} value={option.value}>
                             {option.label}
                           </option>
@@ -1220,7 +1209,7 @@ export default function TrainingMode() {
                       </label>
                       <input
                         type="text"
-                        value={`${getFormattedStartTime(formData.startHour, formData.startMinute)} - ${calculateEndTime(formData.startHour, formData.startMinute, formData.duration)}`}
+                        value={`${formData.startTime} - ${calculateEndTime(formData.startTime, formData.duration)}`}
                         disabled
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-gray-400"
                       />
