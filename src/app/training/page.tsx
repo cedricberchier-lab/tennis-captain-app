@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import { Training, TrainingParticipant, Player } from "@/types";
 import { useTrainings } from "@/hooks/useTrainings";
@@ -528,15 +527,7 @@ export default function TrainingMode() {
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800">
         <div className="container mx-auto px-4 py-8">
-          <header className="flex items-center justify-between mb-8">
-            <Link href="/" className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-              ← Back to Home
-            </Link>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              🏃‍♂️ Training
-            </h1>
-            <div></div>
-          </header>
+          <div className="mb-8"></div>
 
           {/* Error Display */}
           {error && (
