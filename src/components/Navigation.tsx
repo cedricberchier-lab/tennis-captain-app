@@ -28,12 +28,6 @@ const navigationItems = [
     description: "Dashboard"
   },
   {
-    href: "/match",
-    label: "Match",
-    icon: Trophy,
-    description: "Match management"
-  },
-  {
     href: "/training",
     label: "Training",
     icon: Activity,

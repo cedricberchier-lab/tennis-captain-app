@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePlayers } from "@/hooks/usePlayers";
 import { useTrainings } from "@/hooks/useTrainings";
-import { useMatches } from "@/hooks/useMatches";
 import { 
   Trophy, 
   Activity, 
@@ -32,7 +31,6 @@ export default function Home() {
   const { user } = useAuth();
   const { players } = usePlayers();
   const { trainings } = useTrainings();
-  const { matches } = useMatches();
   
   // Get current player name
   const getCurrentPlayerName = () => {
@@ -118,7 +116,7 @@ export default function Home() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const events: Array<{
-      type: 'training' | 'match';
+      type: 'training';
       title: string;
       date: string;
       location: string;
@@ -154,41 +152,6 @@ export default function Home() {
         });
       });
     
-    // Get upcoming matches where user might be involved (as captain or player)
-    matches
-      .filter(match => {
-        // Check if match is upcoming
-        const matchDate = new Date(match.date);
-        matchDate.setHours(0, 0, 0, 0);
-        
-        if (matchDate < today) return false;
-        
-        // Check if user is in home lineup
-        const isInLineup = match.roster?.homeLineup?.some(player => 
-          player.playerId === currentPlayer?.id || 
-          player.email === user?.email ||
-          player.playerName === user?.name
-        );
-        
-        const isInDoublesLineup = match.roster?.homeDoublesLineup?.some(player => 
-          player.playerId === currentPlayer?.id || 
-          player.email === user?.email ||
-          player.playerName === user?.name
-        );
-        
-        return isInLineup || isInDoublesLineup;
-      })
-      .slice(0, 2) // Limit to next 2 matches
-      .forEach(match => {
-        events.push({
-          type: 'match',
-          title: `vs ${match.opponentTeam.name}`,
-          date: `${match.date.toLocaleDateString()}, ${match.time}`,
-          location: match.isHome ? match.location : 'Away Court',
-          participants: 'Match lineup',
-          sortDate: match.date
-        });
-      });
     
     // Sort by date and return up to 4 events
     return events
@@ -233,32 +196,6 @@ export default function Home() {
       }
     });
     
-    // Add teammates from upcoming matches where user participates
-    matches.forEach(match => {
-      const matchDate = new Date(match.date);
-      matchDate.setHours(0, 0, 0, 0);
-      
-      if (matchDate >= today) {
-        const userInMatch = match.roster?.homeLineup?.some(p => 
-          p.playerId === currentPlayer?.id || 
-          p.email === user?.email ||
-          p.playerName === user?.name
-        ) || match.roster?.homeDoublesLineup?.some(p => 
-          p.playerId === currentPlayer?.id || 
-          p.email === user?.email ||
-          p.playerName === user?.name
-        );
-        
-        if (userInMatch) {
-          match.roster?.homeLineup?.forEach(player => {
-            if (player.playerId) relevantPlayerIds.add(player.playerId);
-          });
-          match.roster?.homeDoublesLineup?.forEach(player => {
-            if (player.playerId) relevantPlayerIds.add(player.playerId);
-          });
-        }
-      }
-    });
     
     // Collect absences from relevant players
     players.forEach(player => {
@@ -315,32 +252,7 @@ export default function Home() {
               
               <div className="space-y-6">
                 {/* Quick Actions */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-                {/* Match Action */}
-                <Link href="/match" className="group block">
-                  <Card className="p-4 sm:p-6 transition-all duration-200 hover:shadow-lg hover:scale-[1.02] border-2 border-transparent hover:border-blue-200 dark:hover:border-blue-700">
-                    <CardContent className="p-0">
-                      <div className="flex items-center gap-4 mb-3">
-                        <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-full">
-                          <Trophy className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg sm:text-xl">Match</CardTitle>
-                          <CardDescription className="text-sm">
-                            Results & management
-                          </CardDescription>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                          Schedule and track matches
-                        </p>
-                        <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200 transition-colors" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 {/* Training Action */}
                 <Link href="/training" className="group block">
                   <Card className="p-4 sm:p-6 transition-all duration-200 hover:shadow-lg hover:scale-[1.02] border-2 border-transparent hover:border-purple-200 dark:hover:border-purple-700">
