@@ -873,19 +873,6 @@ export default function TrainingMode() {
                       </select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Training Time (Auto-calculated)
-                      </label>
-                      <input
-                        type="text"
-                        value={`${formData.startTime} - ${calculateEndTime(formData.startTime, formData.duration)}`}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-gray-400"
-                      />
-                    </div>
-                  </div>
 
                   {/* Participants */}
                   <div>
@@ -1200,19 +1187,6 @@ export default function TrainingMode() {
                           </option>
                         ))}
                       </select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Training Time (Auto-calculated)
-                      </label>
-                      <input
-                        type="text"
-                        value={`${formData.startTime} - ${calculateEndTime(formData.startTime, formData.duration)}`}
-                        disabled
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-gray-400"
-                      />
                     </div>
                   </div>
 
