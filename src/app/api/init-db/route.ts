@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { initializeDatabase, getAllMatches, getAllPlayers } from '@/lib/db';
+import { initializeDatabase, getAllPlayers } from '@/lib/db';
 
 export async function POST() {
   try {
@@ -31,14 +31,12 @@ export async function POST() {
 export async function GET() {
   try {
     // Check database connection by trying to fetch data
-    const matches = await getAllMatches();
     const players = await getAllPlayers();
     
     return NextResponse.json({ 
       message: 'Database is connected and operational',
       status: 'healthy',
       data: {
-        matchCount: matches.length,
         playerCount: players.length
       }
     });
