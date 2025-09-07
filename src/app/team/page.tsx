@@ -609,17 +609,6 @@ export default function TeamMode() {
                       <div><strong>Email:</strong> {selectedPlayer.email || "Not provided"}</div>
                       <div><strong>Phone:</strong> {selectedPlayer.phone || "Not provided"}</div>
                     </div>
-                    <div className="md:col-span-2 space-y-2">
-                      <div><strong>Record:</strong> {selectedPlayer.stats.wins}W - {selectedPlayer.stats.losses}L ({selectedPlayer.stats.matchesPlayed} matches)</div>
-                      <div><strong>Joined:</strong> {selectedPlayer.createdAt.toLocaleDateString()}</div>
-                    </div>
-                    {!isAdmin() && !canEditPlayer(selectedPlayer) && (
-                      <div className="md:col-span-2 mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                        <p className="text-yellow-800 dark:text-yellow-200 text-sm">
-                          ℹ️ You can only edit your own player information
-                        </p>
-                      </div>
-                    )}
                     {isAdmin() && (
                       <div className="md:col-span-2 mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                         <p className="text-blue-800 dark:text-blue-200 text-sm">
