@@ -108,18 +108,8 @@ export async function GET(req: Request) {
 
           // Extract booking link if present in onclick
           let href: string | undefined;
-          
-          // Simple approach: look for reservation1.php URLs in onclick
-          if (attrs.includes('reservation1.php')) {
-            const startIdx = attrs.indexOf("'reservation1.php");
-            if (startIdx > 0) {
-              const endIdx = attrs.indexOf("'", startIdx + 1);
-              if (endIdx > startIdx) {
-                const url = attrs.substring(startIdx + 1, endIdx);
-                href = `${FCP_BASE}/${url}`;
-              }
-            }
-          }
+          const onclick = attrs.match(/onclick="[^"]*'([^']*reservation1\.php\?[^']*)'[^"]*"/);
+          if (onclick?.[1]) href = `${FCP_BASE}/${onclick[1].replace(/^\.\//, "")}`;
 
           return { status, href };
         });
