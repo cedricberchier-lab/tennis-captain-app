@@ -30,8 +30,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Use the existing free-courts API to get booking links with the correct date token
-    const freeCourtsUrl = `${request.nextUrl.origin}/api/free-courts?site=${site}${dateToken ? `&d=${encodeURIComponent(dateToken)}` : ''}`;
-    const freeCourtsResponse = await fetch(freeCourtsUrl, {
+    const freeCourtsUrl = new URL('/api/free-courts', request.nextUrl.origin);
+    freeCourtsUrl.searchParams.set('site', site);
+    if (dateToken) {
+      freeCourtsUrl.searchParams.set('d', dateToken);
+    }
+    
+    const freeCourtsResponse = await fetch(freeCourtsUrl.toString(), {
       cache: 'no-store'
     });
     
