@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Activity, Settings, Key, CheckCircle, Trash2 } from "lucide-react";
 
 interface AddPlayerFormData {
   name: string;
@@ -321,7 +322,9 @@ export default function TeamMode() {
               
               {players.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="text-6xl mb-4">🎾</div>
+                  <div className="text-gray-400 dark:text-gray-600 mb-4">
+                    <Activity className="h-16 w-16 mx-auto" />
+                  </div>
                   <p className="text-gray-600 dark:text-gray-300 mb-6">
                     No players added yet. Start building your team!
                   </p>
@@ -364,7 +367,7 @@ export default function TeamMode() {
                             className="text-red-500 hover:text-red-700 p-2"
                             title="Delete player (Admin only)"
                           >
-                            🗑️
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         )}
                       </div>
@@ -576,7 +579,8 @@ export default function TeamMode() {
                     {isAdmin() && (
                       <div className="md:col-span-2 mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                         <p className="text-blue-800 dark:text-blue-200 text-sm">
-                          🔧 Admin: You can edit and delete all player accounts
+                          <Settings className="h-4 w-4 inline mr-1" />
+                        Admin: You can edit and delete all player accounts
                         </p>
                       </div>
                     )}
@@ -596,7 +600,8 @@ export default function TeamMode() {
                         onClick={() => setIsChangingPassword(true)}
                         className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                       >
-                        🔑 Change Password
+                        <Key className="h-4 w-4 inline mr-1" />
+                        Change Password
                       </button>
                     )}
                   </div>
@@ -652,7 +657,10 @@ export default function TeamMode() {
                       
                       {passwordSuccess && (
                         <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-                          <p className="text-green-700 dark:text-green-200 text-sm">✅ Password changed successfully!</p>
+                          <p className="text-green-700 dark:text-green-200 text-sm flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4" />
+                            Password changed successfully!
+                          </p>
                         </div>
                       )}
                       

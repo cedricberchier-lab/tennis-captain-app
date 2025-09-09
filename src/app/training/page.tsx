@@ -10,6 +10,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  Plus, 
+  Clock, 
+  Users, 
+  Calendar,
+  Upload,
+  FileText,
+  MessageSquare,
+  MapPin,
+  Edit3,
+  Trash2,
+  AlertTriangle,
+  CheckCircle,
+  RefreshCw,
+  PersonStanding
+} from "lucide-react";
 import * as XLSX from 'xlsx';
 
 // Helper function to convert numeric ranking to proper tennis ranking display
@@ -689,9 +705,10 @@ export default function TrainingMode() {
               {/* Schedule Training Button */}
               <Button
                 onClick={() => setShowAddForm(true)}
-                className="bg-purple-600 hover:bg-purple-700"
+                className="bg-purple-600 hover:bg-purple-700 flex items-center gap-2"
               >
-                ➕ Schedule Training
+                <Plus className="h-4 w-4" />
+                Schedule Training
               </Button>
             </div>
           </div>
@@ -709,16 +726,19 @@ export default function TrainingMode() {
               </div>
             ) : displayableTrainings.length === 0 ? (
               <div className="text-center py-12">
-                <div className="text-6xl mb-4">🏃‍♂️</div>
+                <div className="flex justify-center mb-4">
+                  <PersonStanding className="h-16 w-16 text-gray-400 dark:text-gray-500" />
+                </div>
                 <p className="text-gray-600 dark:text-gray-300 mb-6">
                   No upcoming training sessions scheduled
                 </p>
-                <button
+                <Button
                   onClick={() => setShowAddForm(true)}
-                  className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+                  className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center gap-2"
                 >
+                  <Plus className="h-4 w-4" />
                   Schedule First Training
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="space-y-4" key={`trainings-${refreshKey}-${players.length}-${JSON.stringify(players.map(p => p.absences)).substring(0, 50)}`}>
@@ -734,12 +754,19 @@ export default function TrainingMode() {
                             {training.dayName}, {training.date.toLocaleDateString()}
                           </div>
                           <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
-                            <div className="text-sm bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded">
+                            <div className="text-sm bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
                               Court {training.courtNumber}
                             </div>
-                            <span>🕐 {training.timeStart} - {training.timeEnd}</span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {training.timeStart} - {training.timeEnd}
+                            </span>
                             {training.participants.length > 0 && (
-                              <span>👥 {training.participants.length}/4 players</span>
+                              <span className="flex items-center gap-1">
+                                <Users className="h-3 w-3" />
+                                {training.participants.length}/4 players
+                              </span>
                             )}
                           </div>
                         </div>
@@ -759,7 +786,7 @@ export default function TrainingMode() {
                                     <button
                                       onClick={() => playerId && handleToggleAbsence(playerId, training.date, participant.playerName)}
                                       disabled={!playerId}
-                                      className={`px-2 py-1 rounded text-sm font-medium transition-all duration-200 ${
+                                      className={`px-2 py-1 rounded text-sm font-medium transition-all duration-200 flex items-center gap-1 ${
                                         hasAbsence
                                           ? "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-600 hover:bg-red-200 dark:hover:bg-red-800"
                                           : "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-600 hover:bg-green-200 dark:hover:bg-green-800"
@@ -768,7 +795,12 @@ export default function TrainingMode() {
                                       }`}
                                       title={playerId ? `Click to toggle availability` : 'Manual entry - cannot toggle'}
                                     >
-                                      {hasAbsence ? '⚠️ ' : '✓ '}{participant.playerName}
+                                      {hasAbsence ? (
+                                        <AlertTriangle className="h-3 w-3" />
+                                      ) : (
+                                        <CheckCircle className="h-3 w-3" />
+                                      )}
+                                      {participant.playerName}
                                     </button>
                                     
                                     {/* Hover tooltip */}
@@ -786,27 +818,34 @@ export default function TrainingMode() {
                         )}
 
                         {training.comment && (
-                          <div className="text-sm text-gray-600 dark:text-gray-300">
-                            💬 {training.comment}
+                          <div className="text-sm text-gray-600 dark:text-gray-300 flex items-start gap-1">
+                            <MessageSquare className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                            {training.comment}
                           </div>
                         )}
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <button
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => openEditForm(training)}
-                          className="text-blue-600 hover:text-blue-800 text-sm px-3 py-1 rounded border border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                          className="text-blue-600 hover:text-blue-800 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                         >
+                          <Edit3 className="h-3 w-3 mr-1" />
                           Edit
-                        </button>
+                        </Button>
                         {isAdmin() && (
-                          <button
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => handleDeleteTraining(training.id)}
-                            className="text-red-500 hover:text-red-700 text-sm px-3 py-1 rounded border border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            className="text-red-500 hover:text-red-700 border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                             title="Delete training (Admin only)"
                           >
+                            <Trash2 className="h-3 w-3 mr-1" />
                             Delete
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </div>
@@ -828,23 +867,25 @@ export default function TrainingMode() {
                 <div className="flex mb-6 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
                   <button
                     onClick={() => setActiveTab('single')}
-                    className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                    className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
                       activeTab === 'single'
                         ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
                         : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                     }`}
                   >
-                    📅 Single Training
+                    <Calendar className="h-4 w-4" />
+                    Single Training
                   </button>
                   <button
                     onClick={() => setActiveTab('bulk')}
-                    className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                    className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
                       activeTab === 'bulk'
                         ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm'
                         : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                     }`}
                   >
-                    📤 CSV Upload
+                    <Upload className="h-4 w-4" />
+                    CSV Upload
                   </button>
                 </div>
                 
@@ -931,14 +972,16 @@ export default function TrainingMode() {
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Select Players for Training ({participants.length}/4)
                       </label>
-                      <button
+                      <Button
                         type="button"
                         onClick={addParticipant}
                         disabled={participants.length >= 4}
                         className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm font-medium py-1 px-3 rounded transition-colors"
+                        size="sm"
                       >
-                        + Add Player
-                      </button>
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add Player
+                      </Button>
                     </div>
 
                     {participants.length === 0 && (
@@ -985,14 +1028,16 @@ export default function TrainingMode() {
                             ))}
                           </select>
 
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => removeParticipant(index)}
                             className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                             title="Remove player"
                           >
-                            🗑️
-                          </button>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       ))}
                     </div>
@@ -1045,8 +1090,9 @@ export default function TrainingMode() {
                           id="csv-upload"
                         />
                         <div className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-700 rounded-lg p-4 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
-                          <div className="text-blue-600 dark:text-blue-400 mb-2">
-                            📁 {csvFile ? 'Choose a file' : 'Click here to select a file'}
+                          <div className="text-blue-600 dark:text-blue-400 mb-2 flex items-center justify-center gap-2">
+                            <Upload className="h-5 w-5" />
+                            {csvFile ? 'Choose a file' : 'Click here to select a file'}
                           </div>
                           {csvFile && (
                             <p className="text-sm text-green-600 dark:text-green-400">
@@ -1061,8 +1107,9 @@ export default function TrainingMode() {
                     </div>
                     
                     <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-                      <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">
-                        📝 CSV Format Requirements:
+                      <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2 flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        CSV Format Requirements:
                       </h4>
                       <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
                         Your file should have these columns in order:
@@ -1083,20 +1130,38 @@ export default function TrainingMode() {
                           ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
                           : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
                       }`}>
-                        <h4 className={`font-medium mb-2 ${
+                        <h4 className={`font-medium mb-2 flex items-center gap-2 ${
                           csvResults.success > 0 
                             ? 'text-green-800 dark:text-green-200' 
                             : 'text-red-800 dark:text-red-200'
                         }`}>
-                          {csvResults.success > 0 ? '🎉 Training uploaded!' : '⚠️ Upload Results:'}
+                          {csvResults.success > 0 ? (
+                            <>
+                              <CheckCircle className="h-4 w-4" />
+                              Training uploaded!
+                            </>
+                          ) : (
+                            <>
+                              <AlertTriangle className="h-4 w-4" />
+                              Upload Results:
+                            </>
+                          )}
                         </h4>
                         <p className={`text-sm ${
                           csvResults.success > 0 
                             ? 'text-green-700 dark:text-green-300' 
                             : 'text-red-700 dark:text-red-300'
                         }`}>
-                          ✅ Success: {csvResults.success} training session{csvResults.success !== 1 ? 's' : ''} created<br/>
-                          {csvResults.failed > 0 && `❌ Failed: ${csvResults.failed} training session${csvResults.failed !== 1 ? 's' : ''}`}
+                          <span className="flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            Success: {csvResults.success} training session{csvResults.success !== 1 ? 's' : ''} created
+                          </span>
+                          {csvResults.failed > 0 && (
+                            <span className="flex items-center gap-1 mt-1">
+                              <AlertTriangle className="h-3 w-3" />
+                              Failed: {csvResults.failed} training session{csvResults.failed !== 1 ? 's' : ''}
+                            </span>
+                          )}
                         </p>
                         {csvResults.errors.length > 0 && (
                           <div className="mt-2">
@@ -1112,16 +1177,28 @@ export default function TrainingMode() {
                     )}
                     
                     <div className="flex space-x-3 pt-4">
-                      <button
+                      <Button
                         type="button"
                         onClick={handleCsvUpload}
                         disabled={!csvFile || csvUploading}
                         className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white font-medium py-2 px-4 rounded-lg transition-colors"
                       >
-                        {csvUploading ? 'Importing...' : '📤 Import Training Schedule'}
-                      </button>
+                        <div className="flex items-center justify-center gap-2">
+                          {csvUploading ? (
+                            <>
+                              <RefreshCw className="h-4 w-4 animate-spin" />
+                              Importing...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="h-4 w-4" />
+                              Import Training Schedule
+                            </>
+                          )}
+                        </div>
+                      </Button>
                       {csvResults && csvResults.success > 0 ? (
-                        <button
+                        <Button
                           type="button"
                           onClick={() => {
                             setShowAddForm(false);
@@ -1131,8 +1208,11 @@ export default function TrainingMode() {
                           }}
                           className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
                         >
-                          ✅ Close & View Trainings
-                        </button>
+                          <div className="flex items-center justify-center gap-2">
+                            <CheckCircle className="h-4 w-4" />
+                            Close & View Trainings
+                          </div>
+                        </Button>
                       ) : (
                         <button
                           type="button"
@@ -1244,14 +1324,16 @@ export default function TrainingMode() {
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Select Players for Training ({participants.length}/4)
                       </label>
-                      <button
+                      <Button
                         type="button"
                         onClick={addParticipant}
                         disabled={participants.length >= 4}
                         className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm font-medium py-1 px-3 rounded transition-colors"
+                        size="sm"
                       >
-                        + Add Player
-                      </button>
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add Player
+                      </Button>
                     </div>
 
                     {participants.length === 0 && (
@@ -1298,14 +1380,16 @@ export default function TrainingMode() {
                             ))}
                           </select>
 
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => removeParticipant(index)}
                             className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                             title="Remove player"
                           >
-                            🗑️
-                          </button>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       ))}
                     </div>
