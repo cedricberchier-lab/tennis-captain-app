@@ -14,7 +14,8 @@ import {
   Plus, 
   Trash2,
   Calendar,
-  User
+  User,
+  Loader2
 } from "lucide-react";
 
 interface Absence {
@@ -231,7 +232,8 @@ export default function AbsencePage() {
             {loading ? (
               <Card className="p-8">
                 <div className="text-center text-gray-500 dark:text-gray-400">
-                  Loading absences...
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+                  <p>Loading absences...</p>
                 </div>
               </Card>
             ) : absences.length === 0 ? (
@@ -296,7 +298,7 @@ export default function AbsencePage() {
         {/* Add Absence Modal */}
         {showAddForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-md">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
                 <CalendarOff className="h-5 w-5 text-red-600" />
                 Add Absence
@@ -360,7 +362,14 @@ export default function AbsencePage() {
                     className="flex-1 bg-red-600 hover:bg-red-700"
                     disabled={!formData.fromDate.trim() || !formData.toDate.trim() || isSubmitting}
                   >
-                    {isSubmitting ? 'Adding...' : 'Add Absence'}
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Adding...
+                      </>
+                    ) : (
+                      'Add Absence'
+                    )}
                   </Button>
                 </div>
               </form>

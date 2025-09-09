@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Users, Upload, Eye } from 'lucide-react';
+import { Settings, Users, Upload, Eye, ShieldX, BarChart3, Loader2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 interface AddPlayerFormData {
@@ -47,7 +47,7 @@ export default function SetupPage() {
         <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 pt-4">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
             <div className="text-center py-12">
-              <div className="text-6xl mb-6">🚫</div>
+              <div className="text-6xl mb-6"><ShieldX className="h-16 w-16 text-red-500 mx-auto" /></div>
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
                 Access Denied
               </h1>
@@ -783,7 +783,8 @@ export default function SetupPage() {
                       onClick={() => setShowExportMenu(!showExportMenu)}
                       className="w-full bg-blue-600 hover:bg-blue-700"
                     >
-                      📤 Export Player Data
+                      <Upload className="h-4 w-4 mr-2" />
+                      Export Player Data
                     </Button>
 
                     {showExportMenu && (
@@ -799,7 +800,8 @@ export default function SetupPage() {
                             onClick={handleExportCSV}
                             className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-sm"
                           >
-                            📊 Export as CSV
+                            <BarChart3 className="h-4 w-4 mr-2" />
+                            Export as CSV
                           </button>
                           <button
                             onClick={handleCopyToClipboard}
@@ -920,7 +922,8 @@ export default function SetupPage() {
                 }}>
                   <DialogTrigger asChild>
                     <Button className="w-full bg-green-600 hover:bg-green-700">
-                      📤 Upload Schedule
+                      <Upload className="h-4 w-4 mr-2" />
+                      Upload Schedule
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-2xl">
@@ -976,7 +979,17 @@ export default function SetupPage() {
                           disabled={!selectedFile || isUploading}
                           className="bg-green-600 hover:bg-green-700"
                         >
-                          {isUploading ? 'Importing...' : '📤 Import Training Schedule'}
+                          {isUploading ? (
+                            <>
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                              Importing...
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="h-4 w-4 mr-2" />
+                              Import Training Schedule
+                            </>
+                          )}
                         </Button>
                       </div>
                       

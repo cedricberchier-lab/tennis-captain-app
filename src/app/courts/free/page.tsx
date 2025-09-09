@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Clock, Filter, RefreshCw, Sun, Building2, Activity } from 'lucide-react';
+import { ExternalLink, Clock, Filter, RefreshCw, Sun, Building2, Activity, CheckCircle, XCircle, Minus, Circle } from 'lucide-react';
 
 type ApiResp = {
   site: string;
@@ -288,10 +288,10 @@ export default function FreeCourtsList() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "free": return "🟢";
-      case "booked": return "🔴";
-      case "closed": return "⚫";
-      default: return "⚪";
+      case "free": return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case "booked": return <XCircle className="h-4 w-4 text-red-500" />;
+      case "closed": return <Minus className="h-4 w-4 text-gray-800 dark:text-gray-200" />;
+      default: return <Circle className="h-4 w-4 text-gray-400" />;
     }
   };
 
@@ -449,7 +449,7 @@ export default function FreeCourtsList() {
                             key={idx}
                             onClick={() => handleDirectBooking(c.court, slot.time, c.type)}
                             disabled={loading}
-                            className="p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors group disabled:opacity-50 text-center"
+                            className="p-3 min-h-[44px] bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors group disabled:opacity-50 text-center touch-manipulation"
                           >
                             <div className="text-xs font-medium text-green-700 dark:text-green-300 group-hover:text-green-800">
                               {slot.time.replace('h', ':')}
@@ -505,10 +505,8 @@ export default function FreeCourtsList() {
                                 <td className="p-3 font-medium text-gray-900 dark:text-white">{c.court}</td>
                                 {c.slots.map((s, i) => (
                                   <td key={i} className="p-2 text-center">
-                                    <div className="flex items-center justify-center">
-                                      <span className="text-lg" title={s.status}>
-                                        {getStatusIcon(s.status)}
-                                      </span>
+                                    <div className="flex items-center justify-center" title={s.status}>
+                                      {getStatusIcon(s.status)}
                                     </div>
                                   </td>
                                 ))}
@@ -548,10 +546,8 @@ export default function FreeCourtsList() {
                                 <td className="p-3 font-medium text-gray-900 dark:text-white">{c.court}</td>
                                 {c.slots.map((s, i) => (
                                   <td key={i} className="p-2 text-center">
-                                    <div className="flex items-center justify-center">
-                                      <span className="text-lg" title={s.status}>
-                                        {getStatusIcon(s.status)}
-                                      </span>
+                                    <div className="flex items-center justify-center" title={s.status}>
+                                      {getStatusIcon(s.status)}
                                     </div>
                                   </td>
                                 ))}
