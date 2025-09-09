@@ -181,7 +181,8 @@ function findReservationLink(html: string, courtNumber: number, time: string) {
   }
 
   // Extract onclick -> reservation1.php?d=...
-  const match = onclick.match(/'([^']+reservation1\.php\?[^']+)'/);
+  // Format: onclick="window.location='reservation1.php?d=...'; return false;"
+  const match = onclick.match(/window\.location\s*=\s*'([^']+reservation1\.php\?[^']+)'/);
   if (!match) {
     throw new Error(`Lien réservation introuvable dans onclick: "${onclick}"`);
   }
