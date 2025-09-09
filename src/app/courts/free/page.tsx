@@ -23,10 +23,13 @@ function toMinutes(hhmm: string) {
 }
 
 export default function FreeCourtsList() {
-  const [isIndoor, setIsIndoor] = useState(false); // false = outdoor, true = indoor
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [showIndoor, setShowIndoor] = useState(true);
+  const [showOutdoor, setShowOutdoor] = useState(true);
   const [after, setAfter] = useState("18:00");
   const [dToken, setDToken] = useState<string>(""); // optional vendor date token
-  const [data, setData] = useState<ApiResp | null>(null);
+  const [indoorData, setIndoorData] = useState<ApiResp | null>(null);
+  const [outdoorData, setOutdoorData] = useState<ApiResp | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showRawTable, setShowRawTable] = useState(false);
@@ -36,18 +39,51 @@ export default function FreeCourtsList() {
     setError(null);
     
     try {
-      const site = isIndoor ? "int" : "ext";
-      const qs = new URLSearchParams({ site });
-      if (dToken) qs.set("d", dToken);
+      const promises = [];
       
-      const res = await fetch(`/api/free-courts?${qs.toString()}`, { cache: "no-store" });
-      const json = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(json.error || 'Failed to fetch');
+      // Fetch indoor data if toggled on
+      if (showIndoor) {
+        const indoorQs = new URLSearchParams({ site: "int" });
+        if (dToken) indoorQs.set("d", dToken);
+        promises.push(
+          fetch(`/api/free-courts?${indoorQs.toString()}`, { cache: "no-store" })
+            .then(res => res.json())
+            .then(data => ({ type: 'indoor', data }))
+        );
       }
       
-      setData(json);
+      // Fetch outdoor data if toggled on
+      if (showOutdoor) {
+        const outdoorQs = new URLSearchParams({ site: "ext" });
+        if (dToken) outdoorQs.set("d", dToken);
+        promises.push(
+          fetch(`/api/free-courts?${outdoorQs.toString()}`, { cache: "no-store" })
+            .then(res => res.json())
+            .then(data => ({ type: 'outdoor', data }))
+        );
+      }
+      
+      if (promises.length === 0) {
+        setIndoorData(null);
+        setOutdoorData(null);
+        return;
+      }
+      
+      const results = await Promise.all(promises);
+      
+      // Reset data first
+      setIndoorData(null);
+      setOutdoorData(null);
+      
+      // Set the fetched data
+      results.forEach(result => {
+        if (result.type === 'indoor') {
+          setIndoorData(result.data);
+        } else {
+          setOutdoorData(result.data);
+        }
+      });
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
@@ -58,31 +94,62 @@ export default function FreeCourtsList() {
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isIndoor, dToken]);
+  }, [showIndoor, showOutdoor, selectedDate, dToken]);
 
   const filtered = useMemo(() => {
-    if (!data) return [];
     const afterMin = toMinutes(after);
+    const allCourts = [];
     
-    return data.courts
-      .map(c => {
-        // Get individual free slots (not ranges) that start after the specified time
-        const freeSlots = c.slots
-          .filter(slot => slot.status === "free")
-          .filter(slot => {
-            const slotMin = toMinutes(slot.time.replace("h", ":"));
-            return slotMin >= afterMin;
-          })
-          .map(slot => ({
-            court: c.court,
-            time: slot.time.replace("h", ":"),
-            href: slot.href,
-          }));
-        
-        return { court: c.court, slots: freeSlots };
-      })
-      .filter(c => c.slots.length > 0);
-  }, [data, after]);
+    // Process outdoor data
+    if (showOutdoor && outdoorData) {
+      const outdoorCourts = outdoorData.courts
+        .map(c => {
+          const freeSlots = c.slots
+            .filter(slot => slot.status === "free")
+            .filter(slot => {
+              const slotMin = toMinutes(slot.time.replace("h", ":"));
+              return slotMin >= afterMin;
+            })
+            .map(slot => ({
+              court: c.court,
+              time: slot.time.replace("h", ":"),
+              href: slot.href,
+              type: 'outdoor' as const,
+            }));
+          
+          return { court: c.court, slots: freeSlots, type: 'outdoor' as const };
+        })
+        .filter(c => c.slots.length > 0);
+      
+      allCourts.push(...outdoorCourts);
+    }
+    
+    // Process indoor data
+    if (showIndoor && indoorData) {
+      const indoorCourts = indoorData.courts
+        .map(c => {
+          const freeSlots = c.slots
+            .filter(slot => slot.status === "free")
+            .filter(slot => {
+              const slotMin = toMinutes(slot.time.replace("h", ":"));
+              return slotMin >= afterMin;
+            })
+            .map(slot => ({
+              court: c.court,
+              time: slot.time.replace("h", ":"),
+              href: slot.href,
+              type: 'indoor' as const,
+            }));
+          
+          return { court: c.court, slots: freeSlots, type: 'indoor' as const };
+        })
+        .filter(c => c.slots.length > 0);
+      
+      allCourts.push(...indoorCourts);
+    }
+    
+    return allCourts;
+  }, [indoorData, outdoorData, after, showIndoor, showOutdoor]);
 
   const getSiteDisplayName = () => {
     return isIndoor ? "Tennis Indoor" : "Tennis Outdoor";
@@ -112,33 +179,59 @@ export default function FreeCourtsList() {
         {/* Filters */}
         <Card className="mb-6">
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-              {/* Tennis Indoor/Outdoor Toggle */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+              {/* Date Picker */}
               <div className="flex flex-col">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Court Type
+                  Date
                 </label>
-                <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 p-1">
-                  <button
-                    onClick={() => setIsIndoor(false)}
-                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                      !isIndoor
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
-                    }`}
-                  >
-                    🌞 Outdoor
-                  </button>
-                  <button
-                    onClick={() => setIsIndoor(true)}
-                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                      isIndoor
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
-                    }`}
-                  >
-                    🏢 Indoor
-                  </button>
+                <Input
+                  type="date"
+                  value={selectedDate}
+                  onChange={e => setSelectedDate(e.target.value)}
+                  className="focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Apple-style Toggles for Court Types */}
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Court Types
+                </label>
+                <div className="space-y-2">
+                  {/* Outdoor Toggle */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setShowOutdoor(!showOutdoor)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                        showOutdoor ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          showOutdoor ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">🌞 Outdoor</span>
+                  </div>
+                  
+                  {/* Indoor Toggle */}
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setShowIndoor(!showIndoor)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                        showIndoor ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          showIndoor ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                    <span className="text-sm text-gray-700 dark:text-gray-300">🏢 Indoor</span>
+                  </div>
                 </div>
               </div>
 
@@ -195,20 +288,33 @@ export default function FreeCourtsList() {
         )}
 
         {/* Results */}
-        {data && (
+        {(indoorData || outdoorData) && (
           <div className="space-y-6">
             {/* Source Info */}
-            <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
-              <span>Source:</span>
-              <a 
-                href={data.url} 
-                target="_blank" 
-                rel="noreferrer" 
-                className="underline hover:text-blue-600 flex items-center gap-1"
-              >
-                {getSiteDisplayName()} - Centre FairPlay
-                <ExternalLink className="h-3 w-3" />
-              </a>
+            <div className="text-sm text-gray-600 dark:text-gray-400 flex flex-wrap items-center gap-4">
+              <span>Sources:</span>
+              {showOutdoor && outdoorData && (
+                <a 
+                  href={outdoorData.url} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="underline hover:text-blue-600 flex items-center gap-1"
+                >
+                  🌞 Outdoor Courts - Centre FairPlay
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
+              {showIndoor && indoorData && (
+                <a 
+                  href={indoorData.url} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="underline hover:text-blue-600 flex items-center gap-1"
+                >
+                  🏢 Indoor Courts - Centre FairPlay
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
             </div>
 
             {/* Available Slots */}
@@ -220,18 +326,21 @@ export default function FreeCourtsList() {
                     No courts available
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400">
-                    No free tennis courts after {after}.
-                    Try adjusting your time filter or check back later.
+                    No free tennis courts after {after} on {selectedDate}.
+                    Try adjusting your filters or selecting a different date.
                   </p>
                 </CardContent>
               </Card>
             ) : (
               <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filtered.map(c => (
-                  <Card key={c.court} className="hover:shadow-lg transition-shadow">
+                {filtered.map((c, courtIdx) => (
+                  <Card key={`${c.court}-${c.type}`} className="hover:shadow-lg transition-shadow">
                     <CardHeader className="pb-4">
                       <CardTitle className="text-lg flex items-center justify-between">
-                        {c.court}
+                        <div className="flex items-center gap-2">
+                          {c.type === 'indoor' ? '🏢' : '🌞'}
+                          {c.court}
+                        </div>
                         <Badge variant="secondary">
                           {c.slots.length} slot{c.slots.length !== 1 ? 's' : ''}
                         </Badge>
@@ -240,29 +349,33 @@ export default function FreeCourtsList() {
                     <CardContent>
                       <div className="grid grid-cols-2 gap-2">
                         {c.slots.map((slot, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                            <div className="flex items-center gap-2">
-                              <div className="font-medium text-gray-900 dark:text-white">
-                                {slot.time}
-                              </div>
-                            </div>
+                          <div key={idx}>
                             {slot.href ? (
-                              <Button
-                                asChild
-                                size="sm"
-                                className="bg-green-600 hover:bg-green-700 text-xs px-2 py-1 h-7"
+                              <a
+                                href={slot.href}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="block p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border-2 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors cursor-pointer group"
                               >
-                                <a
-                                  href={slot.href}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="flex items-center gap-1"
-                                >
-                                  Book
-                                </a>
-                              </Button>
+                                <div className="flex items-center justify-between">
+                                  <div className="font-medium text-green-700 dark:text-green-300 group-hover:text-green-800 dark:group-hover:text-green-200">
+                                    {slot.time}
+                                  </div>
+                                  <ExternalLink className="h-3 w-3 text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300" />
+                                </div>
+                                <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                  Click to book
+                                </div>
+                              </a>
                             ) : (
-                              <span className="text-xs text-gray-500">No link</span>
+                              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                                <div className="font-medium text-gray-700 dark:text-gray-300">
+                                  {slot.time}
+                                </div>
+                                <div className="text-xs text-gray-500 mt-1">
+                                  No booking link
+                                </div>
+                              </div>
                             )}
                           </div>
                         ))}
@@ -284,61 +397,110 @@ export default function FreeCourtsList() {
               </Button>
             </div>
 
-            {/* Raw Table */}
+            {/* Raw Tables */}
             {showRawTable && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Raw Schedule - {getSiteDisplayName()}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-auto">
-                    <table className="min-w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-gray-200 dark:border-gray-700">
-                          <th className="p-3 text-left font-medium text-gray-900 dark:text-white">Court</th>
-                          {data.times.map((t, i) => (
-                            <th key={i} className="p-2 text-center font-medium text-gray-900 dark:text-white min-w-[50px]">
-                              {t.replace("h", ":")}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {data.courts.map((c, idx) => (
-                          <tr key={idx} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
-                            <td className="p-3 font-medium text-gray-900 dark:text-white">{c.court}</td>
-                            {c.slots.map((s, i) => (
-                              <td key={i} className="p-2 text-center">
-                                <div className="flex items-center justify-center">
-                                  <span className="text-lg" title={s.status}>
-                                    {getStatusIcon(s.status)}
-                                  </span>
-                                </div>
-                              </td>
+              <div className="space-y-6">
+                {showOutdoor && outdoorData && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">🌞 Outdoor Courts - Raw Schedule</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="overflow-auto">
+                        <table className="min-w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-gray-200 dark:border-gray-700">
+                              <th className="p-3 text-left font-medium text-gray-900 dark:text-white">Court</th>
+                              {outdoorData.times.map((t, i) => (
+                                <th key={i} className="p-2 text-center font-medium text-gray-900 dark:text-white min-w-[50px]">
+                                  {t.replace("h", ":")}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {outdoorData.courts.map((c, idx) => (
+                              <tr key={idx} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <td className="p-3 font-medium text-gray-900 dark:text-white">{c.court}</td>
+                                {c.slots.map((s, i) => (
+                                  <td key={i} className="p-2 text-center">
+                                    <div className="flex items-center justify-center">
+                                      <span className="text-lg" title={s.status}>
+                                        {getStatusIcon(s.status)}
+                                      </span>
+                                    </div>
+                                  </td>
+                                ))}
+                              </tr>
                             ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-                    <div className="flex flex-wrap gap-4">
-                      <span className="flex items-center gap-1">
-                        <span>🟢</span> Free
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span>🔴</span> Booked
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span>⚫</span> Closed
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <span>⚪</span> Unavailable
-                      </span>
+                          </tbody>
+                        </table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+                
+                {showIndoor && indoorData && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">🏢 Indoor Courts - Raw Schedule</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="overflow-auto">
+                        <table className="min-w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-gray-200 dark:border-gray-700">
+                              <th className="p-3 text-left font-medium text-gray-900 dark:text-white">Court</th>
+                              {indoorData.times.map((t, i) => (
+                                <th key={i} className="p-2 text-center font-medium text-gray-900 dark:text-white min-w-[50px]">
+                                  {t.replace("h", ":")}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {indoorData.courts.map((c, idx) => (
+                              <tr key={idx} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <td className="p-3 font-medium text-gray-900 dark:text-white">{c.court}</td>
+                                {c.slots.map((s, i) => (
+                                  <td key={i} className="p-2 text-center">
+                                    <div className="flex items-center justify-center">
+                                      <span className="text-lg" title={s.status}>
+                                        {getStatusIcon(s.status)}
+                                      </span>
+                                    </div>
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+                
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <div className="flex flex-wrap gap-4">
+                        <span className="flex items-center gap-1">
+                          <span>🟢</span> Free
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span>🔴</span> Booked
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span>⚫</span> Closed
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span>⚪</span> Unavailable
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             )}
           </div>
         )}
