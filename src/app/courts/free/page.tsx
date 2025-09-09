@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Clock, Filter, RefreshCw } from 'lucide-react';
+import { ExternalLink, Clock, Filter, RefreshCw, Sun, Building2, Activity } from 'lucide-react';
 
 type ApiResp = {
   site: string;
@@ -345,7 +345,10 @@ export default function FreeCourtsList() {
                       }`}
                     />
                   </button>
-                  <span className="text-xs text-gray-700 dark:text-gray-300">🌞 Out</span>
+                  <div className="flex items-center gap-1">
+                    <Sun className="h-3 w-3 text-yellow-500" />
+                    <span className="text-xs text-gray-700 dark:text-gray-300">Out</span>
+                  </div>
                 </div>
                 
                 <div className="flex items-center gap-2">
@@ -361,7 +364,10 @@ export default function FreeCourtsList() {
                       }`}
                     />
                   </button>
-                  <span className="text-xs text-gray-700 dark:text-gray-300">🏢 In</span>
+                  <div className="flex items-center gap-1">
+                    <Building2 className="h-3 w-3 text-blue-500" />
+                    <span className="text-xs text-gray-700 dark:text-gray-300">In</span>
+                  </div>
                 </div>
               </div>
 
@@ -410,7 +416,9 @@ export default function FreeCourtsList() {
             {/* Available Slots */}
             {filtered.length === 0 ? (
               <div className="text-center py-8">
-                <div className="text-4xl mb-3">🎾</div>
+                <div className="mb-3">
+                  <Activity className="h-8 w-8 mx-auto text-gray-400" />
+                </div>
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
                   No courts available
                 </h3>
@@ -425,7 +433,10 @@ export default function FreeCourtsList() {
                     <CardContent className="p-3">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <span className="text-lg">{c.type === 'indoor' ? '🏢' : '🌞'}</span>
+                          {c.type === 'indoor' ? 
+                            <Building2 className="h-4 w-4 text-blue-500" /> : 
+                            <Sun className="h-4 w-4 text-yellow-500" />
+                          }
                           <span className="font-semibold text-sm">{c.court}</span>
                         </div>
                         <Badge variant="secondary" className="text-xs px-2 py-0.5">
@@ -470,7 +481,10 @@ export default function FreeCourtsList() {
                 {showOutdoor && outdoorData && (
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">🌞 Outdoor Courts - Raw Schedule</CardTitle>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Sun className="h-4 w-4 text-yellow-500" />
+                        Outdoor Courts - Raw Schedule
+                      </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="overflow-auto">
@@ -510,7 +524,10 @@ export default function FreeCourtsList() {
                 {showIndoor && indoorData && (
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-lg">🏢 Indoor Courts - Raw Schedule</CardTitle>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-blue-500" />
+                        Indoor Courts - Raw Schedule
+                      </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="overflow-auto">
@@ -552,16 +569,16 @@ export default function FreeCourtsList() {
                     <div className="text-sm text-gray-600 dark:text-gray-400">
                       <div className="flex flex-wrap gap-4">
                         <span className="flex items-center gap-1">
-                          <span>🟢</span> Free
+                          <div className="w-2 h-2 rounded-full bg-green-500"></div> Free
                         </span>
                         <span className="flex items-center gap-1">
-                          <span>🔴</span> Booked
+                          <div className="w-2 h-2 rounded-full bg-red-500"></div> Booked
                         </span>
                         <span className="flex items-center gap-1">
-                          <span>⚫</span> Closed
+                          <div className="w-2 h-2 rounded-full bg-gray-800 dark:bg-gray-200"></div> Closed
                         </span>
                         <span className="flex items-center gap-1">
-                          <span>⚪</span> Unavailable
+                          <div className="w-2 h-2 rounded-full bg-gray-400"></div> Unavailable
                         </span>
                       </div>
                     </div>
