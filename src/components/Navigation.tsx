@@ -17,7 +17,8 @@ import {
   CalendarOff,
   Home,
   Trophy,
-  Activity
+  Activity,
+  Clock
 } from "lucide-react";
 
 const navigationItems = [
@@ -44,6 +45,12 @@ const navigationItems = [
     label: "Absence",
     icon: CalendarOff,
     description: "Manage absences"
+  },
+  {
+    href: "/courts/free",
+    label: "Free Courts",
+    icon: Clock,
+    description: "Available court slots"
   },
   {
     href: "/setup",
