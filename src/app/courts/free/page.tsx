@@ -26,7 +26,7 @@ export default function FreeCourtsList() {
   const [selectedDateIndex, setSelectedDateIndex] = useState(0);
   const [showIndoor, setShowIndoor] = useState(true);
   const [showOutdoor, setShowOutdoor] = useState(true);
-  const [after, setAfter] = useState("18:00");
+  const [after, setAfter] = useState("08:00");
   
   // Generate next 7 days
   const next7Days = useMemo(() => {
