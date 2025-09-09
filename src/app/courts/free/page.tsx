@@ -261,6 +261,7 @@ export default function FreeCourtsList() {
     // Process indoor data
     if (showIndoor && indoorData) {
       const indoorCourts = indoorData.courts
+        .filter(c => !c.court.toLowerCase().includes('terrain n°4')) // Remove Terrain n°4
         .map(c => {
           const freeSlots = c.slots
             .filter(slot => slot.status === "free")
@@ -541,7 +542,9 @@ export default function FreeCourtsList() {
                             </tr>
                           </thead>
                           <tbody>
-                            {indoorData.courts.map((c, idx) => (
+                            {indoorData.courts
+                              .filter(c => !c.court.toLowerCase().includes('terrain n°4'))
+                              .map((c, idx) => (
                               <tr key={idx} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
                                 <td className="p-3 font-medium text-gray-900 dark:text-white">{c.court}</td>
                                 {c.slots.map((s, i) => (
