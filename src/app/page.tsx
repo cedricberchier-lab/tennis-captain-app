@@ -13,7 +13,8 @@ import {
   Clock,
   MapPin,
   ChevronRight,
-  CalendarOff
+  CalendarOff,
+  Sparkles
 } from "lucide-react";
 
 
@@ -176,8 +177,9 @@ export default function Home() {
           
           {/* Welcome Header - Mobile Optimized */}
           <div className="mb-8">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2">
-              Welcome back, {getCurrentPlayerName()}! 👋
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
+              Welcome back, {getCurrentPlayerName()}!
+              <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 text-purple-500 dark:text-purple-400" />
             </h1>
             <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
               Choose an action to get started

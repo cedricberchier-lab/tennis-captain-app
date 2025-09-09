@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Target } from 'lucide-react';
 
 export default function LoginPage() {
   const [credentials, setCredentials] = useState<LoginCredentials>({
@@ -81,7 +82,10 @@ export default function LoginPage() {
       <div className="w-full max-w-sm sm:max-w-md">
         <Card className="shadow-2xl border-0 sm:border-2">
           <CardHeader className="text-center px-6 sm:px-8 py-6 sm:py-8">
-            <CardTitle className="text-2xl sm:text-3xl font-bold mb-2">🎾 Tennis Captain</CardTitle>
+            <CardTitle className="text-2xl sm:text-3xl font-bold mb-2 flex items-center justify-center gap-3">
+              <Target className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
+              Tennis Captain
+            </CardTitle>
             <CardDescription className="text-base">Sign in to your account</CardDescription>
           </CardHeader>
           <CardContent className="px-6 sm:px-8 pb-6 sm:pb-8">

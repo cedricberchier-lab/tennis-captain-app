@@ -18,7 +18,9 @@ import {
   Home,
   Trophy,
   Activity,
-  Clock
+  Clock,
+  Target,
+  Database
 } from "lucide-react";
 
 const navigationItems = [
@@ -138,7 +140,7 @@ export default function Navigation() {
                 href="/" 
                 className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
               >
-                <span className="text-2xl">🎾</span>
+                <Target className="h-8 w-8 text-purple-600 dark:text-purple-400" />
                 <span className="hidden sm:block">CourtCrew</span>
               </Link>
             </div>
@@ -194,7 +196,7 @@ export default function Navigation() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="text-blue-600 dark:text-blue-400 text-lg">💾</span>
+                  <Database className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   <div>
                     <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
                       Using Local Storage
@@ -235,7 +237,7 @@ export default function Navigation() {
             href="/"
             className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-white"
           >
-            <span className="text-2xl">🎾</span>
+            <Target className="h-8 w-8 text-purple-600 dark:text-purple-400" />
             CourtCrew
           </Link>
           <button
