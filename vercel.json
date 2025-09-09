@@ -9,5 +9,6 @@
       "maxDuration": 10
     }
   },
-  "crons": []
+  "crons": [],
+  "version": 2
 }
