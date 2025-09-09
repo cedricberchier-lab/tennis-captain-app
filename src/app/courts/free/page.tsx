@@ -64,6 +64,9 @@ export default function FreeCourtsList() {
       return;
     }
 
+    // Open window immediately to avoid popup blocking on iOS Safari
+    const newWindow = window.open('about:blank', '_blank');
+    
     try {
       setLoading(true);
       const response = await fetch('/api/direct-booking', {
@@ -82,12 +85,23 @@ export default function FreeCourtsList() {
       const result = await response.json();
       
       if (result.success) {
-        window.open(result.reservationUrl, '_blank');
+        if (newWindow) {
+          newWindow.location.href = result.reservationUrl;
+        } else {
+          // Fallback for when popup is blocked
+          window.location.href = result.reservationUrl;
+        }
       } else {
+        if (newWindow) {
+          newWindow.close();
+        }
         alert(`Booking failed: ${result.error}`);
       }
     } catch (error) {
       console.error('Booking error:', error);
+      if (newWindow) {
+        newWindow.close();
+      }
       alert('Failed to open booking page. Please try again.');
     } finally {
       setLoading(false);
