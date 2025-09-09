@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Clock, Filter, RefreshCw, Sun, Building2, Activity, CheckCircle, XCircle, Minus, Circle } from 'lucide-react';
+import { ExternalLink, Clock, Filter, RefreshCw, Sun, Building2, Activity, CheckCircle, XCircle, Minus, Circle, Home } from 'lucide-react';
 
 type ApiResp = {
   site: string;
@@ -299,14 +299,6 @@ export default function FreeCourtsList() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-3 py-4">
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-            Free Tennis Courts
-          </h1>
-          <p className="text-sm text-gray-600 dark:text-gray-300">
-            Centre FairPlay - Real-time availability
-          </p>
-        </div>
 
         {/* Filters */}
         <Card className="mb-4">
@@ -366,7 +358,7 @@ export default function FreeCourtsList() {
                     />
                   </button>
                   <div className="flex items-center gap-1">
-                    <Building2 className="h-3 w-3 text-blue-500" />
+                    <Home className="h-3 w-3 text-blue-500" />
                     <span className="text-xs text-gray-700 dark:text-gray-300">In</span>
                   </div>
                 </div>
@@ -435,7 +427,7 @@ export default function FreeCourtsList() {
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           {c.type === 'indoor' ? 
-                            <Building2 className="h-4 w-4 text-blue-500" /> : 
+                            <Home className="h-4 w-4 text-blue-500" /> : 
                             <Sun className="h-4 w-4 text-yellow-500" />
                           }
                           <span className="font-semibold text-sm">{c.court}</span>
@@ -524,7 +516,7 @@ export default function FreeCourtsList() {
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-lg flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-blue-500" />
+                        <Home className="h-4 w-4 text-blue-500" />
                         Indoor Courts - Raw Schedule
                       </CardTitle>
                     </CardHeader>
