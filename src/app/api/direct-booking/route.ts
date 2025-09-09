@@ -120,6 +120,15 @@ function findReservationLink(html: string, courtNumber: number, time: string) {
   const $ = cheerio.load(html);
   const headerText = `Tennis n°${courtNumber}`;
 
+  // Debug: log all court headers found
+  const allHeaders: string[] = [];
+  $(".col-courts .courts").each((_, element) => {
+    const text = $(element).text().trim();
+    allHeaders.push(text);
+  });
+  console.log(`Available court headers: ${allHeaders.join(', ')}`);
+  console.log(`Looking for: "${headerText}"`);
+
   // Locate the court column by its header
   const courtCols = $(".col-courts .courts");
   let targetCol: cheerio.Cheerio<cheerio.Element> | null = null;
@@ -133,7 +142,7 @@ function findReservationLink(html: string, courtNumber: number, time: string) {
   });
 
   if (!targetCol) {
-    throw new Error(`Court "${headerText}" non trouvé`);
+    throw new Error(`Court "${headerText}" non trouvé. Available: ${allHeaders.join(', ')}`);
   }
 
   // Collect the time slots, excluding headers
@@ -148,10 +157,14 @@ function findReservationLink(html: string, courtNumber: number, time: string) {
   // Map "16:30" -> "16h30" then to index
   const siteTime = time.replace(":", "h");
   const idx = TIMES.indexOf(siteTime);
+  console.log(`Time mapping: ${time} -> ${siteTime} -> index ${idx}`);
+  console.log(`Available times: ${TIMES.join(', ')}`);
+  
   if (idx < 0) {
-    throw new Error(`Horaire "${siteTime}" invalide`);
+    throw new Error(`Horaire "${siteTime}" invalide. Available: ${TIMES.join(', ')}`);
   }
 
+  console.log(`Found ${slotDivs.length} time slots in court column`);
   if (idx >= slotDivs.length) {
     throw new Error(`Index ${idx} hors limites (${slotDivs.length} créneaux disponibles)`);
   }
@@ -160,15 +173,17 @@ function findReservationLink(html: string, courtNumber: number, time: string) {
   
   // Check if slot is free
   const className = slot.attr("class") || "";
+  const onclick = slot.attr("onclick") || "";
+  console.log(`Slot ${idx} (${siteTime}): class="${className}", onclick="${onclick.substring(0, 100)}..."`);
+  
   if (!/libre/.test(className)) {
     throw new Error(`Créneau ${siteTime} n'est pas libre (${className})`);
   }
 
   // Extract onclick -> reservation1.php?d=...
-  const onclick = slot.attr("onclick") || "";
   const match = onclick.match(/'([^']+reservation1\.php\?[^']+)'/);
   if (!match) {
-    throw new Error("Lien réservation introuvable");
+    throw new Error(`Lien réservation introuvable dans onclick: "${onclick}"`);
   }
 
   return new URL(match[1], ORIGIN).toString();
