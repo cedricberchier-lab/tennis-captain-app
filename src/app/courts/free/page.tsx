@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, Clock, Calendar, Filter, RefreshCw } from 'lucide-react';
+import { ExternalLink, Clock, Filter, RefreshCw } from 'lucide-react';
 
 type ApiResp = {
   site: string;
@@ -23,9 +23,8 @@ function toMinutes(hhmm: string) {
 }
 
 export default function FreeCourtsList() {
-  const [site, setSite] = useState<"ext" | "int" | "squash" | "bad" | "padel">("ext");
+  const [isIndoor, setIsIndoor] = useState(false); // false = outdoor, true = indoor
   const [after, setAfter] = useState("18:00");
-  const [minDur, setMinDur] = useState(60);
   const [dToken, setDToken] = useState<string>(""); // optional vendor date token
   const [data, setData] = useState<ApiResp | null>(null);
   const [loading, setLoading] = useState(false);
@@ -37,6 +36,7 @@ export default function FreeCourtsList() {
     setError(null);
     
     try {
+      const site = isIndoor ? "int" : "ext";
       const qs = new URLSearchParams({ site });
       if (dToken) qs.set("d", dToken);
       
@@ -58,42 +58,34 @@ export default function FreeCourtsList() {
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [site, dToken]);
+  }, [isIndoor, dToken]);
 
   const filtered = useMemo(() => {
     if (!data) return [];
     const afterMin = toMinutes(after);
+    
     return data.courts
       .map(c => {
-        const ranges = c.freeRanges
-          .map(r => {
-            const s = toMinutes(r.start);
-            const e = toMinutes(r.end);
-            const dur = e - s;
-            return { ...r, s, e, dur };
+        // Get individual free slots (not ranges) that start after the specified time
+        const freeSlots = c.slots
+          .filter(slot => slot.status === "free")
+          .filter(slot => {
+            const slotMin = toMinutes(slot.time.replace("h", ":"));
+            return slotMin >= afterMin;
           })
-          .filter(r => r.e > afterMin && r.dur >= minDur)
-          .map(r => ({
+          .map(slot => ({
             court: c.court,
-            start: r.s < afterMin ? after : r.start,
-            end: r.end,
-            href: r.href,
-            durationMin: r.dur,
+            time: slot.time.replace("h", ":"),
+            href: slot.href,
           }));
-        return { court: c.court, ranges };
+        
+        return { court: c.court, slots: freeSlots };
       })
-      .filter(c => c.ranges.length > 0);
-  }, [data, after, minDur]);
+      .filter(c => c.slots.length > 0);
+  }, [data, after]);
 
-  const getSiteDisplayName = (siteKey: string) => {
-    const names = {
-      ext: "Tennis Outdoor",
-      int: "Tennis Indoor", 
-      squash: "Squash",
-      bad: "Badminton",
-      padel: "Padel"
-    };
-    return names[siteKey as keyof typeof names] || siteKey;
+  const getSiteDisplayName = () => {
+    return isIndoor ? "Tennis Indoor" : "Tennis Outdoor";
   };
 
   const getStatusIcon = (status: string) => {
@@ -110,33 +102,44 @@ export default function FreeCourtsList() {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Free Courts - Centre FairPlay
+            Free Tennis Courts - Centre FairPlay
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
-            Real-time court availability across all sports facilities
+            Real-time tennis court availability with direct booking
           </p>
         </div>
 
-        {/* Enhanced Filters */}
+        {/* Filters */}
         <Card className="mb-6">
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 items-end">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+              {/* Tennis Indoor/Outdoor Toggle */}
               <div className="flex flex-col">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  <Calendar className="h-4 w-4 inline mr-1" />
-                  Sport/Site
+                  Court Type
                 </label>
-                <select
-                  value={site}
-                  onChange={e => setSite(e.target.value as any)}
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="ext">Tennis Outdoor</option>
-                  <option value="int">Tennis Indoor</option>
-                  <option value="squash">Squash</option>
-                  <option value="bad">Badminton</option>
-                  <option value="padel">Padel</option>
-                </select>
+                <div className="flex rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 p-1">
+                  <button
+                    onClick={() => setIsIndoor(false)}
+                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      !isIndoor
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
+                    }`}
+                  >
+                    🌞 Outdoor
+                  </button>
+                  <button
+                    onClick={() => setIsIndoor(true)}
+                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      isIndoor
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600"
+                    }`}
+                  >
+                    🏢 Indoor
+                  </button>
+                </div>
               </div>
 
               <div className="flex flex-col">
@@ -150,23 +153,6 @@ export default function FreeCourtsList() {
                   onChange={e => setAfter(e.target.value)}
                   className="focus:ring-2 focus:ring-blue-500"
                 />
-              </div>
-
-              <div className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  <Filter className="h-4 w-4 inline mr-1" />
-                  Min duration (min)
-                </label>
-                <select
-                  value={minDur}
-                  onChange={e => setMinDur(parseInt(e.target.value || "60"))}
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value={30}>30 min</option>
-                  <option value={60}>1 hour</option>
-                  <option value={90}>1.5 hours</option>
-                  <option value={120}>2 hours</option>
-                </select>
               </div>
 
               <div className="flex flex-col">
@@ -220,7 +206,7 @@ export default function FreeCourtsList() {
                 rel="noreferrer" 
                 className="underline hover:text-blue-600 flex items-center gap-1"
               >
-                {getSiteDisplayName(data.site)} - Centre FairPlay
+                {getSiteDisplayName()} - Centre FairPlay
                 <ExternalLink className="h-3 w-3" />
               </a>
             </div>
@@ -234,8 +220,8 @@ export default function FreeCourtsList() {
                     No courts available
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400">
-                    No free courts matching your filters (after {after}, min {minDur} minutes).
-                    Try adjusting your filters or check back later.
+                    No free tennis courts after {after}.
+                    Try adjusting your time filter or check back later.
                   </p>
                 </CardContent>
               </Card>
@@ -247,41 +233,36 @@ export default function FreeCourtsList() {
                       <CardTitle className="text-lg flex items-center justify-between">
                         {c.court}
                         <Badge variant="secondary">
-                          {c.ranges.length} slot{c.ranges.length !== 1 ? 's' : ''}
+                          {c.slots.length} slot{c.slots.length !== 1 ? 's' : ''}
                         </Badge>
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-3">
-                        {c.ranges.map((r, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                            <div className="flex-1">
+                      <div className="grid grid-cols-2 gap-2">
+                        {c.slots.map((slot, idx) => (
+                          <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                            <div className="flex items-center gap-2">
                               <div className="font-medium text-gray-900 dark:text-white">
-                                {r.start} → {r.end}
-                              </div>
-                              <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {r.durationMin} minutes
+                                {slot.time}
                               </div>
                             </div>
-                            {r.href ? (
+                            {slot.href ? (
                               <Button
                                 asChild
                                 size="sm"
-                                className="bg-green-600 hover:bg-green-700"
+                                className="bg-green-600 hover:bg-green-700 text-xs px-2 py-1 h-7"
                               >
                                 <a
-                                  href={r.href}
+                                  href={slot.href}
                                   target="_blank"
                                   rel="noreferrer"
                                   className="flex items-center gap-1"
                                 >
                                   Book
-                                  <ExternalLink className="h-3 w-3" />
                                 </a>
                               </Button>
                             ) : (
-                              <span className="text-xs text-gray-500">No booking link</span>
+                              <span className="text-xs text-gray-500">No link</span>
                             )}
                           </div>
                         ))}
@@ -307,7 +288,7 @@ export default function FreeCourtsList() {
             {showRawTable && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Raw Schedule - {getSiteDisplayName(data.site)}</CardTitle>
+                  <CardTitle className="text-lg">Raw Schedule - {getSiteDisplayName()}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="overflow-auto">
