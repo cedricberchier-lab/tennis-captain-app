@@ -42,12 +42,50 @@ export default function FreeCourtsList() {
     return days;
   }, []);
   
-  const selectedDate = next7Days[selectedDateIndex]?.date || next7Days[0].date
+  const selectedDate = next7Days[selectedDateIndex]?.date || next7Days[0].date;
+  const [dateTokens, setDateTokens] = useState<{indoor?: string, outdoor?: string}>({});
   const [indoorData, setIndoorData] = useState<ApiResp | null>(null);
   const [outdoorData, setOutdoorData] = useState<ApiResp | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showRawTable, setShowRawTable] = useState(false);
+
+  // Helper function to format date for site matching (like "Ve 12")
+  const siteDayLabel = (dateStr: string) => {
+    const date = new Date(dateStr + 'T12:00:00'); // Add time to avoid timezone issues
+    const fr = date.toLocaleDateString("fr-CH", { weekday: "short", day: "numeric" });
+    const [wdRaw, dayStr] = fr.replace(/\u00A0/g, " ").split(" ");
+    const wd2 = (wdRaw || "").slice(0, 2).toLowerCase();
+    const wd = wd2.charAt(0).toUpperCase() + wd2.charAt(1);
+    return `${wd} ${parseInt(dayStr, 10)}`;
+  };
+
+  // Resolve date token for a specific site
+  const resolveDateToken = async (site: 'ext' | 'int', targetDate: string): Promise<string> => {
+    const wanted = siteDayLabel(targetDate);
+    const baseUrl = site === 'ext' 
+      ? 'https://online.centrefairplay.ch/tableau.php?responsive=false'
+      : 'https://online.centrefairplay.ch/tableau_int.php?responsive=false';
+    
+    try {
+      // For now, we'll make a request to our API to resolve the token
+      // The API should implement the day-strip scraping logic
+      const response = await fetch(`/api/resolve-date-token?site=${site}&date=${targetDate}`, {
+        cache: 'no-store'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to resolve date token: ${response.status}`);
+      }
+      
+      const { token } = await response.json();
+      return token;
+    } catch (error) {
+      console.error(`Failed to resolve date token for ${site}:`, error);
+      // Fallback: return empty string, API should handle this gracefully
+      return '';
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -55,10 +93,31 @@ export default function FreeCourtsList() {
     
     try {
       const promises = [];
+      const tokenPromises = [];
+      
+      // Resolve date tokens first
+      if (showIndoor) {
+        tokenPromises.push(
+          resolveDateToken('int', selectedDate).then(token => ({ site: 'indoor', token }))
+        );
+      }
+      if (showOutdoor) {
+        tokenPromises.push(
+          resolveDateToken('ext', selectedDate).then(token => ({ site: 'outdoor', token }))
+        );
+      }
+      
+      const resolvedTokens = await Promise.all(tokenPromises);
+      const tokens: {indoor?: string, outdoor?: string} = {};
+      resolvedTokens.forEach(({site, token}) => {
+        tokens[site as keyof typeof tokens] = token;
+      });
+      setDateTokens(tokens);
       
       // Fetch indoor data if toggled on
-      if (showIndoor) {
-        const indoorQs = new URLSearchParams({ site: "int", date: selectedDate });
+      if (showIndoor && tokens.indoor) {
+        const indoorQs = new URLSearchParams({ site: "int" });
+        if (tokens.indoor) indoorQs.set("d", tokens.indoor);
         promises.push(
           fetch(`/api/free-courts?${indoorQs.toString()}`, { cache: "no-store" })
             .then(res => res.json())
@@ -66,9 +125,10 @@ export default function FreeCourtsList() {
         );
       }
       
-      // Fetch outdoor data if toggled on
-      if (showOutdoor) {
-        const outdoorQs = new URLSearchParams({ site: "ext", date: selectedDate });
+      // Fetch outdoor data if toggled on  
+      if (showOutdoor && tokens.outdoor) {
+        const outdoorQs = new URLSearchParams({ site: "ext" });
+        if (tokens.outdoor) outdoorQs.set("d", tokens.outdoor);
         promises.push(
           fetch(`/api/free-courts?${outdoorQs.toString()}`, { cache: "no-store" })
             .then(res => res.json())
@@ -164,9 +224,6 @@ export default function FreeCourtsList() {
     return allCourts;
   }, [indoorData, outdoorData, after, showIndoor, showOutdoor]);
 
-  const getSiteDisplayName = () => {
-    return isIndoor ? "Tennis Indoor" : "Tennis Outdoor";
-  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -340,7 +397,7 @@ export default function FreeCourtsList() {
               </Card>
             ) : (
               <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filtered.map((c, courtIdx) => (
+                {filtered.map((c) => (
                   <Card key={`${c.court}-${c.type}`} className="hover:shadow-lg transition-shadow">
                     <CardHeader className="pb-4">
                       <CardTitle className="text-lg flex items-center justify-between">
