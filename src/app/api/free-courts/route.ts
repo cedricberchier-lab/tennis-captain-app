@@ -108,9 +108,15 @@ export async function GET(req: Request) {
 
           // Extract booking link if present in onclick
           let href: string | undefined;
-          // Updated regex to match: onclick="window.location='reservation1.php?d=...'; return false;"
-          const onclick = attrs.match(/onclick="[^"]*window\.location\s*=\s*'([^']+reservation1\.php\?[^']+)'/);
-          if (onclick?.[1]) href = `${FCP_BASE}/${onclick[1].replace(/^\.\//, "")}`;
+          // Match onclick="window.location='reservation1.php?d=...'; return false;"
+          const onclickMatch = attrs.match(/onclick="([^"]*)"/);
+          if (onclickMatch) {
+            const onclickStr = onclickMatch[1];
+            const urlMatch = onclickStr.match(/window\.location\s*=\s*'([^']+reservation1\.php\?[^']+)'/);
+            if (urlMatch) {
+              href = `${FCP_BASE}/${urlMatch[1].replace(/^\.\//, "")}`;
+            }
+          }
 
           return { status, href };
         });
