@@ -19,9 +19,12 @@ export async function GET(request: NextRequest) {
     const dateParam = searchParams.get('date');
     const timeParam = searchParams.get('time');
     
+    console.log('[FairPlay API] Request params:', { dateParam, timeParam });
+    
     // Validate and set date
     const date = dateParam || getTodayString();
     if (!isValidDate(date)) {
+      console.log('[FairPlay API] Invalid date:', date);
       return NextResponse.json(
         { error: 'Invalid date format. Use YYYY-MM-DD.' },
         { status: 400 }
@@ -32,6 +35,7 @@ export async function GET(request: NextRequest) {
     let time: string | null = null;
     if (timeParam) {
       if (!isValidTime(timeParam)) {
+        console.log('[FairPlay API] Invalid time:', timeParam);
         return NextResponse.json(
           { error: 'Invalid time format. Use HH:MM.' },
           { status: 400 }
@@ -43,10 +47,16 @@ export async function GET(request: NextRequest) {
     const baseUrl = process.env.FAIRPLAY_BASE || 'https://online.centrefairplay.ch';
     const url = `${baseUrl}/tableau.php?responsive=false`;
     
+    console.log('[FairPlay API] Fetching from:', url);
+    
     const html = await fetchHtml(url);
+    console.log('[FairPlay API] HTML length:', html.length);
+    
     const slots = time 
       ? parseFreeSlotsAtTime(html, date, time)
       : parseFreeSlots(html, date);
+    
+    console.log('[FairPlay API] Found slots:', slots.length);
     
     return NextResponse.json({
       date,
@@ -59,9 +69,13 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('Free courts API error:', error);
+    console.error('[FairPlay API] Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      type: typeof error
+    });
     return NextResponse.json(
-      { error: 'Failed to fetch free courts' },
+      { error: `Failed to fetch free courts: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }

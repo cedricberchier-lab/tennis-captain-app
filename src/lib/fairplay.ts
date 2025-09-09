@@ -56,8 +56,10 @@ function isCellClosed(cellText: string): boolean {
 }
 
 function getLargestTable(html: string): Element {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
+  // Use JSDOM for server-side HTML parsing
+  const { JSDOM } = require('jsdom');
+  const dom = new JSDOM(html);
+  const doc = dom.window.document;
   const tables = Array.from(doc.querySelectorAll('table'));
   
   if (tables.length === 0) {
