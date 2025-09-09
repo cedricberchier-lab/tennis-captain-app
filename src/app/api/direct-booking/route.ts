@@ -18,8 +18,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use the existing free-courts API to get booking links
-    const freeCourtsResponse = await fetch(`${request.nextUrl.origin}/api/free-courts?site=${site}`, {
+    // First, resolve the date token for the selected date
+    const dateTokenResponse = await fetch(`${request.nextUrl.origin}/api/resolve-date-token?site=${site}&date=${date}`, {
+      cache: 'no-store'
+    });
+    
+    let dateToken = '';
+    if (dateTokenResponse.ok) {
+      const tokenData = await dateTokenResponse.json();
+      dateToken = tokenData.token || '';
+    }
+
+    // Use the existing free-courts API to get booking links with the correct date token
+    const freeCourtsUrl = `${request.nextUrl.origin}/api/free-courts?site=${site}${dateToken ? `&d=${encodeURIComponent(dateToken)}` : ''}`;
+    const freeCourtsResponse = await fetch(freeCourtsUrl, {
       cache: 'no-store'
     });
     

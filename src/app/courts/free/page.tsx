@@ -162,7 +162,7 @@ export default function FreeCourtsList() {
       setDateTokens(tokens);
       
       // Fetch indoor data if toggled on
-      if (showIndoor && tokens.indoor) {
+      if (showIndoor) {
         const indoorQs = new URLSearchParams({ site: "int" });
         if (tokens.indoor) indoorQs.set("d", tokens.indoor);
         promises.push(
@@ -173,7 +173,7 @@ export default function FreeCourtsList() {
       }
       
       // Fetch outdoor data if toggled on  
-      if (showOutdoor && tokens.outdoor) {
+      if (showOutdoor) {
         const outdoorQs = new URLSearchParams({ site: "ext" });
         if (tokens.outdoor) outdoorQs.set("d", tokens.outdoor);
         promises.push(
