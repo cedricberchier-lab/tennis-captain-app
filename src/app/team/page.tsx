@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Activity, Settings, Key, CheckCircle, Trash2 } from "lucide-react";
+import { Activity, Settings, Key, CheckCircle, Trash2, Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface AddPlayerFormData {
   name: string;
@@ -306,9 +307,31 @@ export default function TeamMode() {
 
         {/* Loading State */}
         {loading ? (
-          <div className="text-center py-12">
-            <div className="text-4xl mb-4">⏳</div>
-            <p className="text-gray-600 dark:text-gray-300">Loading players...</p>
+          <div className="space-y-6">
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin mr-3 text-purple-600" />
+              <p className="text-gray-600 dark:text-gray-300">Loading players...</p>
+            </div>
+            {/* Loading skeleton cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <Card key={index} className="h-48">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-6 w-24" />
+                      <Skeleton className="h-4 w-12" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         ) : (
           <div>

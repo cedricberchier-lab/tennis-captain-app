@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/c
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { 
   CalendarOff, 
   Plus, 
@@ -17,6 +17,7 @@ import {
   User,
   Loader2
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Absence {
   id: string;
@@ -212,14 +213,96 @@ export default function AbsencePage() {
 
           {/* Quick Add Button */}
           <div className="mb-6">
-            <Button
-              onClick={() => setShowAddForm(true)}
-              className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
-              disabled={!currentPlayer}
-            >
-              <Plus className="h-4 w-4" />
-              Add Absence
-            </Button>
+            <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
+              <DialogTrigger asChild>
+                <Button
+                  className="bg-red-600 hover:bg-red-700 text-white flex items-center gap-2"
+                  disabled={!currentPlayer}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Absence
+                </Button>
+              </DialogTrigger>
+              
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <CalendarOff className="h-5 w-5 text-red-600" />
+                    Add Absence
+                  </DialogTitle>
+                  <DialogDescription>
+                    Report when you won't be available for training or matches.
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <form onSubmit={handleAddAbsence} className="space-y-4">
+                  <div>
+                    <Label htmlFor="absence-from-date">From Date *</Label>
+                    <Input
+                      id="absence-from-date"
+                      type="date"
+                      value={formData.fromDate}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => handleFromDateChange(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="absence-to-date">To Date *</Label>
+                    <Input
+                      id="absence-to-date"
+                      type="date"
+                      value={formData.toDate}
+                      min={formData.fromDate || new Date().toISOString().split('T')[0]}
+                      onChange={(e) => handleToDateChange(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="absence-reason">Reason (optional)</Label>
+                    <Input
+                      id="absence-reason"
+                      type="text"
+                      value={formData.reason}
+                      onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                      placeholder="e.g., Vacation, Work trip, Medical appointment"
+                      maxLength={200}
+                    />
+                  </div>
+
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        resetForm();
+                        setShowAddForm(false);
+                      }}
+                      disabled={isSubmitting}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="bg-red-600 hover:bg-red-700"
+                      disabled={!formData.fromDate.trim() || !formData.toDate.trim() || isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Adding...
+                        </>
+                      ) : (
+                        'Add Absence'
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+            
             {!currentPlayer && (
               <p className="text-sm text-gray-500 mt-2">
                 You need to be linked to a player record to add absences.
@@ -230,12 +313,30 @@ export default function AbsencePage() {
           {/* Absences List */}
           <div className="space-y-4">
             {loading ? (
-              <Card className="p-8">
-                <div className="text-center text-gray-500 dark:text-gray-400">
-                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-                  <p>Loading absences...</p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin mr-3 text-red-600" />
+                  <p className="text-gray-600 dark:text-gray-300">Loading absences...</p>
                 </div>
-              </Card>
+                {/* Loading skeleton cards */}
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <Card key={index} className="p-6">
+                    <CardContent className="p-0">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-start gap-4 flex-1">
+                          <Skeleton className="h-12 w-12 rounded-full" />
+                          <div className="space-y-3 flex-1">
+                            <Skeleton className="h-5 w-48" />
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-8 w-full max-w-xs" />
+                          </div>
+                        </div>
+                        <Skeleton className="h-8 w-8 rounded" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             ) : absences.length === 0 ? (
               <Card className="p-8">
                 <div className="text-center text-gray-500 dark:text-gray-400">
@@ -294,88 +395,6 @@ export default function AbsencePage() {
             )}
           </div>
         </div>
-
-        {/* Add Absence Modal */}
-        {showAddForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                <CalendarOff className="h-5 w-5 text-red-600" />
-                Add Absence
-              </h3>
-              
-              <form onSubmit={handleAddAbsence} className="space-y-4">
-                <div>
-                  <Label htmlFor="absence-from-date">From Date *</Label>
-                  <Input
-                    id="absence-from-date"
-                    type="date"
-                    value={formData.fromDate}
-                    min={new Date().toISOString().split('T')[0]}
-                    onChange={(e) => handleFromDateChange(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:bg-gray-700 dark:text-white"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="absence-to-date">To Date *</Label>
-                  <Input
-                    id="absence-to-date"
-                    type="date"
-                    value={formData.toDate}
-                    min={formData.fromDate || new Date().toISOString().split('T')[0]}
-                    onChange={(e) => handleToDateChange(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:bg-gray-700 dark:text-white"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="absence-reason">Reason (optional)</Label>
-                  <Input
-                    id="absence-reason"
-                    type="text"
-                    value={formData.reason}
-                    onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                    placeholder="e.g., Vacation, Work trip, Medical appointment"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:bg-gray-700 dark:text-white"
-                    maxLength={200}
-                  />
-                </div>
-
-                <div className="flex items-center gap-3 pt-4">
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      resetForm();
-                      setShowAddForm(false);
-                    }}
-                    variant="outline"
-                    className="flex-1"
-                    disabled={isSubmitting}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="flex-1 bg-red-600 hover:bg-red-700"
-                    disabled={!formData.fromDate.trim() || !formData.toDate.trim() || isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Adding...
-                      </>
-                    ) : (
-                      'Add Absence'
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
       </div>
     </ProtectedRoute>
   );
