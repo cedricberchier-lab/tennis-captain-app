@@ -108,6 +108,11 @@ export async function GET(req: Request) {
 
           // Extract booking link if present in onclick
           let href: string | undefined;
+          // Debug: log onclick content for free slots
+          if (status === 'free' && /onclick/.test(attrs)) {
+            console.log(`Free slot onclick: "${attrs}"`);
+          }
+          
           // Match onclick="window.location='reservation1.php?d=...'; return false;"
           const onclickMatch = attrs.match(/onclick="([^"]*)"/);
           if (onclickMatch) {
@@ -115,6 +120,9 @@ export async function GET(req: Request) {
             const urlMatch = onclickStr.match(/window\.location\s*=\s*'([^']+reservation1\.php\?[^']+)'/);
             if (urlMatch) {
               href = `${FCP_BASE}/${urlMatch[1].replace(/^\.\//, "")}`;
+              console.log(`Extracted href: ${href}`);
+            } else if (status === 'free') {
+              console.log(`No URL match in: "${onclickStr}"`);
             }
           }
 
