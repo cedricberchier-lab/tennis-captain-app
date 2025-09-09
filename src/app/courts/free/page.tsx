@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { ExternalLink, Clock, Filter, RefreshCw, Sun, Building2, Activity, CheckCircle, XCircle, Minus, Circle, Home } from 'lucide-react';
 
 type ApiResp = {
@@ -323,44 +325,31 @@ export default function FreeCourtsList() {
               </div>
 
               {/* Court Type Toggles */}
-              <div className="flex gap-4 items-center">
-                <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Courts:</label>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowOutdoor(!showOutdoor)}
-                    className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${
-                      showOutdoor ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
-                        showOutdoor ? 'translate-x-5' : 'translate-x-0.5'
-                      }`}
-                    />
-                  </button>
-                  <div className="flex items-center gap-1">
+              <div className="flex gap-6 items-center">
+                <Label className="text-xs font-medium text-gray-600 dark:text-gray-400">Courts:</Label>
+                
+                <div className="flex items-center space-x-2">
+                  <Switch 
+                    id="outdoor-courts" 
+                    checked={showOutdoor}
+                    onCheckedChange={setShowOutdoor}
+                  />
+                  <Label htmlFor="outdoor-courts" className="flex items-center gap-1 text-xs">
                     <Sun className="h-3 w-3 text-yellow-500" />
-                    <span className="text-xs text-gray-700 dark:text-gray-300">Out</span>
-                  </div>
+                    Out
+                  </Label>
                 </div>
                 
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setShowIndoor(!showIndoor)}
-                    className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${
-                      showIndoor ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
-                        showIndoor ? 'translate-x-5' : 'translate-x-0.5'
-                      }`}
-                    />
-                  </button>
-                  <div className="flex items-center gap-1">
+                <div className="flex items-center space-x-2">
+                  <Switch 
+                    id="indoor-courts" 
+                    checked={showIndoor}
+                    onCheckedChange={setShowIndoor}
+                  />
+                  <Label htmlFor="indoor-courts" className="flex items-center gap-1 text-xs">
                     <Home className="h-3 w-3 text-blue-500" />
-                    <span className="text-xs text-gray-700 dark:text-gray-300">In</span>
-                  </div>
+                    In
+                  </Label>
                 </div>
               </div>
 
