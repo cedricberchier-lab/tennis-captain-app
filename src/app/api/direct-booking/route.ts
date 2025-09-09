@@ -12,11 +12,20 @@ const TIMES = [
 /** Format Date -> site label like "Ve 12" */
 function siteDayLabel(dateStr: string) {
   const date = new Date(dateStr + 'T12:00:00'); // Add time to avoid timezone issues
-  const fr = date.toLocaleDateString("fr-CH", { weekday: "short", day: "numeric" });
-  const [wdRaw, dayStr] = fr.replace(/\u00A0/g, " ").split(" ");
-  const wd2 = (wdRaw || "").slice(0, 2).toLowerCase();
-  const wd = wd2.charAt(0).toUpperCase() + wd2.charAt(1);
-  return `${wd} ${parseInt(dayStr, 10)}`;
+  const fr = date.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric" });
+  
+  // Handle different French formats
+  let [wdRaw, dayStr] = fr.replace(/\u00A0/g, " ").split(" ");
+  
+  // Clean up weekday (remove periods, take first 2 chars)
+  wdRaw = (wdRaw || "").replace(/\./g, "").slice(0, 2).toLowerCase();
+  const wd = wdRaw.charAt(0).toUpperCase() + wdRaw.charAt(1);
+  
+  // Clean up day number
+  const dayNum = parseInt((dayStr || "").replace(/[^\d]/g, ""), 10);
+  
+  console.log(`Date formatting: ${dateStr} -> ${fr} -> "${wd} ${dayNum}"`);
+  return `${wd} ${dayNum}`;
 }
 
 /** Extract {label, url, d} from a page's day bar */
@@ -70,6 +79,9 @@ async function resolveDayToken(targetDate: string, site: string, maxHops: number
     try {
       const html = await fetchPage(url);
       const links = extractDayLinks(html);
+      
+      console.log(`Available day labels on page: ${links.map(l => l.label).join(', ')}`);
+      console.log(`Looking for: "${wanted}"`);
 
       const hit = links.find(l => l.label === wanted);
       if (hit?.d) {
@@ -85,7 +97,7 @@ async function resolveDayToken(targetDate: string, site: string, maxHops: number
     }
   }
   
-  throw new Error(`Date "${wanted}" not found within ${maxHops} hops`);
+  throw new Error(`Date "${wanted}" not found within ${maxHops} hops. Available labels: ${JSON.stringify(links?.map(l => l.label) || [])}`);
 }
 
 /** Fetch the day board HTML for a given day token */
