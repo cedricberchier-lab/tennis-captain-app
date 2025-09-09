@@ -28,7 +28,8 @@ interface Absence {
 }
 
 interface AddAbsenceFormData {
-  date: string;
+  fromDate: string;
+  toDate: string;
   reason: string;
 }
 
@@ -40,7 +41,8 @@ export default function AbsencePage() {
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState<AddAbsenceFormData>({
-    date: "",
+    fromDate: "",
+    toDate: "",
     reason: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,9 +89,19 @@ export default function AbsencePage() {
   // Reset form
   const resetForm = () => {
     setFormData({
-      date: "",
+      fromDate: "",
+      toDate: "",
       reason: ""
     });
+  };
+
+  // Auto-set toDate when fromDate changes
+  const handleFromDateChange = (date: string) => {
+    setFormData(prev => ({
+      ...prev,
+      fromDate: date,
+      toDate: prev.toDate || date // Set toDate to same as fromDate if not already set
+    }));
   };
 
   // Handle adding absence
@@ -101,8 +113,22 @@ export default function AbsencePage() {
       return;
     }
     
-    if (!formData.date.trim()) {
-      alert('Please select a date.');
+    if (!formData.fromDate.trim()) {
+      alert('Please select a from date.');
+      return;
+    }
+    
+    if (!formData.toDate.trim()) {
+      alert('Please select a to date.');
+      return;
+    }
+    
+    // Validate date range
+    const fromDate = new Date(formData.fromDate);
+    const toDate = new Date(formData.toDate);
+    
+    if (toDate < fromDate) {
+      alert('To date cannot be earlier than From date.');
       return;
     }
     
@@ -110,8 +136,18 @@ export default function AbsencePage() {
 
     setIsSubmitting(true);
     try {
-      const absenceEntry = `${formData.date}${formData.reason.trim() ? ` - ${formData.reason.trim()}` : ''}`;
-      const updatedAbsences = [...currentPlayer.absences, absenceEntry];
+      const newAbsences: string[] = [];
+      
+      // Generate absence entries for each date in the range
+      const currentDate = new Date(fromDate);
+      while (currentDate <= toDate) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        const absenceEntry = `${dateStr}${formData.reason.trim() ? ` - ${formData.reason.trim()}` : ''}`;
+        newAbsences.push(absenceEntry);
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      const updatedAbsences = [...currentPlayer.absences, ...newAbsences];
       
       const updatedPlayer = await updatePlayer(currentPlayer.id, { absences: updatedAbsences });
       
@@ -253,13 +289,26 @@ export default function AbsencePage() {
               
               <form onSubmit={handleAddAbsence} className="space-y-4">
                 <div>
-                  <Label htmlFor="absence-date">Date *</Label>
+                  <Label htmlFor="absence-from-date">From Date *</Label>
                   <Input
-                    id="absence-date"
+                    id="absence-from-date"
                     type="date"
-                    value={formData.date}
+                    value={formData.fromDate}
                     min={new Date().toISOString().split('T')[0]}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    onChange={(e) => handleFromDateChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:bg-gray-700 dark:text-white"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="absence-to-date">To Date *</Label>
+                  <Input
+                    id="absence-to-date"
+                    type="date"
+                    value={formData.toDate}
+                    min={formData.fromDate || new Date().toISOString().split('T')[0]}
+                    onChange={(e) => setFormData({ ...formData, toDate: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:bg-gray-700 dark:text-white"
                     required
                   />
@@ -294,7 +343,7 @@ export default function AbsencePage() {
                   <Button
                     type="submit"
                     className="flex-1 bg-red-600 hover:bg-red-700"
-                    disabled={!formData.date.trim() || isSubmitting}
+                    disabled={!formData.fromDate.trim() || !formData.toDate.trim() || isSubmitting}
                   >
                     {isSubmitting ? 'Adding...' : 'Add Absence'}
                   </Button>

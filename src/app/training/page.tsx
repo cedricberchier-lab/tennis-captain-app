@@ -119,7 +119,7 @@ export default function TrainingMode() {
     refreshTrainings
   } = useTrainings();
   
-  const { players, loading: playersLoading, refreshPlayers } = usePlayers();
+  const { players, loading: playersLoading, refreshPlayers, updatePlayer } = usePlayers();
   const { user } = useAuth();
   
   // Check if current user is admin
@@ -319,6 +319,38 @@ export default function TrainingMode() {
       return null;
     };
   }, [players, refreshKey]); // Recalculate when players data changes or manual refresh
+
+  // Quick absence management functions for participant interaction
+  const handleToggleAbsence = async (playerId: string, trainingDate: Date, playerName: string) => {
+    const player = players.find(p => p.id === playerId);
+    if (!player) return;
+    
+    const hasAbsence = playerHasAbsenceOnDate(playerId, trainingDate);
+    
+    try {
+      if (hasAbsence) {
+        // Remove absence
+        const dateStr = trainingDate.toISOString().split('T')[0];
+        const updatedAbsences = player.absences.filter(absence => 
+          !absence.startsWith(dateStr)
+        );
+        await updatePlayer(player.id, { absences: updatedAbsences });
+      } else {
+        // Add absence with default reason
+        const dateStr = trainingDate.toISOString().split('T')[0];
+        const absenceEntry = `${dateStr} - Training unavailable`;
+        const updatedAbsences = [...player.absences, absenceEntry];
+        await updatePlayer(player.id, { absences: updatedAbsences });
+      }
+      
+      // Refresh data to show updated state
+      await refreshPlayers();
+      setRefreshKey(prev => prev + 1);
+    } catch (error) {
+      console.error('Error toggling absence:', error);
+      alert(`Failed to update availability for ${playerName}. Please try again.`);
+    }
+  };
 
   // Calculate end time based on start time and duration
   const calculateEndTime = (startTime: string, duration: string) => {
@@ -721,22 +753,30 @@ export default function TrainingMode() {
                                 const absenceReason = playerId ? getAbsenceReason(playerId, training.date) : null;
                                 
                                 return (
-                                  <span
-                                    key={participant.id}
-                                    className={`px-2 py-1 rounded text-sm font-medium ${
-                                      hasAbsence
-                                        ? "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-600"
-                                        : "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-600"
-                                    }`}
-                                    title={hasAbsence 
-                                      ? `Absent: ${absenceReason}` 
-                                      : playerId 
-                                        ? `Available (Player ID: ${playerId})`
-                                        : `Manual Entry (No roster link)`
-                                    }
-                                  >
-                                    {hasAbsence ? '⚠️ ' : '✓ '}{participant.playerName}
-                                  </span>
+                                  <div key={participant.id} className="group relative">
+                                    <button
+                                      onClick={() => playerId && handleToggleAbsence(playerId, training.date, participant.playerName)}
+                                      disabled={!playerId}
+                                      className={`px-2 py-1 rounded text-sm font-medium transition-all duration-200 ${
+                                        hasAbsence
+                                          ? "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-600 hover:bg-red-200 dark:hover:bg-red-800"
+                                          : "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-600 hover:bg-green-200 dark:hover:bg-green-800"
+                                      } ${
+                                        playerId ? 'cursor-pointer' : 'cursor-default'
+                                      }`}
+                                      title={playerId ? `Click to toggle availability` : 'Manual entry - cannot toggle'}
+                                    >
+                                      {hasAbsence ? '⚠️ ' : '✓ '}{participant.playerName}
+                                    </button>
+                                    
+                                    {/* Hover tooltip */}
+                                    {playerId && (
+                                      <div className="absolute z-10 invisible group-hover:visible bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 dark:bg-gray-700 rounded whitespace-nowrap">
+                                        {hasAbsence ? 'Mark as Available' : 'Mark as Unavailable'}
+                                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800 dark:border-t-gray-700"></div>
+                                      </div>
+                                    )}
+                                  </div>
                                 );
                               })}
                             </div>
