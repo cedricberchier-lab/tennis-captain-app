@@ -208,23 +208,63 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Resolve the day token
-    const dayToken = await resolveDayToken(date, site);
+    // For now, let's use the existing free-courts API to get booking links
+    // This is a temporary workaround while we debug the HTML parsing
     
-    // Fetch the board HTML
-    const html = await fetchDayBoardHtml(dayToken, site);
+    const freeCourtsResponse = await fetch(`${request.nextUrl.origin}/api/free-courts?site=${site}`, {
+      cache: 'no-store'
+    });
     
-    // Find the reservation link
-    const reservationUrl = findReservationLink(html, courtNumber, time);
+    if (!freeCourtsResponse.ok) {
+      throw new Error('Failed to fetch free courts data');
+    }
+    
+    const freeCourtsData = await freeCourtsResponse.json();
+    
+    // Find the court and time slot
+    const targetCourtName = `Tennis n°${courtNumber}`;
+    const targetTime = time.replace(':', 'h'); // Convert 16:30 to 16h30
+    
+    const court = freeCourtsData.courts.find((c: any) => c.court === targetCourtName);
+    if (!court) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: `Court "${targetCourtName}" not found. Available courts: ${freeCourtsData.courts.map((c: any) => c.court).join(', ')}`
+        },
+        { status: 404 }
+      );
+    }
+    
+    const slot = court.slots.find((s: any) => s.time === targetTime && s.status === 'free');
+    if (!slot) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: `Time slot ${targetTime} not available or not free on ${targetCourtName}`
+        },
+        { status: 404 }
+      );
+    }
+    
+    if (!slot.href) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: `No booking link available for ${targetTime} on ${targetCourtName}`
+        },
+        { status: 404 }
+      );
+    }
     
     return NextResponse.json({
       success: true,
-      reservationUrl,
-      dayToken,
+      reservationUrl: slot.href,
       site,
       date,
       time,
-      courtNumber
+      courtNumber,
+      court: targetCourtName
     });
 
   } catch (error) {
