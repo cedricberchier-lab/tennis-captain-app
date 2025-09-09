@@ -738,7 +738,9 @@ export default function TrainingMode() {
                               Court {training.courtNumber}
                             </div>
                             <span>🕐 {training.timeStart} - {training.timeEnd}</span>
-                            <span>👥 {training.participants.length}/4 players</span>
+                            {training.participants.length > 0 && (
+                              <span>👥 {training.participants.length}/4 players</span>
+                            )}
                           </div>
                         </div>
 
