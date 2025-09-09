@@ -335,13 +335,13 @@ export default function FreeCourtsList() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowOutdoor(!showOutdoor)}
-                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                    className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${
                       showOutdoor ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
                     }`}
                   >
                     <span
-                      className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                        showOutdoor ? 'translate-x-5' : 'translate-x-1'
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
+                        showOutdoor ? 'translate-x-5' : 'translate-x-0.5'
                       }`}
                     />
                   </button>
@@ -354,13 +354,13 @@ export default function FreeCourtsList() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowIndoor(!showIndoor)}
-                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                    className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${
                       showIndoor ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
                     }`}
                   >
                     <span
-                      className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                        showIndoor ? 'translate-x-5' : 'translate-x-1'
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm ${
+                        showIndoor ? 'translate-x-5' : 'translate-x-0.5'
                       }`}
                     />
                   </button>
