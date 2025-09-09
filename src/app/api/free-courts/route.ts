@@ -117,8 +117,8 @@ export async function GET(req: Request) {
           const onclickMatch = attrs.match(/onclick="([^"]*)"/);
           if (onclickMatch) {
             const onclickStr = onclickMatch[1];
-            const urlMatch = onclickStr.match(/window\.location\s*=\s*'([^']+reservation1\.php\?[^']+)'/);
-            if (urlMatch) {
+            const urlMatch = onclickStr.match(/window\.location\s*=\s*'([^']+)'/);
+            if (urlMatch && urlMatch[1].includes('reservation1.php')) {
               href = `${FCP_BASE}/${urlMatch[1].replace(/^\.\//, "")}`;
               console.log(`Extracted href: ${href}`);
             } else if (status === 'free') {
