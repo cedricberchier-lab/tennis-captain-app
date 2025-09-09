@@ -97,11 +97,14 @@ export default function FreeCourtsList() {
   // Helper function to format date for site matching (like "Ve 12")
   const siteDayLabel = (dateStr: string) => {
     const date = new Date(dateStr + 'T12:00:00'); // Add time to avoid timezone issues
-    const fr = date.toLocaleDateString("fr-CH", { weekday: "short", day: "numeric" });
-    const [wdRaw, dayStr] = fr.replace(/\u00A0/g, " ").split(" ");
-    const wd2 = (wdRaw || "").slice(0, 2).toLowerCase();
-    const wd = wd2.charAt(0).toUpperCase() + wd2.charAt(1);
-    return `${wd} ${parseInt(dayStr, 10)}`;
+    
+    // Manual mapping to match FairPlay site exactly
+    const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, etc.
+    const dayAbbrevs = ['Di', 'Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa']; // Sunday to Saturday
+    const wd = dayAbbrevs[dayOfWeek];
+    const dayNum = date.getDate();
+    
+    return `${wd} ${dayNum}`;
   };
 
   // Resolve date token for a specific site

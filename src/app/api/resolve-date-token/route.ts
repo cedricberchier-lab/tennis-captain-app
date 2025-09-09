@@ -11,19 +11,14 @@ const getBaseUrl = (site: string) => {
 /** Format Date -> site label like "Ve 12" */
 function siteDayLabel(dateStr: string) {
   const date = new Date(dateStr + 'T12:00:00'); // Add time to avoid timezone issues
-  const fr = date.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric" });
   
-  // Handle different French formats
-  let [wdRaw, dayStr] = fr.replace(/\u00A0/g, " ").split(" ");
+  // Manual mapping to match FairPlay site exactly
+  const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, etc.
+  const dayAbbrevs = ['Di', 'Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa']; // Sunday to Saturday
+  const wd = dayAbbrevs[dayOfWeek];
+  const dayNum = date.getDate();
   
-  // Clean up weekday (remove periods, take first 2 chars)
-  wdRaw = (wdRaw || "").replace(/\./g, "").slice(0, 2).toLowerCase();
-  const wd = wdRaw.charAt(0).toUpperCase() + wdRaw.charAt(1);
-  
-  // Clean up day number
-  const dayNum = parseInt((dayStr || "").replace(/[^\d]/g, ""), 10);
-  
-  console.log(`Date formatting: ${dateStr} -> ${fr} -> "${wd} ${dayNum}"`);
+  console.log(`Date formatting: ${dateStr} -> day ${dayOfWeek} -> "${wd} ${dayNum}"`);
   return `${wd} ${dayNum}`;
 }
 
