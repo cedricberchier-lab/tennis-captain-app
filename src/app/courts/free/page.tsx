@@ -282,30 +282,30 @@ export default function FreeCourtsList() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Free Tennis Courts - Centre FairPlay
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="container mx-auto px-3 py-4">
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            Free Tennis Courts
           </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            Real-time tennis court availability with direct booking
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            Centre FairPlay - Real-time availability
           </p>
         </div>
 
         {/* Filters */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-              {/* Date Selector - Next 7 Days */}
-              <div className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <Card className="mb-4">
+          <CardContent className="p-4">
+            <div className="flex flex-wrap gap-4 items-end">
+              {/* Date Selector */}
+              <div className="min-w-32">
+                <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 block">
                   Date
                 </label>
                 <select
                   value={selectedDateIndex}
                   onChange={e => setSelectedDateIndex(parseInt(e.target.value))}
-                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
                 >
                   {next7Days.map((day, index) => (
                     <option key={index} value={index}>
@@ -315,73 +315,68 @@ export default function FreeCourtsList() {
                 </select>
               </div>
 
-              {/* Apple-style Toggles for Court Types */}
-              <div className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Court Types
-                </label>
-                <div className="space-y-2">
-                  {/* Outdoor Toggle */}
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setShowOutdoor(!showOutdoor)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                        showOutdoor ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+              {/* Court Type Toggles */}
+              <div className="flex gap-4 items-center">
+                <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Courts:</label>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowOutdoor(!showOutdoor)}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                      showOutdoor ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                        showOutdoor ? 'translate-x-5' : 'translate-x-1'
                       }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          showOutdoor ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                    <span className="text-sm text-gray-700 dark:text-gray-300">🌞 Outdoor</span>
-                  </div>
-                  
-                  {/* Indoor Toggle */}
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setShowIndoor(!showIndoor)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                        showIndoor ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-600'
+                    />
+                  </button>
+                  <span className="text-xs text-gray-700 dark:text-gray-300">🌞 Out</span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowIndoor(!showIndoor)}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                      showIndoor ? 'bg-blue-500' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
+                        showIndoor ? 'translate-x-5' : 'translate-x-1'
                       }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          showIndoor ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
-                    <span className="text-sm text-gray-700 dark:text-gray-300">🏢 Indoor</span>
-                  </div>
+                    />
+                  </button>
+                  <span className="text-xs text-gray-700 dark:text-gray-300">🏢 In</span>
                 </div>
               </div>
 
-              <div className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  <Clock className="h-4 w-4 inline mr-1" />
-                  Show after
+              {/* Time Filter */}
+              <div className="min-w-24">
+                <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 block">
+                  After
                 </label>
                 <Input
                   type="time"
                   value={after}
                   onChange={e => setAfter(e.target.value)}
-                  className="focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-2 py-1.5 text-sm"
                 />
               </div>
 
 
+              {/* Refresh Button */}
               <Button
                 onClick={fetchData}
                 disabled={loading}
-                className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700"
               >
                 {loading ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <RefreshCw className="h-3 w-3 animate-spin" />
                 ) : (
-                  <RefreshCw className="h-4 w-4" />
+                  <RefreshCw className="h-3 w-3" />
                 )}
-                {loading ? 'Loading...' : 'Refresh'}
               </Button>
             </div>
           </CardContent>
@@ -389,94 +384,52 @@ export default function FreeCourtsList() {
 
         {/* Error Display */}
         {error && (
-          <Card className="mb-6">
-            <CardContent className="p-4">
-              <div className="text-red-600 dark:text-red-400">
-                <strong>Error:</strong> {error}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-red-600 dark:text-red-400 text-sm">
+            <strong>Error:</strong> {error}
+          </div>
         )}
 
         {/* Results */}
         {(indoorData || outdoorData) && (
-          <div className="space-y-6">
-            {/* Source Info */}
-            <div className="text-sm text-gray-600 dark:text-gray-400 flex flex-wrap items-center gap-4">
-              <span>Sources:</span>
-              {showOutdoor && outdoorData && (
-                <a 
-                  href={outdoorData.url} 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  className="underline hover:text-blue-600 flex items-center gap-1"
-                >
-                  🌞 Outdoor Courts - Centre FairPlay
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
-              {showIndoor && indoorData && (
-                <a 
-                  href={indoorData.url} 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  className="underline hover:text-blue-600 flex items-center gap-1"
-                >
-                  🏢 Indoor Courts - Centre FairPlay
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
-            </div>
+          <div className="space-y-4">
 
             {/* Available Slots */}
             {filtered.length === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <div className="text-6xl mb-4">🎾</div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    No courts available
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    No free tennis courts after {after} on {next7Days[selectedDateIndex]?.displayName}.
-                    Try adjusting your filters or selecting a different date.
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="text-center py-8">
+                <div className="text-4xl mb-3">🎾</div>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+                  No courts available
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  No free courts after {after} on {next7Days[selectedDateIndex]?.displayName}
+                </p>
+              </div>
             ) : (
-              <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                 {filtered.map((c) => (
-                  <Card key={`${c.court}-${c.type}`} className="hover:shadow-lg transition-shadow">
-                    <CardHeader className="pb-4">
-                      <CardTitle className="text-lg flex items-center justify-between">
+                  <Card key={`${c.court}-${c.type}`} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          {c.type === 'indoor' ? '🏢' : '🌞'}
-                          {c.court}
+                          <span className="text-lg">{c.type === 'indoor' ? '🏢' : '🌞'}</span>
+                          <span className="font-semibold text-sm">{c.court}</span>
                         </div>
-                        <Badge variant="secondary">
-                          {c.slots.length} slot{c.slots.length !== 1 ? 's' : ''}
+                        <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                          {c.slots.length}
                         </Badge>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 gap-2">
+                      </div>
+                      <div className="grid grid-cols-3 gap-1.5">
                         {c.slots.map((slot, idx) => (
-                          <div key={idx}>
-                            <button
-                              onClick={() => handleDirectBooking(c.court, slot.time, c.type)}
-                              disabled={loading}
-                              className="w-full p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border-2 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="font-medium text-green-700 dark:text-green-300 group-hover:text-green-800 dark:group-hover:text-green-200">
-                                  {slot.time}
-                                </div>
-                                <ExternalLink className="h-3 w-3 text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300" />
-                              </div>
-                              <div className="text-xs text-green-600 dark:text-green-400 mt-1 text-left">
-                                {loading ? 'Loading...' : 'Click to book'}
-                              </div>
-                            </button>
-                          </div>
+                          <button
+                            key={idx}
+                            onClick={() => handleDirectBooking(c.court, slot.time, c.type)}
+                            disabled={loading}
+                            className="p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors group disabled:opacity-50 text-center"
+                          >
+                            <div className="text-xs font-medium text-green-700 dark:text-green-300 group-hover:text-green-800">
+                              {slot.time.replace('h', ':')}
+                            </div>
+                          </button>
                         ))}
                       </div>
                     </CardContent>
@@ -489,8 +442,9 @@ export default function FreeCourtsList() {
             <div className="flex justify-center">
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setShowRawTable(!showRawTable)}
-                className="flex items-center gap-2"
+                className="text-xs"
               >
                 {showRawTable ? 'Hide' : 'Show'} Raw Schedule
               </Button>
