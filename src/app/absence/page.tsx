@@ -95,12 +95,20 @@ export default function AbsencePage() {
     });
   };
 
-  // Auto-set toDate when fromDate changes
+  // Auto-set toDate when fromDate changes - always align toDate to fromDate
   const handleFromDateChange = (date: string) => {
     setFormData(prev => ({
       ...prev,
       fromDate: date,
-      toDate: prev.toDate || date // Set toDate to same as fromDate if not already set
+      toDate: date // Always align toDate to fromDate when fromDate changes
+    }));
+  };
+  
+  // Handle toDate change independently
+  const handleToDateChange = (date: string) => {
+    setFormData(prev => ({
+      ...prev,
+      toDate: date
     }));
   };
 
@@ -123,11 +131,8 @@ export default function AbsencePage() {
       return;
     }
     
-    // Validate date range
-    const fromDate = new Date(formData.fromDate);
-    const toDate = new Date(formData.toDate);
-    
-    if (toDate < fromDate) {
+    // Validate date range using string comparison to avoid timezone issues
+    if (formData.toDate < formData.fromDate) {
       alert('To date cannot be earlier than From date.');
       return;
     }
@@ -138,10 +143,20 @@ export default function AbsencePage() {
     try {
       const newAbsences: string[] = [];
       
-      // Generate absence entries for each date in the range
+      // Generate absence entries for each date in the range using safer date handling
+      const fromParts = formData.fromDate.split('-').map(Number);
+      const toParts = formData.toDate.split('-').map(Number);
+      
+      const fromDate = new Date(fromParts[0], fromParts[1] - 1, fromParts[2]); // Year, Month (0-indexed), Day
+      const toDate = new Date(toParts[0], toParts[1] - 1, toParts[2]);
+      
       const currentDate = new Date(fromDate);
       while (currentDate <= toDate) {
-        const dateStr = currentDate.toISOString().split('T')[0];
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+        const day = String(currentDate.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+        
         const absenceEntry = `${dateStr}${formData.reason.trim() ? ` - ${formData.reason.trim()}` : ''}`;
         newAbsences.push(absenceEntry);
         currentDate.setDate(currentDate.getDate() + 1);
@@ -308,7 +323,7 @@ export default function AbsencePage() {
                     type="date"
                     value={formData.toDate}
                     min={formData.fromDate || new Date().toISOString().split('T')[0]}
-                    onChange={(e) => setFormData({ ...formData, toDate: e.target.value })}
+                    onChange={(e) => handleToDateChange(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 dark:bg-gray-700 dark:text-white"
                     required
                   />
