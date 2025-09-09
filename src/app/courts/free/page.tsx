@@ -50,6 +50,50 @@ export default function FreeCourtsList() {
   const [error, setError] = useState<string | null>(null);
   const [showRawTable, setShowRawTable] = useState(false);
 
+  // Extract court number from court name (e.g., "Tennis n°5" -> 5)
+  const extractCourtNumber = (courtName: string): number | null => {
+    const match = courtName.match(/n°(\d+)/i);
+    return match ? parseInt(match[1], 10) : null;
+  };
+
+  // Direct booking handler
+  const handleDirectBooking = async (court: string, time: string, type: 'indoor' | 'outdoor') => {
+    const courtNumber = extractCourtNumber(court);
+    if (!courtNumber) {
+      alert(`Cannot extract court number from "${court}"`);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch('/api/direct-booking', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          date: selectedDate,
+          time,
+          courtNumber,
+          site: type === 'indoor' ? 'int' : 'ext'
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        window.open(result.reservationUrl, '_blank');
+      } else {
+        alert(`Booking failed: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Booking error:', error);
+      alert('Failed to open booking page. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Helper function to format date for site matching (like "Ve 12")
   const siteDayLabel = (dateStr: string) => {
     const date = new Date(dateStr + 'T12:00:00'); // Add time to avoid timezone issues
@@ -414,33 +458,21 @@ export default function FreeCourtsList() {
                       <div className="grid grid-cols-2 gap-2">
                         {c.slots.map((slot, idx) => (
                           <div key={idx}>
-                            {slot.href ? (
-                              <a
-                                href={slot.href}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="block p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border-2 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors cursor-pointer group"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div className="font-medium text-green-700 dark:text-green-300 group-hover:text-green-800 dark:group-hover:text-green-200">
-                                    {slot.time}
-                                  </div>
-                                  <ExternalLink className="h-3 w-3 text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300" />
-                                </div>
-                                <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                  Click to book
-                                </div>
-                              </a>
-                            ) : (
-                              <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                                <div className="font-medium text-gray-700 dark:text-gray-300">
+                            <button
+                              onClick={() => handleDirectBooking(c.court, slot.time, c.type)}
+                              disabled={loading}
+                              className="w-full p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border-2 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="font-medium text-green-700 dark:text-green-300 group-hover:text-green-800 dark:group-hover:text-green-200">
                                   {slot.time}
                                 </div>
-                                <div className="text-xs text-gray-500 mt-1">
-                                  No booking link
-                                </div>
+                                <ExternalLink className="h-3 w-3 text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300" />
                               </div>
-                            )}
+                              <div className="text-xs text-green-600 dark:text-green-400 mt-1 text-left">
+                                {loading ? 'Loading...' : 'Click to book'}
+                              </div>
+                            </button>
                           </div>
                         ))}
                       </div>
