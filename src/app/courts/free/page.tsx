@@ -23,11 +23,26 @@ function toMinutes(hhmm: string) {
 }
 
 export default function FreeCourtsList() {
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [selectedDateIndex, setSelectedDateIndex] = useState(0);
   const [showIndoor, setShowIndoor] = useState(true);
   const [showOutdoor, setShowOutdoor] = useState(true);
   const [after, setAfter] = useState("18:00");
-  const [dToken, setDToken] = useState<string>(""); // optional vendor date token
+  
+  // Generate next 7 days
+  const next7Days = useMemo(() => {
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() + i);
+      days.push({
+        date: date.toISOString().split('T')[0],
+        displayName: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+      });
+    }
+    return days;
+  }, []);
+  
+  const selectedDate = next7Days[selectedDateIndex]?.date || next7Days[0].date
   const [indoorData, setIndoorData] = useState<ApiResp | null>(null);
   const [outdoorData, setOutdoorData] = useState<ApiResp | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,8 +58,7 @@ export default function FreeCourtsList() {
       
       // Fetch indoor data if toggled on
       if (showIndoor) {
-        const indoorQs = new URLSearchParams({ site: "int" });
-        if (dToken) indoorQs.set("d", dToken);
+        const indoorQs = new URLSearchParams({ site: "int", date: selectedDate });
         promises.push(
           fetch(`/api/free-courts?${indoorQs.toString()}`, { cache: "no-store" })
             .then(res => res.json())
@@ -54,8 +68,7 @@ export default function FreeCourtsList() {
       
       // Fetch outdoor data if toggled on
       if (showOutdoor) {
-        const outdoorQs = new URLSearchParams({ site: "ext" });
-        if (dToken) outdoorQs.set("d", dToken);
+        const outdoorQs = new URLSearchParams({ site: "ext", date: selectedDate });
         promises.push(
           fetch(`/api/free-courts?${outdoorQs.toString()}`, { cache: "no-store" })
             .then(res => res.json())
@@ -94,7 +107,7 @@ export default function FreeCourtsList() {
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showIndoor, showOutdoor, selectedDate, dToken]);
+  }, [showIndoor, showOutdoor, selectedDate]);
 
   const filtered = useMemo(() => {
     const afterMin = toMinutes(after);
@@ -179,18 +192,23 @@ export default function FreeCourtsList() {
         {/* Filters */}
         <Card className="mb-6">
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-              {/* Date Picker */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+              {/* Date Selector - Next 7 Days */}
               <div className="flex flex-col">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Date
                 </label>
-                <Input
-                  type="date"
-                  value={selectedDate}
-                  onChange={e => setSelectedDate(e.target.value)}
-                  className="focus:ring-2 focus:ring-blue-500"
-                />
+                <select
+                  value={selectedDateIndex}
+                  onChange={e => setSelectedDateIndex(parseInt(e.target.value))}
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                >
+                  {next7Days.map((day, index) => (
+                    <option key={index} value={index}>
+                      {day.displayName}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Apple-style Toggles for Court Types */}
@@ -248,17 +266,6 @@ export default function FreeCourtsList() {
                 />
               </div>
 
-              <div className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Date Token (optional)
-                </label>
-                <Input
-                  placeholder="d=ZwNlAF0jBF0kZN=="
-                  value={dToken}
-                  onChange={e => setDToken(e.target.value.trim())}
-                  className="focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
 
               <Button
                 onClick={fetchData}
@@ -326,7 +333,7 @@ export default function FreeCourtsList() {
                     No courts available
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400">
-                    No free tennis courts after {after} on {selectedDate}.
+                    No free tennis courts after {after} on {next7Days[selectedDateIndex]?.displayName}.
                     Try adjusting your filters or selecting a different date.
                   </p>
                 </CardContent>
