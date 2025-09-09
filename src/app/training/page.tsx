@@ -869,13 +869,22 @@ export default function TrainingMode() {
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Court Number
                       </label>
-                      <input
-                        type="text"
+                      <select
                         value={formData.courtNumber}
                         onChange={(e) => setFormData({ ...formData, courtNumber: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
-                        placeholder="e.g., 1, 2A, Center Court"
-                      />
+                        required
+                      >
+                        <option value="">Select a court...</option>
+                        <option value="1-int">1-int</option>
+                        <option value="2-int">2-int</option>
+                        <option value="3-int">3-int</option>
+                        <option value="4-int">4-int</option>
+                        <option value="5-ext">5-ext</option>
+                        <option value="6-ext">6-ext</option>
+                        <option value="7-ext">7-ext</option>
+                        <option value="8-ext">8-ext</option>
+                      </select>
                     </div>
                   </div>
 
@@ -975,18 +984,6 @@ export default function TrainingMode() {
                               </option>
                             ))}
                           </select>
-                          
-                          <div className="text-sm text-gray-600 dark:text-gray-300 min-w-0">
-                            {participant.playerId ? (
-                              <span className="font-medium text-green-600 dark:text-green-400">
-                                ✓ {participant.playerName}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400">
-                                No player selected
-                              </span>
-                            )}
-                          </div>
 
                           <button
                             type="button"
@@ -1185,13 +1182,22 @@ export default function TrainingMode() {
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Court Number
                       </label>
-                      <input
-                        type="text"
+                      <select
                         value={formData.courtNumber}
                         onChange={(e) => setFormData({ ...formData, courtNumber: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
-                        placeholder="e.g., 1, 2A, Center Court"
-                      />
+                        required
+                      >
+                        <option value="">Select a court...</option>
+                        <option value="1-int">1-int</option>
+                        <option value="2-int">2-int</option>
+                        <option value="3-int">3-int</option>
+                        <option value="4-int">4-int</option>
+                        <option value="5-ext">5-ext</option>
+                        <option value="6-ext">6-ext</option>
+                        <option value="7-ext">7-ext</option>
+                        <option value="8-ext">8-ext</option>
+                      </select>
                     </div>
                   </div>
 
@@ -1291,18 +1297,6 @@ export default function TrainingMode() {
                               </option>
                             ))}
                           </select>
-                          
-                          <div className="text-sm text-gray-600 dark:text-gray-300 min-w-0">
-                            {participant.playerId ? (
-                              <span className="font-medium text-green-600 dark:text-green-400">
-                                ✓ {participant.playerName}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400">
-                                No player selected
-                              </span>
-                            )}
-                          </div>
 
                           <button
                             type="button"
