@@ -108,7 +108,8 @@ export async function GET(req: Request) {
 
           // Extract booking link if present in onclick
           let href: string | undefined;
-          const onclick = attrs.match(/onclick="[^"]*'([^']+reservation1\.php\?d=[^']+)'/);
+          // Updated regex to match: onclick="window.location='reservation1.php?d=...'; return false;"
+          const onclick = attrs.match(/onclick="[^"]*window\.location\s*=\s*'([^']+reservation1\.php\?[^']+)'/);
           if (onclick?.[1]) href = `${FCP_BASE}/${onclick[1].replace(/^\.\//, "")}`;
 
           return { status, href };
