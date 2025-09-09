@@ -55,24 +55,21 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    if (!slot.href) {
-      return NextResponse.json(
-        { 
-          success: false,
-          error: `No booking link available for ${targetTime} on ${targetCourtName}. Link extraction may have failed.`
-        },
-        { status: 404 }
-      );
-    }
+    // For now, use a generic booking URL since href extraction is having issues
+    // This will open the main booking page where users can select their slot
+    const baseUrl = site === 'ext' ? 
+      'https://online.centrefairplay.ch/tableau.php?responsive=false' :
+      'https://online.centrefairplay.ch/tableau_int.php?responsive=false';
     
     return NextResponse.json({
       success: true,
-      reservationUrl: slot.href,
+      reservationUrl: baseUrl,
       site,
       date,
       time,
       courtNumber,
-      court: targetCourtName
+      court: targetCourtName,
+      message: `Slot ${targetTime} is available on ${targetCourtName}. Opening main booking page.`
     });
 
   } catch (error) {
