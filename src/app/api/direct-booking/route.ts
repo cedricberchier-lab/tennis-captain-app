@@ -55,21 +55,26 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // For now, use a generic booking URL since href extraction is having issues
-    // This will open the main booking page where users can select their slot
-    const baseUrl = site === 'ext' ? 
-      'https://online.centrefairplay.ch/tableau.php?responsive=false' :
-      'https://online.centrefairplay.ch/tableau_int.php?responsive=false';
+    // Use the exact booking URL if available, otherwise use the main booking page
+    let reservationUrl: string;
+    if (slot.href) {
+      reservationUrl = slot.href;
+    } else {
+      // Fallback to main booking page  
+      reservationUrl = site === 'ext' ? 
+        'https://online.centrefairplay.ch/tableau.php?responsive=false' :
+        'https://online.centrefairplay.ch/tableau_int.php?responsive=false';
+    }
     
     return NextResponse.json({
       success: true,
-      reservationUrl: baseUrl,
+      reservationUrl,
       site,
       date,
       time,
       courtNumber,
       court: targetCourtName,
-      message: `Slot ${targetTime} is available on ${targetCourtName}. Opening main booking page.`
+      hasDirectLink: !!slot.href
     });
 
   } catch (error) {
