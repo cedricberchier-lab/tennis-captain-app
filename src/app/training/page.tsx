@@ -715,9 +715,6 @@ export default function TrainingMode() {
 
           {/* Training List */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-              Next {horizonCount} Training Session{horizonCount !== 1 ? 's' : ''}
-            </h2>
             
             {trainingsLoading ? (
               <div className="text-center py-12">
@@ -747,35 +744,49 @@ export default function TrainingMode() {
                     key={`${training.id}-${refreshKey}-${players.length}`}
                     className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="mb-2">
-                          <div className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                            {training.dayName}, {training.date.toLocaleDateString()}
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
-                            <div className="text-sm bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded flex items-center gap-1">
+                    <div className="space-y-3">
+                      <div>
+                        <div className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                          {training.dayName}, {training.date.toLocaleDateString()}
+                        </div>
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-2">
+                            <div className="text-sm bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded flex items-center gap-1 w-fit">
                               <MapPin className="h-3 w-3" />
                               Court {training.courtNumber}
                             </div>
-                            <span className="flex items-center gap-1">
+                            <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-300">
                               <Clock className="h-3 w-3" />
                               {training.timeStart} - {training.timeEnd}
-                            </span>
-                            {training.participants.length > 0 && (
-                              <span className="flex items-center gap-1">
-                                <Users className="h-3 w-3" />
-                                {training.participants.length}/4 players
-                              </span>
-                            )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteTraining(training.id)}
+                              className="text-red-500 hover:text-red-700 border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors h-[24px] w-[24px] p-0"
+                              title="Delete training"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openEditForm(training)}
+                              className="text-blue-600 hover:text-blue-800 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors h-[24px] w-[24px] p-0"
+                              title="Edit training"
+                            >
+                              <Edit3 className="h-3 w-3" />
+                            </Button>
                           </div>
                         </div>
+                      </div>
 
-                        {training.participants.length > 0 && (
-                          <div className="mb-2">
-                            <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Players:</div>
-                            <div className="flex flex-wrap gap-2">
-                              {training.participants.map((participant, index) => {
+                      {training.participants.length > 0 && (
+                        <div>
+                          <div className="space-y-2">
+                            {training.participants.map((participant, index) => {
                                 // Debug info for absence checking
                                 const playerId = participant.playerId || participant.id;
                                 const hasAbsence = playerId && playerHasAbsenceOnDate(playerId, training.date);
@@ -786,7 +797,7 @@ export default function TrainingMode() {
                                     <button
                                       onClick={() => playerId && handleToggleAbsence(playerId, training.date, participant.playerName)}
                                       disabled={!playerId}
-                                      className={`px-2 py-1 rounded text-sm font-medium transition-all duration-200 flex items-center gap-1 ${
+                                      className={`w-full px-3 py-2 rounded text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
                                         hasAbsence
                                           ? "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-600 hover:bg-red-200 dark:hover:bg-red-800"
                                           : "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-600 hover:bg-green-200 dark:hover:bg-green-800"
@@ -818,36 +829,15 @@ export default function TrainingMode() {
                         )}
 
                         {training.comment && (
-                          <div className="text-sm text-gray-600 dark:text-gray-300 flex items-start gap-1">
-                            <MessageSquare className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                            {training.comment}
+                          <div>
+                            <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Comment:</div>
+                            <div className="text-sm text-gray-600 dark:text-gray-300 flex items-start gap-2 bg-gray-50 dark:bg-gray-800 p-2 rounded">
+                              <MessageSquare className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                              {training.comment}
+                            </div>
                           </div>
                         )}
-                      </div>
 
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openEditForm(training)}
-                          className="text-blue-600 hover:text-blue-800 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                        >
-                          <Edit3 className="h-3 w-3 mr-1" />
-                          Edit
-                        </Button>
-                        {isAdmin() && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteTraining(training.id)}
-                            className="text-red-500 hover:text-red-700 border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                            title="Delete training (Admin only)"
-                          >
-                            <Trash2 className="h-3 w-3 mr-1" />
-                            Delete
-                          </Button>
-                        )}
-                      </div>
                     </div>
                   </div>
                 ))}
@@ -920,7 +910,6 @@ export default function TrainingMode() {
                         <option value="1-int">1-int</option>
                         <option value="2-int">2-int</option>
                         <option value="3-int">3-int</option>
-                        <option value="4-int">4-int</option>
                         <option value="5-ext">5-ext</option>
                         <option value="6-ext">6-ext</option>
                         <option value="7-ext">7-ext</option>
@@ -1272,7 +1261,6 @@ export default function TrainingMode() {
                         <option value="1-int">1-int</option>
                         <option value="2-int">2-int</option>
                         <option value="3-int">3-int</option>
-                        <option value="4-int">4-int</option>
                         <option value="5-ext">5-ext</option>
                         <option value="6-ext">6-ext</option>
                         <option value="7-ext">7-ext</option>

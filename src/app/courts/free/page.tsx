@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { RefreshCw, Sun, Activity, CheckCircle, XCircle, Minus, Circle, Home } from 'lucide-react';
 
 type ApiResp = {
@@ -26,9 +24,31 @@ function toMinutes(hhmm: string) {
 
 export default function FreeCourtsList() {
   const [selectedDateIndex, setSelectedDateIndex] = useState(0);
-  const [showIndoor, setShowIndoor] = useState(true);
-  const [showOutdoor, setShowOutdoor] = useState(true);
+  
+  // Determine seasonal default (Indoors: Oct-Apr, Outdoors: May-Sep)
+  const getSeasonalDefault = () => {
+    const currentMonth = new Date().getMonth() + 1; // 1-12
+    return currentMonth >= 10 || currentMonth <= 4; // Oct-Apr = true (indoor), else false (outdoor)
+  };
+  
+  const [showIndoor, setShowIndoor] = useState(getSeasonalDefault());
+  const [showOutdoor, setShowOutdoor] = useState(!getSeasonalDefault());
   const [after, setAfter] = useState("08:00");
+  
+  // Exclusive selection handlers
+  const handleIndoorToggle = () => {
+    if (!showIndoor) {
+      setShowIndoor(true);
+      setShowOutdoor(false);
+    }
+  };
+  
+  const handleOutdoorToggle = () => {
+    if (!showOutdoor) {
+      setShowOutdoor(true);
+      setShowIndoor(false);
+    }
+  };
   
   // Generate next 7 days
   const next7Days = useMemo(() => {
@@ -50,7 +70,6 @@ export default function FreeCourtsList() {
   const [outdoorData, setOutdoorData] = useState<ApiResp | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showRawTable, setShowRawTable] = useState(false);
 
   // Extract court number from court name (e.g., "Tennis n°5" -> 5)
   const extractCourtNumber = (courtName: string): number | null => {
@@ -305,9 +324,9 @@ export default function FreeCourtsList() {
         {/* Filters */}
         <Card className="mb-3">
           <CardContent className="p-3">
-            <div className="flex flex-wrap gap-3 items-end">
+            <div className="space-y-3">
               {/* Date Selector */}
-              <div className="min-w-28">
+              <div>
                 <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 block">
                   Date
                 </label>
@@ -325,36 +344,49 @@ export default function FreeCourtsList() {
               </div>
 
               {/* Court Type Toggles */}
-              <div className="flex gap-4 items-center">
-                <Label className="text-xs font-medium text-gray-600 dark:text-gray-400">Courts:</Label>
-                
-                <div className="flex items-center space-x-1.5">
-                  <Switch 
-                    id="outdoor-courts" 
-                    checked={showOutdoor}
-                    onCheckedChange={setShowOutdoor}
-                  />
-                  <Label htmlFor="outdoor-courts" className="flex items-center gap-1 text-xs">
-                    <Sun className="h-3 w-3 text-yellow-500" />
-                    Out
-                  </Label>
-                </div>
-                
-                <div className="flex items-center space-x-1.5">
-                  <Switch 
-                    id="indoor-courts" 
-                    checked={showIndoor}
-                    onCheckedChange={setShowIndoor}
-                  />
-                  <Label htmlFor="indoor-courts" className="flex items-center gap-1 text-xs">
+              <div>
+                <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Courts</div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleIndoorToggle}
+                    className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer ${
+                      showIndoor
+                        ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-600 hover:bg-green-200 dark:hover:bg-green-800"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600"
+                    }`}
+                    title="Select indoor courts"
+                  >
+                    {showIndoor ? (
+                      <CheckCircle className="h-3 w-3" />
+                    ) : (
+                      <Circle className="h-3 w-3" />
+                    )}
                     <Home className="h-3 w-3 text-blue-500" />
-                    In
-                  </Label>
+                    Indoors
+                  </button>
+                  
+                  <button
+                    onClick={handleOutdoorToggle}
+                    className={`flex-1 px-3 py-2 rounded text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer ${
+                      showOutdoor
+                        ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-600 hover:bg-green-200 dark:hover:bg-green-800"
+                        : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600"
+                    }`}
+                    title="Select outdoor courts"
+                  >
+                    {showOutdoor ? (
+                      <CheckCircle className="h-3 w-3" />
+                    ) : (
+                      <Circle className="h-3 w-3" />
+                    )}
+                    <Sun className="h-3 w-3 text-yellow-500" />
+                    Outdoors
+                  </button>
                 </div>
               </div>
 
               {/* Time Filter */}
-              <div className="min-w-20">
+              <div>
                 <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 block">
                   After
                 </label>
@@ -367,18 +399,21 @@ export default function FreeCourtsList() {
               </div>
 
               {/* Refresh Button */}
-              <Button
-                onClick={fetchData}
-                disabled={loading}
-                size="sm"
-                className="bg-blue-600 hover:bg-blue-700 px-2"
-              >
-                {loading ? (
-                  <RefreshCw className="h-3 w-3 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-3 w-3" />
-                )}
-              </Button>
+              <div>
+                <Button
+                  onClick={fetchData}
+                  disabled={loading}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 w-full"
+                >
+                  {loading ? (
+                    <RefreshCw className="h-3 w-3 animate-spin mr-1" />
+                  ) : (
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                  )}
+                  Refresh
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -444,127 +479,6 @@ export default function FreeCourtsList() {
               </div>
             )}
 
-            {/* Raw Table Toggle */}
-            <div className="flex justify-center">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowRawTable(!showRawTable)}
-                className="text-xs px-3 py-1.5"
-              >
-                {showRawTable ? 'Hide' : 'Show'} Raw Schedule
-              </Button>
-            </div>
-
-            {/* Raw Tables */}
-            {showRawTable && (
-              <div className="space-y-4">
-                {showOutdoor && outdoorData && (
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <Sun className="h-4 w-4 text-yellow-500" />
-                        Outdoor Courts - Raw Schedule
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="overflow-auto">
-                        <table className="min-w-full text-sm">
-                          <thead>
-                            <tr className="border-b border-gray-200 dark:border-gray-700">
-                              <th className="p-2 text-left font-medium text-gray-900 dark:text-white text-sm">Court</th>
-                              {outdoorData.times.map((t, i) => (
-                                <th key={i} className="p-1 text-center font-medium text-gray-900 dark:text-white min-w-[40px] text-xs">
-                                  {t.replace("h", ":")}
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {outdoorData.courts.map((c, idx) => (
-                              <tr key={idx} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
-                                <td className="p-2 font-medium text-gray-900 dark:text-white text-sm">{c.court}</td>
-                                {c.slots.map((s, i) => (
-                                  <td key={i} className="p-1 text-center">
-                                    <div className="flex items-center justify-center" title={s.status}>
-                                      {getStatusIcon(s.status)}
-                                    </div>
-                                  </td>
-                                ))}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-                
-                {showIndoor && indoorData && (
-                  <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base flex items-center gap-2">
-                        <Home className="h-4 w-4 text-blue-500" />
-                        Indoor Courts - Raw Schedule
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="overflow-auto">
-                        <table className="min-w-full text-sm">
-                          <thead>
-                            <tr className="border-b border-gray-200 dark:border-gray-700">
-                              <th className="p-2 text-left font-medium text-gray-900 dark:text-white text-sm">Court</th>
-                              {indoorData.times.map((t, i) => (
-                                <th key={i} className="p-1 text-center font-medium text-gray-900 dark:text-white min-w-[40px] text-xs">
-                                  {t.replace("h", ":")}
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {indoorData.courts
-                              .filter(c => !c.court.toLowerCase().includes('n°4'))
-                              .map((c, idx) => (
-                              <tr key={idx} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700">
-                                <td className="p-2 font-medium text-gray-900 dark:text-white text-sm">{c.court}</td>
-                                {c.slots.map((s, i) => (
-                                  <td key={i} className="p-1 text-center">
-                                    <div className="flex items-center justify-center" title={s.status}>
-                                      {getStatusIcon(s.status)}
-                                    </div>
-                                  </td>
-                                ))}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-                
-                <Card>
-                  <CardContent className="p-3">
-                    <div className="text-xs text-gray-600 dark:text-gray-400">
-                      <div className="flex flex-wrap gap-3">
-                        <span className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-green-500"></div> Free
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-red-500"></div> Booked
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-gray-800 dark:bg-gray-200"></div> Closed
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-gray-400"></div> Unavailable
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
           </div>
         )}
       </div>

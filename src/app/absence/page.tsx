@@ -208,11 +208,10 @@ export default function AbsencePage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800">
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-8"></div>
+        <div className="container mx-auto px-2 py-2">
 
           {/* Quick Add Button */}
-          <div className="mb-6">
+          <div className="mb-3">
             <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
               <DialogTrigger asChild>
                 <Button
@@ -311,16 +310,16 @@ export default function AbsencePage() {
           </div>
 
           {/* Absences List */}
-          <div className="space-y-4">
+          <div className="space-y-2">
             {loading ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin mr-3 text-red-600" />
-                  <p className="text-gray-600 dark:text-gray-300">Loading absences...</p>
+              <div className="space-y-2">
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-5 w-5 animate-spin mr-2 text-red-600" />
+                  <p className="text-gray-600 dark:text-gray-300 text-sm">Loading absences...</p>
                 </div>
                 {/* Loading skeleton cards */}
                 {Array.from({ length: 3 }).map((_, index) => (
-                  <Card key={index} className="p-6">
+                  <Card key={index} className="p-3">
                     <CardContent className="p-0">
                       <div className="flex items-center justify-between">
                         <div className="flex items-start gap-4 flex-1">
@@ -338,25 +337,25 @@ export default function AbsencePage() {
                 ))}
               </div>
             ) : absences.length === 0 ? (
-              <Card className="p-8">
+              <Card className="p-6">
                 <div className="text-center text-gray-500 dark:text-gray-400">
-                  <CalendarOff className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg font-medium mb-2">No absences recorded</p>
+                  <CalendarOff className="h-8 w-8 mx-auto mb-3 opacity-50" />
+                  <p className="text-base font-medium mb-1">No absences recorded</p>
                   <p className="text-sm">Click "Add Absence" to report when you won't be available.</p>
                 </div>
               </Card>
             ) : (
               absences.map((absence) => (
-                <Card key={absence.id} className="p-6 hover:shadow-md transition-all duration-200">
+                <Card key={absence.id} className="p-3 hover:shadow-md transition-all duration-200">
                   <CardContent className="p-0">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-start gap-4">
-                        <div className="p-3 bg-red-100 dark:bg-red-900 rounded-full">
-                          <Calendar className="h-5 w-5 text-red-600 dark:text-red-400" />
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-red-100 dark:bg-red-900 rounded-full">
+                          <Calendar className="h-4 w-4 text-red-600 dark:text-red-400" />
                         </div>
                         <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-semibold text-gray-900 dark:text-white">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
                               {absence.date.toLocaleDateString('en-US', { 
                                 weekday: 'long',
                                 year: 'numeric',
@@ -365,12 +364,12 @@ export default function AbsencePage() {
                               })}
                             </h3>
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mb-2">
-                            <User className="h-4 w-4" />
+                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mb-1">
+                            <User className="h-3 w-3" />
                             <span>{absence.playerName}</span>
                           </div>
                           {absence.reason && (
-                            <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 rounded-lg px-3 py-2">
+                            <p className="text-sm text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 rounded px-2 py-1">
                               {absence.reason}
                             </p>
                           )}

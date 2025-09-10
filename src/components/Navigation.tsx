@@ -50,7 +50,7 @@ const navigationItems = [
   },
   {
     href: "/courts/free",
-    label: "Free Courts",
+    label: "Court booking",
     icon: Clock,
     description: "Available court slots"
   },

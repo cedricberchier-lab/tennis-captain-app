@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Activity, Settings, Key, CheckCircle, Trash2, Loader2 } from "lucide-react";
+import { Activity, Settings, Key, CheckCircle, Trash2, Loader2, Edit3, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface AddPlayerFormData {
@@ -37,6 +37,46 @@ const rankingOptions = [
   { value: 11, label: "R8" },
   { value: 12, label: "R9" }
 ];
+
+// Swiss phone number validation and formatting
+const formatSwissPhone = (value: string): string => {
+  // Remove all non-numeric characters except +
+  const numbers = value.replace(/[^\d+]/g, '');
+  
+  // If it starts with +41, format as +41 XX XXX XX XX
+  if (numbers.startsWith('+41')) {
+    const digits = numbers.substring(3);
+    if (digits.length <= 2) return `+41 ${digits}`;
+    if (digits.length <= 5) return `+41 ${digits.substring(0, 2)} ${digits.substring(2)}`;
+    if (digits.length <= 7) return `+41 ${digits.substring(0, 2)} ${digits.substring(2, 5)} ${digits.substring(5)}`;
+    return `+41 ${digits.substring(0, 2)} ${digits.substring(2, 5)} ${digits.substring(5, 7)} ${digits.substring(7, 9)}`;
+  }
+  
+  // If it starts with 0, convert to +41 format
+  if (numbers.startsWith('0')) {
+    const digits = numbers.substring(1);
+    if (digits.length <= 2) return `+41 ${digits}`;
+    if (digits.length <= 5) return `+41 ${digits.substring(0, 2)} ${digits.substring(2)}`;
+    if (digits.length <= 7) return `+41 ${digits.substring(0, 2)} ${digits.substring(2, 5)} ${digits.substring(5)}`;
+    return `+41 ${digits.substring(0, 2)} ${digits.substring(2, 5)} ${digits.substring(5, 7)} ${digits.substring(7, 9)}`;
+  }
+  
+  // If no prefix, assume Swiss number and add +41
+  if (numbers.length > 0 && !numbers.startsWith('+')) {
+    if (numbers.length <= 2) return `+41 ${numbers}`;
+    if (numbers.length <= 5) return `+41 ${numbers.substring(0, 2)} ${numbers.substring(2)}`;
+    if (numbers.length <= 7) return `+41 ${numbers.substring(0, 2)} ${numbers.substring(2, 5)} ${numbers.substring(5)}`;
+    return `+41 ${numbers.substring(0, 2)} ${numbers.substring(2, 5)} ${numbers.substring(5, 7)} ${numbers.substring(7, 9)}`;
+  }
+  
+  return numbers;
+};
+
+const validateSwissPhone = (phone: string): boolean => {
+  if (!phone) return true; // Allow empty phone
+  const phoneRegex = /^\+41 \d{2} \d{3} \d{2} \d{2}$/;
+  return phoneRegex.test(phone);
+};
 
 export default function TeamMode() {
   const { user, token } = useAuth();
@@ -92,6 +132,12 @@ export default function TeamMode() {
     e.preventDefault();
     
     if (!formData.name.trim()) return;
+
+    // Validate phone number format if provided
+    if (formData.phone && !validateSwissPhone(formData.phone)) {
+      alert('Please enter a valid Swiss phone number in format +41 XX XXX XX XX');
+      return;
+    }
 
     const playerData = {
       name: formData.name.trim(),
@@ -149,6 +195,12 @@ export default function TeamMode() {
 
   const handleEditPlayer = async () => {
     if (!selectedPlayer) return;
+    
+    // Validate phone number format if provided
+    if (editPlayerData.phone && !validateSwissPhone(editPlayerData.phone)) {
+      alert('Please enter a valid Swiss phone number in format +41 XX XXX XX XX');
+      return;
+    }
     
     const updates = {
       name: editPlayerData.name.trim(),
@@ -266,12 +318,12 @@ export default function TeamMode() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-2 py-2">
 
         {/* Error Display */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <p className="text-red-800 dark:text-red-200">
+          <div className="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-red-800 dark:text-red-200 text-sm">
               <strong>Error:</strong> {error}
             </p>
           </div>
@@ -279,10 +331,10 @@ export default function TeamMode() {
 
         {/* Migration Banner */}
         {showMigration && (
-          <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+          <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-blue-800 dark:text-blue-200">
+                <p className="text-blue-800 dark:text-blue-200 text-sm">
                   <strong>Data Migration Available:</strong> We found existing player data in your browser. 
                   Would you like to move it to the database?
                 </p>
@@ -307,13 +359,13 @@ export default function TeamMode() {
 
         {/* Loading State */}
         {loading ? (
-          <div className="space-y-6">
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin mr-3 text-purple-600" />
-              <p className="text-gray-600 dark:text-gray-300">Loading players...</p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin mr-2 text-purple-600" />
+              <p className="text-gray-600 dark:text-gray-300 text-sm">Loading players...</p>
             </div>
             {/* Loading skeleton cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {Array.from({ length: 6 }).map((_, index) => (
                 <Card key={index} className="h-48">
                   <CardHeader className="pb-4">
@@ -338,43 +390,40 @@ export default function TeamMode() {
           {/* Team Stats Overview */}
 
           <div>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                Team Players
-              </h2>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-3">
               
               {players.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-gray-400 dark:text-gray-600 mb-4">
-                    <Activity className="h-16 w-16 mx-auto" />
+                <div className="text-center py-8">
+                  <div className="text-gray-400 dark:text-gray-600 mb-3">
+                    <Activity className="h-12 w-12 mx-auto" />
                   </div>
-                  <p className="text-gray-600 dark:text-gray-300 mb-6">
+                  <p className="text-gray-600 dark:text-gray-300 mb-4 text-sm">
                     No players added yet. Start building your team!
                   </p>
                   <button
                     onClick={() => setShowAddForm(true)}
-                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
+                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors text-sm"
                   >
                     Add First Player
                   </button>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   {sortedPlayers.map((player, index) => (
                     <div
                       key={player.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer"
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer"
                       onClick={() => handlePlayerClick(player)}
                     >
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-bold text-xs">
                           {rankingOptions.find(r => r.value === player.ranking)?.label || "UR"}
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900 dark:text-white">
+                          <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
                             {player.name}
                           </h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                          <p className="text-xs text-gray-600 dark:text-gray-300">
                             {player.email || "No email"} • {player.phone || "No phone"}
                           </p>
                         </div>
@@ -443,9 +492,16 @@ export default function TeamMode() {
                   <input
                     type="tel"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white"
-                    placeholder="+41 79 123 45 67"
+                    onChange={(e) => {
+                      const formatted = formatSwissPhone(e.target.value);
+                      setFormData({ ...formData, phone: formatted });
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 dark:bg-gray-700 dark:text-white ${
+                      formData.phone && !validateSwissPhone(formData.phone) 
+                        ? 'border-red-500 dark:border-red-400' 
+                        : 'border-gray-300 dark:border-gray-600'
+                    }`}
+                    placeholder="+41 XX XXX XX XX"
                   />
                 </div>
                 <div>
@@ -505,17 +561,24 @@ export default function TeamMode() {
 
               {/* Player Info Section */}
               <div className="mb-6">
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex justify-between items-start mb-4">
                   <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
                     Player Information
                   </h4>
                   {(isAdmin() || canEditPlayer(selectedPlayer)) && (
-                    <button
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => setIsEditingPlayer(!isEditingPlayer)}
-                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      className="text-blue-600 hover:text-blue-800 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors h-[24px] w-[24px] p-0"
+                      title={isEditingPlayer ? "Cancel editing" : "Edit player info"}
                     >
-                      {isEditingPlayer ? "Cancel Edit" : "✏️ Edit Info"}
-                    </button>
+                      {isEditingPlayer ? (
+                        <X className="h-3 w-3" />
+                      ) : (
+                        <Edit3 className="h-3 w-3" />
+                      )}
+                    </Button>
                   )}
                 </div>
 
@@ -569,8 +632,16 @@ export default function TeamMode() {
                         <input
                           type="tel"
                           value={editPlayerData.phone}
-                          onChange={(e) => setEditPlayerData({ ...editPlayerData, phone: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
+                          onChange={(e) => {
+                            const formatted = formatSwissPhone(e.target.value);
+                            setEditPlayerData({ ...editPlayerData, phone: formatted });
+                          }}
+                          placeholder="+41 XX XXX XX XX"
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white ${
+                            editPlayerData.phone && !validateSwissPhone(editPlayerData.phone) 
+                              ? 'border-red-500 dark:border-red-400' 
+                              : 'border-gray-300 dark:border-gray-600'
+                          }`}
                         />
                       </div>
                     </div>
@@ -614,18 +685,20 @@ export default function TeamMode() {
               {/* Password Change Section - Only for logged user's own account (not admin override) */}
               {canEditPlayer(selectedPlayer) && (
                 <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-600">
-                  <div className="flex justify-between items-center mb-4">
+                  <div className="flex justify-between items-start mb-4">
                     <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
                       Password Management
                     </h4>
                     {!isChangingPassword && (
-                      <button
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => setIsChangingPassword(true)}
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        className="text-blue-600 hover:text-blue-800 border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors h-[24px] w-[24px] p-0"
+                        title="Change password"
                       >
-                        <Key className="h-4 w-4 inline mr-1" />
-                        Change Password
-                      </button>
+                        <Key className="h-3 w-3" />
+                      </Button>
                     )}
                   </div>
 
@@ -709,7 +782,7 @@ export default function TeamMode() {
                     </div>
                   ) : (
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Click "Change Password" to update your account password
+                      Click to update your account password
                     </p>
                   )}
                 </div>

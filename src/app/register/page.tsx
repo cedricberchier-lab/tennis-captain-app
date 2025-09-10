@@ -27,6 +27,46 @@ const rankingOptions = [
   { value: 12, label: "R9" }
 ];
 
+// Swiss phone number validation and formatting
+const formatSwissPhone = (value: string): string => {
+  // Remove all non-numeric characters except +
+  const numbers = value.replace(/[^\d+]/g, '');
+  
+  // If it starts with +41, format as +41 XX XXX XX XX
+  if (numbers.startsWith('+41')) {
+    const digits = numbers.substring(3);
+    if (digits.length <= 2) return `+41 ${digits}`;
+    if (digits.length <= 5) return `+41 ${digits.substring(0, 2)} ${digits.substring(2)}`;
+    if (digits.length <= 7) return `+41 ${digits.substring(0, 2)} ${digits.substring(2, 5)} ${digits.substring(5)}`;
+    return `+41 ${digits.substring(0, 2)} ${digits.substring(2, 5)} ${digits.substring(5, 7)} ${digits.substring(7, 9)}`;
+  }
+  
+  // If it starts with 0, convert to +41 format
+  if (numbers.startsWith('0')) {
+    const digits = numbers.substring(1);
+    if (digits.length <= 2) return `+41 ${digits}`;
+    if (digits.length <= 5) return `+41 ${digits.substring(0, 2)} ${digits.substring(2)}`;
+    if (digits.length <= 7) return `+41 ${digits.substring(0, 2)} ${digits.substring(2, 5)} ${digits.substring(5)}`;
+    return `+41 ${digits.substring(0, 2)} ${digits.substring(2, 5)} ${digits.substring(5, 7)} ${digits.substring(7, 9)}`;
+  }
+  
+  // If no prefix, assume Swiss number and add +41
+  if (numbers.length > 0 && !numbers.startsWith('+')) {
+    if (numbers.length <= 2) return `+41 ${numbers}`;
+    if (numbers.length <= 5) return `+41 ${numbers.substring(0, 2)} ${numbers.substring(2)}`;
+    if (numbers.length <= 7) return `+41 ${numbers.substring(0, 2)} ${numbers.substring(2, 5)} ${numbers.substring(5)}`;
+    return `+41 ${numbers.substring(0, 2)} ${numbers.substring(2, 5)} ${numbers.substring(5, 7)} ${numbers.substring(7, 9)}`;
+  }
+  
+  return numbers;
+};
+
+const validateSwissPhone = (phone: string): boolean => {
+  if (!phone) return true; // Allow empty phone
+  const phoneRegex = /^\+41 \d{2} \d{3} \d{2} \d{2}$/;
+  return phoneRegex.test(phone);
+};
+
 export default function RegisterPage() {
   const [formData, setFormData] = useState<RegisterData>({
     username: '',
@@ -56,6 +96,13 @@ export default function RegisterPage() {
 
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
+
+    // Validate phone number format if provided
+    if (formData.phone && !validateSwissPhone(formData.phone)) {
+      setError('Please enter a valid Swiss phone number in format +41 XX XXX XX XX');
       setLoading(false);
       return;
     }
@@ -101,6 +148,14 @@ export default function RegisterPage() {
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatSwissPhone(e.target.value);
+    setFormData(prev => ({
+      ...prev,
+      phone: formatted
     }));
   };
   
@@ -178,9 +233,13 @@ export default function RegisterPage() {
                   id="phone"
                   name="phone"
                   value={formData.phone}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors mobile-input"
-                  placeholder="+41 79 123 4567"
+                  onChange={handlePhoneChange}
+                  className={`w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors mobile-input ${
+                    formData.phone && !validateSwissPhone(formData.phone) 
+                      ? 'border-red-500 focus:ring-red-500 focus:border-red-500' 
+                      : 'border-gray-300'
+                  }`}
+                  placeholder="+41 XX XXX XX XX"
                   required
                 />
               </div>
