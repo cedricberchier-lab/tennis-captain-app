@@ -237,7 +237,7 @@ export default function Home() {
                       </div>
                       <div className="flex items-center justify-between">
                         <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                          {currentPlayer ? `${currentPlayer.absences.length} recorded` : 'Manage absences'}
+                          Manage absences
                         </p>
                         <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200 transition-colors" />
                       </div>
