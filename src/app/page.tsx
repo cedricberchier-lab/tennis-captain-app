@@ -181,9 +181,6 @@ export default function Home() {
               Welcome back, {getCurrentPlayerName()}!
               <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 text-purple-500 dark:text-purple-400" />
             </h1>
-            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
-              Choose an action to get started
-            </p>
           </div>
 
 
