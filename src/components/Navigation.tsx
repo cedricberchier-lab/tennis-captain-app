@@ -259,7 +259,6 @@ export default function Navigation() {
             </div>
             <div>
               <p className="font-medium text-gray-900 dark:text-white">{getCurrentPlayerName()}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Team Captain</p>
             </div>
           </div>
         </div>

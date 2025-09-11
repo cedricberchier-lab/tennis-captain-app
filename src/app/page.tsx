@@ -103,66 +103,64 @@ export default function Home() {
       .slice(0, 4);
   };
   
-  // Get next 5 upcoming player absences relevant to the user
+  // Get upcoming absences that affect trainings (only show absences when players are unavailable for upcoming trainings)
   const getUpcomingAbsences = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const allAbsences: Array<{player: string, date: string, reason: string, dateObj: Date}> = [];
+    const conflictingAbsences: Array<{player: string, date: string, reason: string, dateObj: Date, trainingInfo: string}> = [];
     
-    // Get relevant player IDs (teammates in upcoming trainings/matches + user's own absences)
-    const relevantPlayerIds = new Set<string>();
-    
-    // Add user's own player ID
-    if (currentPlayer?.id) {
-      relevantPlayerIds.add(currentPlayer.id);
-    }
-    
-    // Add teammates from upcoming trainings where user participates
-    trainings.forEach(training => {
+    // Look at upcoming trainings
+    const upcomingTrainings = trainings.filter(training => {
       const trainingDate = new Date(training.date);
       trainingDate.setHours(0, 0, 0, 0);
+      return trainingDate >= today;
+    });
+    
+    // For each upcoming training, check if any participants have absences on that date
+    upcomingTrainings.forEach(training => {
+      const trainingDate = new Date(training.date);
+      trainingDate.setHours(0, 0, 0, 0);
+      const trainingDateStr = trainingDate.toISOString().split('T')[0];
       
-      if (trainingDate >= today) {
-        const userInTraining = training.participants.some(p => 
-          p.playerId === currentPlayer?.id || 
-          p.email === user?.email ||
-          p.playerName === user?.name
+      // Check each participant in the training
+      training.participants.forEach(participant => {
+        // Find the player record
+        const player = players.find(p => 
+          p.id === participant.playerId || 
+          p.email === participant.email ||
+          p.name === participant.playerName
         );
         
-        if (userInTraining) {
-          training.participants.forEach(participant => {
-            if (participant.playerId) {
-              relevantPlayerIds.add(participant.playerId);
+        if (player) {
+          // Check if this player has an absence on the training date
+          player.absences.forEach(absence => {
+            const [dateStr, ...reasonParts] = absence.split(' - ');
+            const absenceDate = new Date(dateStr);
+            absenceDate.setHours(0, 0, 0, 0);
+            const absenceDateStr = absenceDate.toISOString().split('T')[0];
+            
+            // If the absence date matches the training date
+            if (absenceDateStr === trainingDateStr && absenceDate >= today) {
+              conflictingAbsences.push({
+                player: player.name,
+                date: dateStr,
+                reason: reasonParts.join(' - ') || '',
+                dateObj: absenceDate,
+                trainingInfo: `Training - Court ${training.courtNumber}`
+              });
             }
           });
         }
-      }
+      });
     });
     
+    // Remove duplicates and sort by date, return next 5
+    const uniqueAbsences = conflictingAbsences.filter((absence, index, self) =>
+      index === self.findIndex(a => a.player === absence.player && a.date === absence.date)
+    );
     
-    // Collect absences from relevant players
-    players.forEach(player => {
-      if (relevantPlayerIds.has(player.id)) {
-        player.absences.forEach(absence => {
-          const [dateStr, ...reasonParts] = absence.split(' - ');
-          const absenceDate = new Date(dateStr);
-          absenceDate.setHours(0, 0, 0, 0);
-          
-          if (absenceDate >= today) {
-            allAbsences.push({
-              player: player.name,
-              date: dateStr,
-              reason: reasonParts.join(' - ') || '',
-              dateObj: absenceDate
-            });
-          }
-        });
-      }
-    });
-    
-    // Sort by date and return next 5
-    return allAbsences
+    return uniqueAbsences
       .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
       .slice(0, 5);
   };
@@ -317,10 +315,10 @@ export default function Home() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-gray-900 dark:text-white text-sm">
-                            Player Absences
+                            Training Unavailability
                           </h3>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            Next {upcomingAbsences.length} upcoming
+                            {upcomingAbsences.length} player{upcomingAbsences.length !== 1 ? 's' : ''} unavailable for training
                           </p>
                         </div>
                       </div>
@@ -346,6 +344,9 @@ export default function Home() {
                                 </div>
                                 <div className="text-red-600 dark:text-red-400">
                                   {dateDisplay}
+                                </div>
+                                <div className="text-xs text-red-500 dark:text-red-400 truncate">
+                                  {absence.trainingInfo}
                                 </div>
                               </div>
                               {absence.reason && (
