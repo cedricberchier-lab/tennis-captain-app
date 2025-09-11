@@ -54,6 +54,7 @@ interface AddTrainingFormData {
   duration: string; // "1" or "2" for hours
   courtNumber: string;
   comment: string;
+  eventType: 'training' | 'event';
 }
 
 
@@ -151,7 +152,8 @@ export default function TrainingMode() {
     startTime: "19:00", // Default to 7:00 PM
     duration: "1", // Default to 1 hour
     courtNumber: "",
-    comment: ""
+    comment: "",
+    eventType: 'training'
   });
   const [participants, setParticipants] = useState<TrainingParticipant[]>([]);
   const [horizonCount, setHorizonCount] = useState(3);
@@ -393,7 +395,8 @@ export default function TrainingMode() {
       startTime: "19:00",
       duration: "1",
       courtNumber: "",
-      comment: ""
+      comment: "",
+      eventType: 'training'
     });
     setParticipants([]);
   };
@@ -618,7 +621,8 @@ export default function TrainingMode() {
       startTime: training.timeStart,
       duration: durationHours,
       courtNumber: training.courtNumber,
-      comment: training.comment
+      comment: training.comment,
+      eventType: 'training' // Default to training when editing existing sessions
     });
     setParticipants([...training.participants]);
     setShowEditForm(true);
@@ -626,7 +630,9 @@ export default function TrainingMode() {
 
   // Add participant
   const addParticipant = () => {
-    if (participants.length >= 4) return; // Max 4 players
+    // For events, allow unlimited players. For training, limit to 4
+    const maxPlayers = formData.eventType === 'event' ? 20 : 4;
+    if (participants.length >= maxPlayers) return;
     
     const newParticipant: TrainingParticipant = {
       id: crypto.randomUUID(),
@@ -881,6 +887,37 @@ export default function TrainingMode() {
                 
                 {activeTab === 'single' ? (
                   <form onSubmit={handleAddTraining} className="space-y-6">
+                  {/* Event Type Selection */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Type *
+                    </label>
+                    <div className="flex gap-4 mb-4">
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="eventType"
+                          value="training"
+                          checked={formData.eventType === 'training'}
+                          onChange={(e) => setFormData({ ...formData, eventType: e.target.value as 'training' | 'event' })}
+                          className="mr-2"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Training</span>
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="eventType"
+                          value="event"
+                          checked={formData.eventType === 'event'}
+                          onChange={(e) => setFormData({ ...formData, eventType: e.target.value as 'training' | 'event' })}
+                          className="mr-2"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Event</span>
+                      </label>
+                    </div>
+                  </div>
+
                   {/* Basic Info */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -959,12 +996,12 @@ export default function TrainingMode() {
                   <div>
                     <div className="flex justify-between items-center mb-3">
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Select Players for Training ({participants.length}/4)
+                        Select Players for {formData.eventType === 'event' ? 'Event' : 'Training'} ({participants.length}/{formData.eventType === 'event' ? '∞' : '4'})
                       </label>
                       <Button
                         type="button"
                         onClick={addParticipant}
-                        disabled={participants.length >= 4}
+                        disabled={formData.eventType === 'training' ? participants.length >= 4 : participants.length >= 20}
                         className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white text-sm font-medium py-1 px-3 rounded transition-colors"
                         size="sm"
                       >
