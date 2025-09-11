@@ -951,9 +951,11 @@ export default function TrainingMode() {
                         <option value="6-ext">6-ext</option>
                         <option value="7-ext">7-ext</option>
                         <option value="8-ext">8-ext</option>
+                        <option value="Team event">Team event</option>
                       </select>
                     </div>
                   </div>
+
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -1302,9 +1304,11 @@ export default function TrainingMode() {
                         <option value="6-ext">6-ext</option>
                         <option value="7-ext">7-ext</option>
                         <option value="8-ext">8-ext</option>
+                        <option value="Team event">Team event</option>
                       </select>
                     </div>
                   </div>
+
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
