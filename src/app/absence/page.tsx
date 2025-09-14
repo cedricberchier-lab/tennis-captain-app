@@ -42,7 +42,6 @@ export default function AbsencePage() {
   const [absences, setAbsences] = useState<Absence[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [showOnlyMyAbsences, setShowOnlyMyAbsences] = useState(false);
   const [formData, setFormData] = useState<AddAbsenceFormData>({
     fromDate: "",
     toDate: "",
@@ -52,11 +51,6 @@ export default function AbsencePage() {
 
   // Get current user's player record
   const currentPlayer = user?.email ? players.find(p => p.email === user.email) : null;
-
-  // Filter absences based on toggle
-  const displayedAbsences = showOnlyMyAbsences && currentPlayer 
-    ? absences.filter(absence => absence.playerId === currentPlayer.id)
-    : absences;
 
   // Load all absences from players data
   useEffect(() => {
@@ -216,8 +210,8 @@ export default function AbsencePage() {
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 dark:from-gray-900 dark:to-gray-800">
         <div className="container mx-auto px-2 py-2">
 
-          {/* Quick Add Button and Filter */}
-          <div className="mb-3 flex items-center gap-3">
+          {/* Quick Add Button */}
+          <div className="mb-3">
             <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
               <DialogTrigger asChild>
                 <Button
@@ -308,22 +302,6 @@ export default function AbsencePage() {
               </DialogContent>
             </Dialog>
             
-            {/* Toggle for showing only current user's absences */}
-            {currentPlayer && (
-              <Button
-                onClick={() => setShowOnlyMyAbsences(!showOnlyMyAbsences)}
-                variant="outline"
-                className={`flex items-center gap-2 transition-colors ${
-                  showOnlyMyAbsences
-                    ? 'bg-red-100 hover:bg-red-200 text-red-700 border-red-300 dark:bg-red-900 dark:hover:bg-red-800 dark:text-red-300 dark:border-red-600'
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-              >
-                <User className="h-4 w-4" />
-                {showOnlyMyAbsences ? 'Show All' : 'Show Only Mine'}
-              </Button>
-            )}
-            
             {!currentPlayer && (
               <p className="text-sm text-gray-500 mt-2">
                 You need to be linked to a player record to add absences.
@@ -358,22 +336,16 @@ export default function AbsencePage() {
                   </Card>
                 ))}
               </div>
-            ) : displayedAbsences.length === 0 ? (
+            ) : absences.length === 0 ? (
               <Card className="p-6">
                 <div className="text-center text-gray-500 dark:text-gray-400">
                   <CalendarOff className="h-8 w-8 mx-auto mb-3 opacity-50" />
-                  <p className="text-base font-medium mb-1">
-                    {showOnlyMyAbsences ? 'You have no absences recorded' : 'No absences recorded'}
-                  </p>
-                  <p className="text-sm">
-                    {showOnlyMyAbsences 
-                      ? 'Click "Add Absence" to report when you won\'t be available.' 
-                      : 'Click "Add Absence" to report when you won\'t be available.'}
-                  </p>
+                  <p className="text-base font-medium mb-1">No absences recorded</p>
+                  <p className="text-sm">Click "Add Absence" to report when you won't be available.</p>
                 </div>
               </Card>
             ) : (
-              displayedAbsences.map((absence) => (
+              absences.map((absence) => (
                 <Card key={absence.id} className="p-3 hover:shadow-md transition-all duration-200">
                   <CardContent className="p-0">
                     <div className="flex items-center justify-between">
