@@ -23,7 +23,7 @@ interface AddPlayerFormData {
 }
 
 const rankingOptions = [
-  { value: 0, label: "Unranked" },
+  { value: 0, label: "NA" },
   { value: 1, label: "N1" },
   { value: 2, label: "N2" },
   { value: 3, label: "N3" },
@@ -664,7 +664,7 @@ export default function TeamMode() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <div><strong>Name:</strong> {selectedPlayer.name}</div>
-                      <div><strong>Ranking:</strong> {rankingOptions.find(r => r.value === selectedPlayer.ranking)?.label || "Unranked"}</div>
+                      <div><strong>Ranking:</strong> {rankingOptions.find(r => r.value === selectedPlayer.ranking)?.label || "NA"}</div>
                     </div>
                     <div className="space-y-2">
                       <div><strong>Email:</strong> {selectedPlayer.email || "Not provided"}</div>

@@ -31,7 +31,7 @@ import * as XLSX from 'xlsx';
 // Helper function to convert numeric ranking to proper tennis ranking display
 const formatTennisRanking = (ranking: number): string => {
   const rankingMap: { [key: number]: string } = {
-    0: "Unranked",
+    0: "NA",
     1: "N1",
     2: "N2", 
     3: "N3",

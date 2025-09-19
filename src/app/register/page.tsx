@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Target } from 'lucide-react';
 
 const rankingOptions = [
-  { value: 0, label: "Unranked" },
+  { value: 0, label: "NA" },
   { value: 1, label: "N1" },
   { value: 2, label: "N2" },
   { value: 3, label: "N3" },
@@ -73,7 +73,7 @@ export default function RegisterPage() {
     email: '',
     name: '',
     phone: '',
-    ranking: 0, // Default to unranked, will be set in backend
+    ranking: 0, // Default to NA, will be set in backend
     password: '',
     role: UserRole.PLAYER
   });
