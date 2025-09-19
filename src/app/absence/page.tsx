@@ -336,7 +336,7 @@ export default function AbsencePage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Players</SelectItem>
+                <SelectItem value="all">All</SelectItem>
                 {currentPlayer && (
                   <SelectItem value="me">Me</SelectItem>
                 )}
