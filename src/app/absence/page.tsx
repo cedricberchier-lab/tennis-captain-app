@@ -10,12 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  CalendarOff, 
-  Plus, 
+import {
+  CalendarOff,
+  Plus,
   Trash2,
   Calendar,
-  User,
   Loader2
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -43,8 +42,7 @@ export default function AbsencePage() {
   const [absences, setAbsences] = useState<Absence[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [showOnlyMyAbsences, setShowOnlyMyAbsences] = useState(false);
-  const [selectedPlayerId, setSelectedPlayerId] = useState<string>("all");
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string>("me");
   const [formData, setFormData] = useState<AddAbsenceFormData>({
     fromDate: "",
     toDate: "",
@@ -55,17 +53,27 @@ export default function AbsencePage() {
   // Get current user's player record
   const currentPlayer = user?.email ? players.find(p => p.email === user.email) : null;
 
-  // Filter absences based on toggle and dropdown
+  // Set default selection based on current player availability
+  useEffect(() => {
+    if (players.length > 0) {
+      if (currentPlayer) {
+        // User has a linked player, default to "me"
+        setSelectedPlayerId("me");
+      } else {
+        // User doesn't have a linked player, default to "all"
+        setSelectedPlayerId("all");
+      }
+    }
+  }, [currentPlayer, players.length]);
+
+  // Filter absences based on player dropdown
   const displayedAbsences = (() => {
     let filtered = absences;
 
-    // First apply "Me" toggle
-    if (showOnlyMyAbsences && currentPlayer) {
+    // Apply player filter
+    if (selectedPlayerId === "me" && currentPlayer) {
       filtered = filtered.filter(absence => absence.playerId === currentPlayer.id);
-    }
-
-    // Then apply player dropdown filter if not "all"
-    if (selectedPlayerId !== "all") {
+    } else if (selectedPlayerId !== "all" && selectedPlayerId !== "me") {
       filtered = filtered.filter(absence => absence.playerId === selectedPlayerId);
     }
 
@@ -322,22 +330,6 @@ export default function AbsencePage() {
               </DialogContent>
             </Dialog>
             
-            {/* Toggle for showing only current user's absences */}
-            {currentPlayer && (
-              <Button
-                onClick={() => setShowOnlyMyAbsences(!showOnlyMyAbsences)}
-                variant="outline"
-                className={`flex items-center gap-2 transition-colors ${
-                  showOnlyMyAbsences
-                    ? 'bg-red-100 hover:bg-red-200 text-red-700 border-red-300 dark:bg-red-900 dark:hover:bg-red-800 dark:text-red-300 dark:border-red-600'
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-              >
-                <User className="h-4 w-4" />
-{showOnlyMyAbsences ? 'Show All' : 'Me'}
-              </Button>
-            )}
-
             {/* Player filter dropdown */}
             <Select value={selectedPlayerId} onValueChange={setSelectedPlayerId}>
               <SelectTrigger className="w-48">
@@ -345,11 +337,16 @@ export default function AbsencePage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Players</SelectItem>
-                {players.map((player) => (
-                  <SelectItem key={player.id} value={player.id}>
-                    {player.name}
-                  </SelectItem>
-                ))}
+                {currentPlayer && (
+                  <SelectItem value="me">Me</SelectItem>
+                )}
+                {players
+                  .filter(player => player.id !== currentPlayer?.id)
+                  .map((player) => (
+                    <SelectItem key={player.id} value={player.id}>
+                      {player.name}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
 
@@ -392,7 +389,7 @@ export default function AbsencePage() {
                 <div className="text-center text-gray-500 dark:text-gray-400">
                   <CalendarOff className="h-8 w-8 mx-auto mb-3 opacity-50" />
                   <p className="text-base font-medium mb-1">
-                    {showOnlyMyAbsences
+                    {selectedPlayerId === "me"
                       ? 'You have no absences recorded'
                       : selectedPlayerId !== "all"
                         ? `${players.find(p => p.id === selectedPlayerId)?.name || 'Selected player'} has no absences recorded`
