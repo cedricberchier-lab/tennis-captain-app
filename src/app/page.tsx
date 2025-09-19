@@ -265,43 +265,48 @@ export default function Home() {
                   </Card>
                 ) : (
                   upcomingEvents.map((event, index) => (
-                    <Card key={index} className="p-4 hover:shadow-md transition-all duration-200">
-                      <CardContent className="p-0">
-                        <div className="flex items-start gap-3">
-                          <div className={`p-2 rounded-full shrink-0 ${
-                            event.type === 'training' 
-                              ? 'bg-purple-100 dark:bg-purple-900' 
-                              : 'bg-blue-100 dark:bg-blue-900'
-                          }`}>
-                            {event.type === 'training' ? (
-                              <Activity className={`h-4 w-4 ${
-                                event.type === 'training' 
-                                  ? 'text-purple-600 dark:text-purple-400' 
-                                  : 'text-blue-600 dark:text-blue-400'
-                              }`} />
-                            ) : (
-                              <Trophy className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                            )}
+                    <Link key={index} href="/training" className="group block">
+                      <Card className="p-4 hover:shadow-md transition-all duration-200 cursor-pointer hover:scale-[1.02] border-2 border-transparent hover:border-purple-200 dark:hover:border-purple-700">
+                        <CardContent className="p-0">
+                          <div className="flex items-start gap-3">
+                            <div className={`p-2 rounded-full shrink-0 ${
+                              event.type === 'training'
+                                ? 'bg-purple-100 dark:bg-purple-900'
+                                : 'bg-blue-100 dark:bg-blue-900'
+                            }`}>
+                              {event.type === 'training' ? (
+                                <Activity className={`h-4 w-4 ${
+                                  event.type === 'training'
+                                    ? 'text-purple-600 dark:text-purple-400'
+                                    : 'text-blue-600 dark:text-blue-400'
+                                }`} />
+                              ) : (
+                                <Trophy className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="font-medium text-gray-900 dark:text-white text-sm truncate">
+                                {event.title}
+                              </h3>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
+                                <Clock className="h-3 w-3" />
+                                {event.date}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
+                                <MapPin className="h-3 w-3" />
+                                {event.location}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                {event.participants}
+                              </p>
+                            </div>
+                            <div className="flex items-center justify-center">
+                              <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200 transition-colors" />
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-gray-900 dark:text-white text-sm truncate">
-                              {event.title}
-                            </h3>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
-                              <Clock className="h-3 w-3" />
-                              {event.date}
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
-                              <MapPin className="h-3 w-3" />
-                              {event.location}
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              {event.participants}
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                        </CardContent>
+                      </Card>
+                    </Link>
                   ))
                 )}
                 
