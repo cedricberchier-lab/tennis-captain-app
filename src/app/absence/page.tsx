@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   CalendarOff, 
   Plus, 
@@ -43,6 +44,7 @@ export default function AbsencePage() {
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showOnlyMyAbsences, setShowOnlyMyAbsences] = useState(false);
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string>("all");
   const [formData, setFormData] = useState<AddAbsenceFormData>({
     fromDate: "",
     toDate: "",
@@ -53,10 +55,22 @@ export default function AbsencePage() {
   // Get current user's player record
   const currentPlayer = user?.email ? players.find(p => p.email === user.email) : null;
 
-  // Filter absences based on toggle
-  const displayedAbsences = showOnlyMyAbsences && currentPlayer 
-    ? absences.filter(absence => absence.playerId === currentPlayer.id)
-    : absences;
+  // Filter absences based on toggle and dropdown
+  const displayedAbsences = (() => {
+    let filtered = absences;
+
+    // First apply "Me" toggle
+    if (showOnlyMyAbsences && currentPlayer) {
+      filtered = filtered.filter(absence => absence.playerId === currentPlayer.id);
+    }
+
+    // Then apply player dropdown filter if not "all"
+    if (selectedPlayerId !== "all") {
+      filtered = filtered.filter(absence => absence.playerId === selectedPlayerId);
+    }
+
+    return filtered;
+  })();
 
   // Load all absences from players data
   useEffect(() => {
@@ -320,10 +334,25 @@ export default function AbsencePage() {
                 }`}
               >
                 <User className="h-4 w-4" />
-                {showOnlyMyAbsences ? 'Show All' : 'Show Only Mine'}
+{showOnlyMyAbsences ? 'Show All' : 'Me'}
               </Button>
             )}
-            
+
+            {/* Player filter dropdown */}
+            <Select value={selectedPlayerId} onValueChange={setSelectedPlayerId}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Players</SelectItem>
+                {players.map((player) => (
+                  <SelectItem key={player.id} value={player.id}>
+                    {player.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             {!currentPlayer && (
               <p className="text-sm text-gray-500 mt-2">
                 You need to be linked to a player record to add absences.
@@ -363,12 +392,14 @@ export default function AbsencePage() {
                 <div className="text-center text-gray-500 dark:text-gray-400">
                   <CalendarOff className="h-8 w-8 mx-auto mb-3 opacity-50" />
                   <p className="text-base font-medium mb-1">
-                    {showOnlyMyAbsences ? 'You have no absences recorded' : 'No absences recorded'}
+                    {showOnlyMyAbsences
+                      ? 'You have no absences recorded'
+                      : selectedPlayerId !== "all"
+                        ? `${players.find(p => p.id === selectedPlayerId)?.name || 'Selected player'} has no absences recorded`
+                        : 'No absences recorded'}
                   </p>
                   <p className="text-sm">
-                    {showOnlyMyAbsences 
-                      ? 'Click "Add Absence" to report when you won\'t be available.' 
-                      : 'Click "Add Absence" to report when you won\'t be available.'}
+                    Click "Add Absence" to report when you won't be available.
                   </p>
                 </div>
               </Card>
