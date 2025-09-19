@@ -15,6 +15,7 @@ import {
   Plus,
   Trash2,
   Calendar,
+  User,
   Loader2
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
