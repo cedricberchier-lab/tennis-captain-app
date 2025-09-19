@@ -62,6 +62,21 @@ async function migrateUsersTableSchema() {
       ADD COLUMN IF NOT EXISTS underperformance INTEGER DEFAULT 0,
       ADD COLUMN IF NOT EXISTS training_attendance INTEGER DEFAULT 0
     `;
+
+    // Ensure all NULL rankings are set to 0 (NA)
+    await sql`
+      UPDATE users
+      SET ranking = 0, updated_at = CURRENT_TIMESTAMP
+      WHERE ranking IS NULL
+    `;
+
+    // Ensure any negative rankings are set to 0 (NA)
+    await sql`
+      UPDATE users
+      SET ranking = 0, updated_at = CURRENT_TIMESTAMP
+      WHERE ranking < 0
+    `;
+
     console.log('Users table schema migration completed');
   } catch (error) {
     console.warn('Users table schema migration failed (columns may already exist):', error);
