@@ -4,14 +4,12 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePlayers } from "@/hooks/usePlayers";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Menu, 
-  X, 
-  Users, 
-  Settings,
+import {
+  Menu,
+  X,
+  Users,
   LogOut,
   ChevronRight,
   CalendarOff,
@@ -53,12 +51,6 @@ const navigationItems = [
     label: "Court booking",
     icon: Clock,
     description: "Available court slots"
-  },
-  {
-    href: "/setup",
-    label: "Setup",
-    icon: Settings,
-    description: "App configuration"
   }
 ];
 
@@ -67,21 +59,6 @@ export default function Navigation() {
   const [showLocalStorageNotice, setShowLocalStorageNotice] = useState(false);
   const pathname = usePathname();
   const { user, logout } = useAuth();
-  const { players } = usePlayers();
-  
-  // Get current player name
-  const getCurrentPlayerName = () => {
-    if (!user) return 'User';
-    if (user.role === 'admin') return 'Administrator';
-    
-    const currentPlayer = players.find(p => 
-      p.email === user.email || 
-      p.id === user.id ||
-      p.name === user.name
-    );
-    
-    return currentPlayer?.name || user.name || user.username || 'User';
-  };
 
   // Close mobile menu when route changes
   useEffect(() => {
@@ -148,11 +125,6 @@ export default function Navigation() {
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center space-x-8">
               {navigationItems.map((item) => {
-                // Hide setup page from regular users, only show to admins
-                if (item.href === '/setup' && user?.role !== 'admin') {
-                  return null;
-                }
-                
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
                 return (
@@ -174,9 +146,6 @@ export default function Navigation() {
 
             {/* User Menu */}
             <div className="flex items-center gap-3">
-              <span className="hidden sm:block text-sm text-gray-600 dark:text-gray-300">
-                {getCurrentPlayerName()}
-              </span>
               <Button
                 onClick={logout}
                 variant="ghost"
@@ -249,40 +218,39 @@ export default function Navigation() {
           </button>
         </div>
 
-        {/* User Info */}
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
-              <span className="text-purple-600 dark:text-purple-300 font-semibold text-sm">
-                {user?.username?.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div>
-              <p className="font-medium text-gray-900 dark:text-white">{getCurrentPlayerName()}</p>
-            </div>
-          </div>
-        </div>
-
         {/* Mobile Navigation Items */}
         <div className="flex-1 overflow-y-auto">
           <nav className="p-6 space-y-2">
             {navigationItems.map((item) => {
-              // Hide setup page from regular users, only show to admins
-              if (item.href === '/setup' && user?.role !== 'admin') {
-                return null;
-              }
-              
               const Icon = item.icon;
               const isActive = pathname === item.href;
+
+              // If it's the active page, make it clickable to close menu
+              if (isActive) {
+                return (
+                  <button
+                    key={item.href}
+                    onClick={() => setIsOpen(false)}
+                    className={`w-full flex items-center justify-between p-4 rounded-lg transition-colors bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className="h-5 w-5" />
+                      <div>
+                        <div className="font-medium text-left">{item.label}</div>
+                        <div className="text-xs opacity-75 text-left">{item.description}</div>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 opacity-50" />
+                  </button>
+                );
+              }
+
+              // For non-active pages, use Link as before
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center justify-between p-4 rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300'
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
-                  }`}
+                  className={`flex items-center justify-between p-4 rounded-lg transition-colors text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white`}
                 >
                   <div className="flex items-center gap-3">
                     <Icon className="h-5 w-5" />
