@@ -91,6 +91,34 @@ export default function Home() {
     return !isAbsent; // Only highlight if has training AND is available
   };
 
+  const hasUserTrainingButUnavailable = (date: Date) => {
+    if (!currentPlayer) return false;
+
+    const dateStr = date.toISOString().split('T')[0];
+
+    // Check if user has a training on this date
+    const hasTraining = trainings.some(training => {
+      const trainingDateStr = training.date.toISOString().split('T')[0];
+      if (trainingDateStr !== dateStr) return false;
+
+      return training.participants.some(participant =>
+        participant.playerId === currentPlayer.id ||
+        participant.email === user?.email ||
+        participant.playerName === user?.name
+      );
+    });
+
+    if (!hasTraining) return false;
+
+    // Check if user is absent on this date
+    const isAbsent = currentPlayer.absences.some(absence => {
+      const absenceDate = absence.split(' - ')[0];
+      return absenceDate === dateStr;
+    });
+
+    return isAbsent; // Only return true if has training AND is absent
+  };
+
   // Touch handlers for swipe functionality
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);
@@ -167,22 +195,35 @@ export default function Home() {
       participants: string;
       sortDate: Date;
     }> = [];
-    
-    // Get upcoming trainings where user is a participant
+
+    // Get upcoming trainings where user is a participant AND available
     trainings
       .filter(training => {
         // Check if training is upcoming
         const trainingDate = new Date(training.date);
         trainingDate.setHours(0, 0, 0, 0);
-        
+
         if (trainingDate < today) return false;
-        
+
         // Check if user is a participant
-        return training.participants.some(participant => 
-          participant.playerId === currentPlayer?.id || 
+        const isParticipant = training.participants.some(participant =>
+          participant.playerId === currentPlayer?.id ||
           participant.email === user?.email ||
           participant.playerName === user?.name
         );
+
+        if (!isParticipant) return false;
+
+        // Check if user is available (not absent) for this training
+        if (!currentPlayer) return true; // If no player record, assume available
+
+        const trainingDateStr = trainingDate.toISOString().split('T')[0];
+        const isAbsent = currentPlayer.absences.some(absence => {
+          const absenceDate = absence.split(' - ')[0];
+          return absenceDate === trainingDateStr;
+        });
+
+        return !isAbsent; // Only include if user is available
       })
       .slice(0, 2) // Limit to next 2 trainings
       .forEach(training => {
@@ -331,6 +372,7 @@ export default function Home() {
                         const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
                         const isToday = day.toDateString() === new Date().toDateString();
                         const hasTrainingAndAvailable = hasUserTrainingAndAvailable(day);
+                        const hasTrainingButUnavailable = hasUserTrainingButUnavailable(day);
 
                         return (
                           <div
@@ -339,10 +381,12 @@ export default function Home() {
                             className={`
                               aspect-square flex items-center justify-center text-xs rounded-full transition-colors
                               ${!isCurrentMonth ? 'text-gray-300 dark:text-gray-600' : 'text-gray-900 dark:text-white'}
-                              ${isToday ? 'bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 font-bold' : ''}
-                              ${hasTrainingAndAvailable && isCurrentMonth ? 'bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100 font-semibold cursor-pointer hover:bg-green-200 dark:hover:bg-green-800' : 'cursor-default'}
+                              ${isToday && !hasTrainingAndAvailable && !hasTrainingButUnavailable ? 'bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 font-bold' : ''}
+                              ${hasTrainingAndAvailable && isCurrentMonth ? 'bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100 font-semibold cursor-pointer hover:bg-green-200 dark:hover:bg-green-800' : ''}
+                              ${hasTrainingButUnavailable && isCurrentMonth ? 'bg-red-100 dark:bg-red-900 text-red-900 dark:text-red-100 font-semibold cursor-default' : ''}
                               ${hasTrainingAndAvailable && isToday ? 'bg-green-200 dark:bg-green-800' : ''}
-                              ${!hasTrainingAndAvailable ? 'hover:bg-gray-100 dark:hover:bg-gray-700' : ''}
+                              ${hasTrainingButUnavailable && isToday ? 'bg-red-200 dark:bg-red-800' : ''}
+                              ${!hasTrainingAndAvailable && !hasTrainingButUnavailable ? 'hover:bg-gray-100 dark:hover:bg-gray-700 cursor-default' : ''}
                             `}
                           >
                             {day.getDate()}
@@ -359,7 +403,11 @@ export default function Home() {
                       </div>
                       <div className="flex items-center gap-1">
                         <div className="w-3 h-3 bg-green-100 dark:bg-green-900 rounded-full"></div>
-                        <span className="text-gray-600 dark:text-gray-400">Available for Training</span>
+                        <span className="text-gray-600 dark:text-gray-400">Available</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 bg-red-100 dark:bg-red-900 rounded-full"></div>
+                        <span className="text-gray-600 dark:text-gray-400">Unavailable</span>
                       </div>
                     </div>
                   </div>
