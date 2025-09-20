@@ -1,20 +1,21 @@
 'use client';
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { usePlayers } from "@/hooks/usePlayers";
 import { useTrainings } from "@/hooks/useTrainings";
-import { 
-  Trophy, 
-  Activity, 
+import {
+  Activity,
   Clock,
   MapPin,
   ChevronRight,
   CalendarOff,
-  Sparkles
+  Sparkles,
+  ChevronLeft
 } from "lucide-react";
 
 
@@ -22,7 +23,106 @@ export default function Home() {
   const { user } = useAuth();
   const { players } = usePlayers();
   const { trainings } = useTrainings();
-  
+  const router = useRouter();
+
+  // Calendar state
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  // Calendar utility functions
+  const getMonthData = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startCalendar = new Date(firstDay);
+    startCalendar.setDate(startCalendar.getDate() - firstDay.getDay());
+
+    const days = [];
+    const currentDate = new Date(startCalendar);
+
+    for (let i = 0; i < 42; i++) {
+      days.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return {
+      year,
+      month,
+      days,
+      monthName: firstDay.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    };
+  };
+
+  const navigateMonth = (direction: 'prev' | 'next') => {
+    setCurrentMonth(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(prev.getMonth() + (direction === 'next' ? 1 : -1));
+      return newDate;
+    });
+  };
+
+  const hasUserTrainingAndAvailable = (date: Date) => {
+    if (!currentPlayer) return false;
+
+    const dateStr = date.toISOString().split('T')[0];
+
+    // Check if user has a training on this date
+    const hasTraining = trainings.some(training => {
+      const trainingDateStr = training.date.toISOString().split('T')[0];
+      if (trainingDateStr !== dateStr) return false;
+
+      return training.participants.some(participant =>
+        participant.playerId === currentPlayer.id ||
+        participant.email === user?.email ||
+        participant.playerName === user?.name
+      );
+    });
+
+    if (!hasTraining) return false;
+
+    // Check if user is available (not absent) on this date
+    const isAbsent = currentPlayer.absences.some(absence => {
+      const absenceDate = absence.split(' - ')[0];
+      return absenceDate === dateStr;
+    });
+
+    return !isAbsent; // Only highlight if has training AND is available
+  };
+
+  // Touch handlers for swipe functionality
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe) {
+      navigateMonth('next');
+    } else if (isRightSwipe) {
+      navigateMonth('prev');
+    }
+  };
+
+  // Handle calendar day click
+  const handleDayClick = (date: Date) => {
+    const hasTrainingAndAvailable = hasUserTrainingAndAvailable(date);
+    if (hasTrainingAndAvailable) {
+      router.push('/training');
+    }
+  };
+
   // Get current player name
   const getCurrentPlayerName = () => {
     if (!user) return 'User';
@@ -182,76 +282,90 @@ export default function Home() {
           </div>
 
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-            
-            {/* Main Actions - Mobile Optimized Cards */}
-            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-              <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white mb-4">
-                Quick Actions
-              </h2>
-              
-              <div className="space-y-6">
-                {/* Quick Actions */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                {/* Training Action */}
-                <Link href="/training" className="group block">
-                  <Card className="p-4 sm:p-6 transition-all duration-200 hover:shadow-lg hover:scale-[1.02] border-2 border-transparent hover:border-purple-200 dark:hover:border-purple-700">
-                    <CardContent className="p-0">
-                      <div className="flex items-center gap-4 mb-3">
-                        <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-full">
-                          <Activity className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg sm:text-xl">Training</CardTitle>
-                          <CardDescription className="text-sm">
-                            Schedule & attendance tracking
-                          </CardDescription>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                          Manage training sessions
-                        </p>
-                        <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200 transition-colors" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-                
-                {/* My Absences Action */}
-                <Link href="/absence" className="group block">
-                  <Card className="p-4 sm:p-6 transition-all duration-200 hover:shadow-lg hover:scale-[1.02] border-2 border-transparent hover:border-red-200 dark:hover:border-red-700">
-                    <CardContent className="p-0">
-                      <div className="flex items-center gap-4 mb-3">
-                        <div className="p-3 bg-red-100 dark:bg-red-900 rounded-full">
-                          <CalendarOff className="h-6 w-6 text-red-600 dark:text-red-400" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg sm:text-xl">My Absences</CardTitle>
-                          <CardDescription className="text-sm">
-                            Manage your availability
-                          </CardDescription>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                          Manage absences
-                        </p>
-                        <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-200 transition-colors" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Upcoming Events Sidebar */}
+          <div className="grid grid-cols-1 gap-6 sm:gap-8">
+            {/* Upcoming Events - Full Width */}
             <div className="space-y-6">
               <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
                 Upcoming Events
               </h2>
-              
+
+              {/* Calendar Month View */}
+              <Card className="p-4">
+                <CardContent className="p-0">
+                  <div
+                    className="space-y-4"
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                  >
+                    {/* Calendar Header */}
+                    <div className="flex items-center justify-between">
+                      <button
+                        onClick={() => navigateMonth('prev')}
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                      >
+                        <ChevronLeft className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                      </button>
+                      <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
+                        {getMonthData(currentMonth).monthName}
+                      </h3>
+                      <button
+                        onClick={() => navigateMonth('next')}
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                      >
+                        <ChevronRight className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                      </button>
+                    </div>
+
+                    {/* Calendar Grid */}
+                    <div className="grid grid-cols-7 gap-1">
+                      {/* Day headers */}
+                      {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                        <div key={index} className="text-center text-xs font-medium text-gray-500 dark:text-gray-400 py-2">
+                          {day}
+                        </div>
+                      ))}
+
+                      {/* Calendar days */}
+                      {getMonthData(currentMonth).days.map((day, index) => {
+                        const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
+                        const isToday = day.toDateString() === new Date().toDateString();
+                        const hasTrainingAndAvailable = hasUserTrainingAndAvailable(day);
+
+                        return (
+                          <div
+                            key={index}
+                            onClick={() => handleDayClick(day)}
+                            className={`
+                              aspect-square flex items-center justify-center text-xs rounded-full transition-colors
+                              ${!isCurrentMonth ? 'text-gray-300 dark:text-gray-600' : 'text-gray-900 dark:text-white'}
+                              ${isToday ? 'bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 font-bold' : ''}
+                              ${hasTrainingAndAvailable && isCurrentMonth ? 'bg-green-100 dark:bg-green-900 text-green-900 dark:text-green-100 font-semibold cursor-pointer hover:bg-green-200 dark:hover:bg-green-800' : 'cursor-default'}
+                              ${hasTrainingAndAvailable && isToday ? 'bg-green-200 dark:bg-green-800' : ''}
+                              ${!hasTrainingAndAvailable ? 'hover:bg-gray-100 dark:hover:bg-gray-700' : ''}
+                            `}
+                          >
+                            {day.getDate()}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Calendar Legend */}
+                    <div className="flex items-center justify-center gap-4 text-xs">
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 bg-blue-100 dark:bg-blue-900 rounded-full"></div>
+                        <span className="text-gray-600 dark:text-gray-400">Today</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 bg-green-100 dark:bg-green-900 rounded-full"></div>
+                        <span className="text-gray-600 dark:text-gray-400">Available for Training</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               <div className="space-y-4">
                 {upcomingEvents.length === 0 ? (
                   <Card className="p-4 text-center">
