@@ -110,8 +110,8 @@ export default function AbsencePage() {
         });
       });
 
-      // Sort by date (newest first)
-      allAbsences.sort((a, b) => b.date.getTime() - a.date.getTime());
+      // Sort by date (sooner to later)
+      allAbsences.sort((a, b) => a.date.getTime() - b.date.getTime());
       setAbsences(allAbsences);
       setLoading(false);
     }
@@ -413,10 +413,9 @@ export default function AbsencePage() {
                         <div>
                           <div className="flex items-center gap-2 mb-0.5">
                             <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
-                              {absence.date.toLocaleDateString('en-US', { 
-                                weekday: 'long',
-                                year: 'numeric',
-                                month: 'long',
+                              {absence.date.toLocaleDateString('en-US', {
+                                weekday: 'short',
+                                month: 'short',
                                 day: 'numeric'
                               })}
                             </h3>

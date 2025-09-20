@@ -745,7 +745,11 @@ export default function TrainingMode() {
                     <div className="space-y-3">
                       <div>
                         <div className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-                          {training.dayName}, {training.date.toLocaleDateString()}
+                          {training.date.toLocaleDateString('en-US', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
                         </div>
                         <div className="flex justify-between items-start">
                           <div className="space-y-2">
