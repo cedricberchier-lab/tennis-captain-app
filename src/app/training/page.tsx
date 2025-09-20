@@ -676,9 +676,7 @@ export default function TrainingMode() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800">
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-8"></div>
-
+        <div className="container mx-auto px-2 py-2">
           {/* Error Display */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
@@ -689,34 +687,28 @@ export default function TrainingMode() {
           )}
 
           {/* Training Controls */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-6">
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
-              {/* Number of Trainings Dropdown */}
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Show next:</span>
-                <Select value={horizonCount.toString()} onValueChange={(value) => setHorizonCount(parseInt(value))}>
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1 training</SelectItem>
-                    <SelectItem value="3">3 trainings</SelectItem>
-                    <SelectItem value="5">5 trainings</SelectItem>
-                    <SelectItem value="10">10 trainings</SelectItem>
-                    <SelectItem value="20">20 trainings</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {/* Schedule Training Button */}
-              <Button
-                onClick={() => setShowAddForm(true)}
-                className="bg-purple-600 hover:bg-purple-700 flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Schedule Training
-              </Button>
-            </div>
+          <div className="mb-3 flex items-center gap-3">
+            <Button
+              onClick={() => setShowAddForm(true)}
+              className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              + Add Training
+            </Button>
+
+            {/* Number of Trainings Dropdown */}
+            <Select value={horizonCount.toString()} onValueChange={(value) => setHorizonCount(parseInt(value))}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1 training</SelectItem>
+                <SelectItem value="3">3 trainings</SelectItem>
+                <SelectItem value="5">5 trainings</SelectItem>
+                <SelectItem value="10">10 trainings</SelectItem>
+                <SelectItem value="20">20 trainings</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Training List */}
@@ -740,7 +732,7 @@ export default function TrainingMode() {
                   className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center gap-2"
                 >
                   <Plus className="h-4 w-4" />
-                  Schedule First Training
+                  + Add Training
                 </Button>
               </div>
             ) : (
