@@ -169,13 +169,19 @@ export default function TrainingMode() {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvUploading, setCsvUploading] = useState(false);
   const [csvResults, setCsvResults] = useState<{success: number, failed: number, errors: string[]} | null>(null);
+  const [showMyTrainings, setShowMyTrainings] = useState(false);
 
-  // Load custom horizon settings from localStorage
+  // Load custom horizon settings and filter preference from localStorage
   useEffect(() => {
     const savedHorizonCount = localStorage.getItem('trainingHorizonCount');
-    
+    const savedShowMyTrainings = localStorage.getItem('showMyTrainings');
+
     if (savedHorizonCount) {
       setHorizonCount(parseInt(savedHorizonCount));
+    }
+
+    if (savedShowMyTrainings) {
+      setShowMyTrainings(savedShowMyTrainings === 'true');
     }
   }, []);
 
@@ -183,6 +189,11 @@ export default function TrainingMode() {
   useEffect(() => {
     localStorage.setItem('trainingHorizonCount', horizonCount.toString());
   }, [horizonCount]);
+
+  // Save filter preference to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('showMyTrainings', showMyTrainings.toString());
+  }, [showMyTrainings]);
 
   // Primary effect: Run absence checking whenever page loads or data changes
   useEffect(() => {
@@ -733,8 +744,24 @@ export default function TrainingMode() {
     setParticipants(updated);
   };
 
-  // Get displayable trainings based on custom horizon setting
-  const displayableTrainings = getUpcomingTrainings(horizonCount);
+  // Get displayable trainings based on custom horizon setting and filter
+  const allUpcomingTrainings = getUpcomingTrainings(horizonCount);
+
+  const displayableTrainings = useMemo(() => {
+    if (!showMyTrainings || !user) {
+      return allUpcomingTrainings;
+    }
+
+    // Filter trainings where current user is a participant
+    return allUpcomingTrainings.filter(training =>
+      training.participants.some(participant =>
+        participant.playerId && user.email && (
+          participant.playerId === user.id ||
+          participant.email?.toLowerCase() === user.email.toLowerCase()
+        )
+      )
+    );
+  }, [allUpcomingTrainings, showMyTrainings, user]);
 
 
   return (
@@ -751,13 +778,27 @@ export default function TrainingMode() {
           )}
 
           {/* Training Controls */}
-          <div className="mb-3 flex items-center gap-3">
+          <div className="mb-3 flex items-center gap-3 flex-wrap">
             <Button
               onClick={() => setShowAddForm(true)}
               className="bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2"
             >
               <Plus className="h-4 w-4" />
               + Add Training
+            </Button>
+
+            {/* Me/All Toggle Button */}
+            <Button
+              onClick={() => setShowMyTrainings(!showMyTrainings)}
+              variant="outline"
+              className={`flex items-center gap-2 transition-colors ${
+                showMyTrainings
+                  ? "bg-purple-600 hover:bg-purple-700 !text-white border-purple-600"
+                  : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+              }`}
+            >
+              <Users className="h-4 w-4" />
+              {showMyTrainings ? "Me" : "All"}
             </Button>
 
             {/* Number of Trainings Dropdown */}
@@ -789,15 +830,30 @@ export default function TrainingMode() {
                   <PersonStanding className="h-16 w-16 text-gray-400 dark:text-gray-500" />
                 </div>
                 <p className="text-gray-600 dark:text-gray-300 mb-6">
-                  No upcoming training sessions scheduled
+                  {showMyTrainings
+                    ? "You are not participating in any upcoming training sessions"
+                    : "No upcoming training sessions scheduled"
+                  }
                 </p>
-                <Button
-                  onClick={() => setShowAddForm(true)}
-                  className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  + Add Training
-                </Button>
+                {!showMyTrainings && (
+                  <Button
+                    onClick={() => setShowAddForm(true)}
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    + Add Training
+                  </Button>
+                )}
+                {showMyTrainings && (
+                  <Button
+                    onClick={() => setShowMyTrainings(false)}
+                    variant="outline"
+                    className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-medium py-3 px-6 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <Users className="h-4 w-4" />
+                    View All Trainings
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="space-y-4" key={`trainings-${refreshKey}-${players.length}-${JSON.stringify(players.map(p => p.absences)).substring(0, 50)}`}>
