@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { Training, TrainingParticipant, Player } from "@/types";
 import { useTrainings } from "@/hooks/useTrainings";
 import { usePlayers } from "@/hooks/usePlayers";
@@ -125,6 +126,7 @@ const durationOptions = [
 ];
 
 export default function TrainingMode() {
+  const searchParams = useSearchParams();
   const {
     trainings,
     loading: trainingsLoading,
@@ -194,6 +196,68 @@ export default function TrainingMode() {
   useEffect(() => {
     localStorage.setItem('showMyTrainings', showMyTrainings.toString());
   }, [showMyTrainings]);
+
+  // Handle URL parameter for specific date navigation
+  useEffect(() => {
+    const targetDate = searchParams.get('date');
+    if (targetDate && trainings.length > 0) {
+      console.log('Navigating to training date:', targetDate);
+
+      // Find the training for the target date
+      const targetTraining = trainings.find(training => {
+        const trainingDateStr = getLocalDateString(training.date);
+        return trainingDateStr === targetDate;
+      });
+
+      if (targetTraining) {
+        // Calculate how many trainings we need to show to include the target
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const upcomingTrainings = trainings
+          .filter(training => training.date >= today)
+          .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+        const targetIndex = upcomingTrainings.findIndex(training =>
+          getLocalDateString(training.date) === targetDate
+        );
+
+        if (targetIndex !== -1) {
+          // Adjust horizon count to ensure the target training is visible
+          const requiredHorizon = Math.max(targetIndex + 1, horizonCount);
+          if (requiredHorizon > horizonCount) {
+            setHorizonCount(requiredHorizon);
+          }
+
+          // Reset filter to show all trainings if target might be filtered out
+          const isUserParticipant = targetTraining.participants.some(participant =>
+            participant.playerId === user?.id ||
+            participant.email?.toLowerCase() === user?.email?.toLowerCase()
+          );
+
+          if (showMyTrainings && !isUserParticipant) {
+            setShowMyTrainings(false);
+          }
+
+          // Scroll to the training card after a short delay
+          setTimeout(() => {
+            const trainingElement = document.getElementById(`training-${targetTraining.id}`);
+            if (trainingElement) {
+              trainingElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+              });
+              // Add temporary highlight
+              trainingElement.classList.add('ring-4', 'ring-purple-300', 'ring-opacity-50');
+              setTimeout(() => {
+                trainingElement.classList.remove('ring-4', 'ring-purple-300', 'ring-opacity-50');
+              }, 3000);
+            }
+          }, 500);
+        }
+      }
+    }
+  }, [searchParams, trainings, user, horizonCount, showMyTrainings]);
 
   // Primary effect: Run absence checking whenever page loads or data changes
   useEffect(() => {
@@ -807,6 +871,7 @@ export default function TrainingMode() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="999">All trainings</SelectItem>
                 <SelectItem value="1">1 training</SelectItem>
                 <SelectItem value="3">3 trainings</SelectItem>
                 <SelectItem value="5">5 trainings</SelectItem>
@@ -860,6 +925,7 @@ export default function TrainingMode() {
                 {displayableTrainings.map((training) => (
                   <div
                     key={`${training.id}-${refreshKey}-${players.length}`}
+                    id={`training-${training.id}`}
                     className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
                     <div className="space-y-3">

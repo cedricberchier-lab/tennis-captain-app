@@ -153,9 +153,15 @@ export default function Home() {
 
   // Handle calendar day click
   const handleDayClick = (date: Date) => {
-    const hasTrainingAndAvailable = hasUserTrainingAndAvailable(date);
-    if (hasTrainingAndAvailable) {
-      router.push('/training');
+    const dateStr = getLocalDateString(date);
+    const hasTraining = trainings.some(training => {
+      const trainingDateStr = getLocalDateString(training.date);
+      return trainingDateStr === dateStr;
+    });
+
+    if (hasTraining) {
+      // Navigate to training page with the specific date
+      router.push(`/training?date=${dateStr}`);
     }
   };
 
