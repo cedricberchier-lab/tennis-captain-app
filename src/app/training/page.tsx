@@ -125,16 +125,24 @@ const durationOptions = [
 ];
 
 export default function TrainingMode() {
-  const { 
-    trainings, 
-    loading: trainingsLoading, 
-    error, 
-    addTraining, 
-    updateTraining, 
+  const {
+    trainings,
+    loading: trainingsLoading,
+    error,
+    addTraining,
+    updateTraining,
     deleteTraining,
     getUpcomingTrainings,
     refreshTrainings
   } = useTrainings();
+
+  // Helper function to get local date string (YYYY-MM-DD) without timezone issues
+  const getLocalDateString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
   
   const { players, loading: playersLoading, refreshPlayers, updatePlayer } = usePlayers();
   const { user } = useAuth();
@@ -191,9 +199,9 @@ export default function TrainingMode() {
 
       // Log training participants and check their absence status
       trainings.forEach(training => {
-        const trainingDateStr = training.date.toISOString().split('T')[0];
+        const trainingDateStr = getLocalDateString(training.date);
         console.log(`Training on ${trainingDateStr} (${training.dayName}):`);
-        
+
         training.participants.forEach(participant => {
           if (participant.playerId) {
             // Inline absence checking to avoid dependency issues
@@ -258,9 +266,9 @@ export default function TrainingMode() {
     // Log training participants and check their absence status
     let totalAbsences = 0;
     trainings.forEach(training => {
-      const trainingDateStr = training.date.toISOString().split('T')[0];
+      const trainingDateStr = getLocalDateString(training.date);
       console.log(`Training on ${trainingDateStr} (${training.dayName}):`);
-      
+
       training.participants.forEach(participant => {
         if (participant.playerId) {
           const player = players.find(p => p.id === participant.playerId);
@@ -293,19 +301,15 @@ export default function TrainingMode() {
       if (!player || !player.absences || player.absences.length === 0) {
         return false;
       }
-      
-      // Handle timezone issues by using local date string instead of ISO
-      const trainingDate = new Date(date);
-      const year = trainingDate.getFullYear();
-      const month = String(trainingDate.getMonth() + 1).padStart(2, '0');
-      const day = String(trainingDate.getDate()).padStart(2, '0');
-      const trainingDateStr = `${year}-${month}-${day}`;
-      
+
+      // Handle timezone issues by using local date string
+      const trainingDateStr = getLocalDateString(date);
+
       const hasAbsence = player.absences.some(absence => {
         const absenceDate = absence.split(' - ')[0].trim(); // Get date part and trim whitespace
         return absenceDate === trainingDateStr;
       });
-      
+
       return hasAbsence;
     };
   }, [players, refreshKey]); // Recalculate when players data changes or manual refresh
@@ -315,14 +319,10 @@ export default function TrainingMode() {
     return (playerId: string, date: Date): string | null => {
       const player = players.find(p => p.id === playerId);
       if (!player || !player.absences || player.absences.length === 0) return null;
-      
-      // Handle timezone issues by using local date string instead of ISO
-      const trainingDate = new Date(date);
-      const year = trainingDate.getFullYear();
-      const month = String(trainingDate.getMonth() + 1).padStart(2, '0');
-      const day = String(trainingDate.getDate()).padStart(2, '0');
-      const trainingDateStr = `${year}-${month}-${day}`;
-      
+
+      // Handle timezone issues by using local date string
+      const trainingDateStr = getLocalDateString(date);
+
       const absence = player.absences.find(absence => {
         const absenceDate = absence.split(' - ')[0].trim(); // Get date part and trim whitespace
         return absenceDate === trainingDateStr;
@@ -342,26 +342,28 @@ export default function TrainingMode() {
   const handleToggleAbsence = async (playerId: string, trainingDate: Date, playerName: string) => {
     const player = players.find(p => p.id === playerId);
     if (!player) return;
-    
+
     const hasAbsence = playerHasAbsenceOnDate(playerId, trainingDate);
-    
+
     try {
       if (hasAbsence) {
-        // Remove absence
-        const dateStr = trainingDate.toISOString().split('T')[0];
-        const updatedAbsences = player.absences.filter(absence => 
+        // Remove absence using local date string to avoid timezone issues
+        const dateStr = getLocalDateString(trainingDate);
+        const updatedAbsences = player.absences.filter(absence =>
           !absence.startsWith(dateStr)
         );
         await updatePlayer(player.id, { absences: updatedAbsences });
+        console.log(`Removed absence for ${playerName} on ${dateStr}`);
       } else {
-        // Add absence with default reason
-        const dateStr = trainingDate.toISOString().split('T')[0];
+        // Add absence with default reason using local date string
+        const dateStr = getLocalDateString(trainingDate);
         const absenceEntry = `${dateStr} - Training unavailable`;
         const updatedAbsences = [...player.absences, absenceEntry];
         await updatePlayer(player.id, { absences: updatedAbsences });
+        console.log(`Added absence for ${playerName} on ${dateStr}`);
       }
-      
-      // Refresh data to show updated state
+
+      // Refresh data to show updated state across all pages
       await refreshPlayers();
       setRefreshKey(prev => prev + 1);
     } catch (error) {
@@ -923,7 +925,7 @@ export default function TrainingMode() {
                       <input
                         type="date"
                         value={formData.date}
-                        min={new Date().toISOString().split('T')[0]}
+                        min={getLocalDateString(new Date())}
                         onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
                         required
@@ -1276,7 +1278,7 @@ export default function TrainingMode() {
                       <input
                         type="date"
                         value={formData.date}
-                        min={new Date().toISOString().split('T')[0]}
+                        min={getLocalDateString(new Date())}
                         onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
                         required
