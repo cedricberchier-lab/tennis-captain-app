@@ -30,6 +30,14 @@ export default function Home() {
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
+  // Helper function to get local date string (YYYY-MM-DD) without timezone issues
+  const getLocalDateString = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Calendar utility functions
   const getMonthData = (date: Date) => {
     const year = date.getFullYear();
@@ -66,11 +74,11 @@ export default function Home() {
   const hasUserTrainingAndAvailable = (date: Date) => {
     if (!currentPlayer) return false;
 
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = getLocalDateString(date);
 
     // Check if user has a training on this date
     const hasTraining = trainings.some(training => {
-      const trainingDateStr = training.date.toISOString().split('T')[0];
+      const trainingDateStr = getLocalDateString(training.date);
       if (trainingDateStr !== dateStr) return false;
 
       return training.participants.some(participant =>
@@ -94,11 +102,11 @@ export default function Home() {
   const hasUserTrainingButUnavailable = (date: Date) => {
     if (!currentPlayer) return false;
 
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = getLocalDateString(date);
 
     // Check if user has a training on this date
     const hasTraining = trainings.some(training => {
-      const trainingDateStr = training.date.toISOString().split('T')[0];
+      const trainingDateStr = getLocalDateString(training.date);
       if (trainingDateStr !== dateStr) return false;
 
       return training.participants.some(participant =>
@@ -217,7 +225,7 @@ export default function Home() {
         // Check if user is available (not absent) for this training
         if (!currentPlayer) return true; // If no player record, assume available
 
-        const trainingDateStr = trainingDate.toISOString().split('T')[0];
+        const trainingDateStr = getLocalDateString(trainingDate);
         const isAbsent = currentPlayer.absences.some(absence => {
           const absenceDate = absence.split(' - ')[0];
           return absenceDate === trainingDateStr;
@@ -262,7 +270,7 @@ export default function Home() {
     upcomingTrainings.forEach(training => {
       const trainingDate = new Date(training.date);
       trainingDate.setHours(0, 0, 0, 0);
-      const trainingDateStr = trainingDate.toISOString().split('T')[0];
+      const trainingDateStr = getLocalDateString(trainingDate);
       
       // Check each participant in the training
       training.participants.forEach(participant => {
@@ -279,8 +287,8 @@ export default function Home() {
             const [dateStr, ...reasonParts] = absence.split(' - ');
             const absenceDate = new Date(dateStr);
             absenceDate.setHours(0, 0, 0, 0);
-            const absenceDateStr = absenceDate.toISOString().split('T')[0];
-            
+            const absenceDateStr = getLocalDateString(absenceDate);
+
             // If the absence date matches the training date
             if (absenceDateStr === trainingDateStr && absenceDate >= today) {
               conflictingAbsences.push({
@@ -491,8 +499,10 @@ export default function Home() {
                       </div>
                       <div className="space-y-2">
                         {upcomingAbsences.map((absence, index) => {
-                          const isToday = absence.date === new Date().toISOString().split('T')[0];
-                          const isTomorrow = absence.date === new Date(Date.now() + 86400000).toISOString().split('T')[0];
+                          const today = new Date();
+                          const tomorrow = new Date(Date.now() + 86400000);
+                          const isToday = absence.date === getLocalDateString(today);
+                          const isTomorrow = absence.date === getLocalDateString(tomorrow);
                           
                           let dateDisplay = absence.dateObj.toLocaleDateString('en-US', { 
                             weekday: 'short', 
