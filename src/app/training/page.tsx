@@ -463,21 +463,44 @@ export default function TrainingMode() {
 
   // Handle CSV upload
   const handleCsvUpload = async () => {
-    if (!csvFile) return;
-    
+    console.log('=== CSV UPLOAD STARTED ===');
+    console.log('csvFile:', csvFile?.name);
+    console.log('csvUploading:', csvUploading);
+
+    if (!csvFile || csvUploading) {
+      console.log('Upload prevented: no file or already uploading');
+      return;
+    }
+
     setCsvUploading(true);
     setCsvResults(null);
-    
+
     try {
+      console.log('Parsing CSV file...');
       const data = await parseCSVFile(csvFile);
+      console.log('Parsed CSV data - entries count:', data.length);
+      console.log('Parsed CSV data:', data);
+
+      console.log('Processing training data...');
       const results = await processTrainingData(data);
+      console.log('Processing results:', results);
       setCsvResults(results);
-      
+
       // Refresh training list if any trainings were successfully created
       if (results.success > 0) {
+        console.log('Refreshing training list...');
         await refreshTrainings();
       }
+
+      // Clear the file input to prevent re-uploads
+      const fileInput = document.getElementById('csv-upload') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
+      setCsvFile(null);
+
     } catch (error) {
+      console.error('CSV upload error:', error);
       setCsvResults({
         success: 0,
         failed: 1,
@@ -485,6 +508,7 @@ export default function TrainingMode() {
       });
     } finally {
       setCsvUploading(false);
+      console.log('=== CSV UPLOAD COMPLETED ===');
     }
   };
   
@@ -541,9 +565,15 @@ export default function TrainingMode() {
     let success = 0;
     let failed = 0;
     const errors: string[] = [];
-    
-    for (const item of data) {
+
+    console.log(`Processing ${data.length} training entries from CSV`);
+
+    // Track processed trainings to prevent duplicates within the same upload
+    const processedTrainings = new Set<string>();
+
+    for (const [index, item] of data.entries()) {
       try {
+        console.log(`Processing row ${index + 1}:`, item);
         // Parse date
         let trainingDate;
         if (item.date.includes('/')) {
@@ -552,22 +582,50 @@ export default function TrainingMode() {
         } else {
           trainingDate = new Date(item.date);
         }
-        
+
         if (isNaN(trainingDate.getTime())) {
           throw new Error(`Invalid date: ${item.date}`);
         }
-        
+
+        // Create a unique key for this training to check for duplicates
+        const trainingKey = `${getLocalDateString(trainingDate)}-${item.timeStart}-${item.timeEnd}-${item.courtNumber}`;
+        console.log(`Training key: ${trainingKey}`);
+
+        // Check if we've already processed this exact training in this batch
+        if (processedTrainings.has(trainingKey)) {
+          console.log(`Skipping duplicate training: ${trainingKey}`);
+          failed++;
+          errors.push(`Row ${index + 2}: Duplicate training detected (same date, time, and court)`);
+          continue;
+        }
+
+        // Check if this training already exists in the database
+        const existingTraining = trainings.find(t => {
+          const existingKey = `${getLocalDateString(t.date)}-${t.timeStart}-${t.timeEnd}-${t.courtNumber}`;
+          return existingKey === trainingKey;
+        });
+
+        if (existingTraining) {
+          console.log(`Training already exists in database: ${trainingKey}`);
+          failed++;
+          errors.push(`Row ${index + 2}: Training already exists for this date, time, and court`);
+          continue;
+        }
+
+        // Mark this training as processed
+        processedTrainings.add(trainingKey);
+
         // Create participants
         const participants: TrainingParticipant[] = [];
         [item.player1, item.player2, item.player3, item.player4]
           .filter(name => name && name.trim())
           .forEach((name: string) => {
             // Find matching player in roster
-            const matchedPlayer = players.find(p => 
+            const matchedPlayer = players.find(p =>
               p.name.toLowerCase() === name.trim().toLowerCase() ||
               p.email.toLowerCase() === name.trim().toLowerCase()
             );
-            
+
             participants.push({
               id: crypto.randomUUID(),
               playerId: matchedPlayer?.id,
@@ -577,7 +635,7 @@ export default function TrainingMode() {
               phone: matchedPlayer?.phone || ''
             });
           });
-        
+
         // Create training
         const trainingData = {
           date: trainingDate,
@@ -588,15 +646,19 @@ export default function TrainingMode() {
           participants,
           comment: item.comment || ''
         };
-        
+
+        console.log(`Creating training: ${trainingKey}`);
         await addTraining(trainingData);
         success++;
+        console.log(`Successfully created training: ${trainingKey}`);
       } catch (error) {
         failed++;
-        errors.push(`Row ${data.indexOf(item) + 2}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        errors.push(`Row ${index + 2}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.error(`Error processing row ${index + 1}:`, error);
       }
     }
-    
+
+    console.log(`Processing complete: ${success} success, ${failed} failed`);
     return { success, failed, errors };
   };
 
@@ -1205,7 +1267,13 @@ export default function TrainingMode() {
                     <div className="flex space-x-3 pt-4">
                       <Button
                         type="button"
-                        onClick={handleCsvUpload}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (!csvUploading && csvFile) {
+                            handleCsvUpload();
+                          }
+                        }}
                         disabled={!csvFile || csvUploading}
                         className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white font-medium py-2 px-4 rounded-lg transition-colors"
                       >
