@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Training, TrainingParticipant, Player } from "@/types";
 import { useTrainings } from "@/hooks/useTrainings";
@@ -125,7 +125,7 @@ const durationOptions = [
   { value: "2", label: "2 hours" }
 ];
 
-export default function TrainingMode() {
+function TrainingModeContent() {
   const searchParams = useSearchParams();
   const {
     trainings,
@@ -1653,5 +1653,17 @@ export default function TrainingMode() {
         </div>
       </div>
     </ProtectedRoute>
+  );
+}
+
+export default function TrainingMode() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      </div>
+    }>
+      <TrainingModeContent />
+    </Suspense>
   );
 }
