@@ -20,6 +20,17 @@ export const metadata: Metadata = {
   description: "Complete tennis team management solution with training schedules, match results, and player tracking",
   keywords: "tennis, team management, training, matches, sports app",
   viewport: "width=device-width, initial-scale=1, user-scalable=yes",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Tennis Captain",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "default",
+  },
 };
 
 export default function RootLayout({
