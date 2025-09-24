@@ -11,10 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  Plus, 
-  Clock, 
-  Users, 
+import {
+  Plus,
+  Clock,
+  Users,
   Calendar,
   Upload,
   FileText,
@@ -25,7 +25,8 @@ import {
   AlertTriangle,
   CheckCircle,
   RefreshCw,
-  PersonStanding
+  PersonStanding,
+  Star
 } from "lucide-react";
 import * as XLSX from 'xlsx';
 
@@ -1072,13 +1073,19 @@ function TrainingModeContent() {
                                 const playerId = participant.playerId || participant.id;
                                 const hasAbsence = playerId && playerHasAbsenceOnDate(playerId, training.date);
                                 const absenceReason = playerId ? getAbsenceReason(playerId, training.date) : null;
-                                
+
+                                // Check if this is the current logged-in user
+                                const isCurrentUser = user && playerId && (
+                                  playerId === user.id ||
+                                  participant.email?.toLowerCase() === user.email?.toLowerCase()
+                                );
+
                                 return (
                                   <div key={participant.id} className="group relative">
                                     <button
                                       onClick={() => playerId && handleToggleAbsence(playerId, training.date, participant.playerName)}
                                       disabled={!playerId}
-                                      className={`w-full px-3 py-2 rounded text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                                      className={`w-full px-3 py-2 rounded text-sm transition-all duration-200 flex items-center gap-2 justify-between ${
                                         hasAbsence
                                           ? "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-600 hover:bg-red-200 dark:hover:bg-red-800"
                                           : "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-600 hover:bg-green-200 dark:hover:bg-green-800"
@@ -1087,14 +1094,21 @@ function TrainingModeContent() {
                                       }`}
                                       title={playerId ? `Click to toggle availability` : 'Manual entry - cannot toggle'}
                                     >
-                                      {hasAbsence ? (
-                                        <AlertTriangle className="h-3 w-3" />
-                                      ) : (
-                                        <CheckCircle className="h-3 w-3" />
+                                      <div className="flex items-center gap-2">
+                                        {hasAbsence ? (
+                                          <AlertTriangle className="h-3 w-3" />
+                                        ) : (
+                                          <CheckCircle className="h-3 w-3" />
+                                        )}
+                                        <span className={isCurrentUser ? 'font-bold' : 'font-medium'}>
+                                          {participant.playerName}
+                                        </span>
+                                      </div>
+                                      {isCurrentUser && (
+                                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                                       )}
-                                      {participant.playerName}
                                     </button>
-                                    
+
                                     {/* Hover tooltip */}
                                     {playerId && (
                                       <div className="absolute z-10 invisible group-hover:visible bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 dark:bg-gray-700 rounded whitespace-nowrap">
