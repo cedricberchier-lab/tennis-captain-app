@@ -354,7 +354,7 @@ export default function Home() {
                 Welcome back, {getCurrentPlayerName()}!
                 <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 text-purple-500 dark:text-purple-400" />
               </h1>
-              {user?.name === 'Cedric Berchier' && (
+              {user?.name === 'Cédric Berchier' && (
                 <div className="flex gap-2">
                   <button
                     onClick={sendTestNotification}
@@ -577,7 +577,7 @@ export default function Home() {
                 )}
 
                 {/* Test Notification Section - Only for Cedric */}
-                {user?.name === 'Cedric Berchier' && (
+                {user?.name === 'Cédric Berchier' && (
                   <Card className="p-4 border-2 border-purple-200 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/20">
                     <CardContent className="p-0">
                       <div className="flex items-start gap-3 mb-3">
