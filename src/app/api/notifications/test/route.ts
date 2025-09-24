@@ -31,9 +31,22 @@ async function sendTestNotification() {
 
 export async function GET() {
   try {
+    // Debug environment variables
+    console.log('🔍 Debugging OneSignal config:');
+    console.log('APP_ID exists:', !!APP_ID);
+    console.log('APP_ID value:', APP_ID ? `${APP_ID.substring(0, 8)}...` : 'undefined');
+    console.log('REST_API_KEY exists:', !!REST_API_KEY);
+    console.log('REST_API_KEY value:', REST_API_KEY ? `${REST_API_KEY.substring(0, 8)}...` : 'undefined');
+
     if (!APP_ID || !REST_API_KEY) {
       return NextResponse.json(
-        { error: "OneSignal not configured" },
+        {
+          error: "OneSignal not configured",
+          debug: {
+            APP_ID_exists: !!APP_ID,
+            REST_API_KEY_exists: !!REST_API_KEY,
+          }
+        },
         { status: 500 }
       );
     }
