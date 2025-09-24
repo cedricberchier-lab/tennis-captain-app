@@ -463,9 +463,15 @@ function TrainingModeContent() {
             const startsAtISO = training.date.toISOString();
 
             // IMPORTANT: OneSignal needs the external user ID, not the player database ID
-            // We need to get the OneSignal user ID from localStorage (same as OneSignalInit)
+            // Use user email if available (same as OneSignalInit), otherwise fallback to UUID
             const getOneSignalUserId = () => {
               try {
+                // If user has email, use email as external user ID (matches OneSignalInit)
+                if (user?.email) {
+                  console.log('🆔 Using user email as OneSignal external user ID:', user.email);
+                  return user.email;
+                }
+                // Fallback to UUID from localStorage
                 return localStorage.getItem('tcapp_anon_uid') || 'anon';
               } catch {
                 return 'anon';

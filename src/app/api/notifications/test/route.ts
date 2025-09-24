@@ -13,10 +13,10 @@ async function sendTestNotification() {
     },
     body: JSON.stringify({
       app_id: APP_ID,
-      // Send to all subscribed users for now (since we need to identify your specific device)
-      included_segments: ["Subscribed Users"],
+      // Target specific user by email
+      include_external_user_ids: ["cedric.berchier@gmail.com"],
       headings: { en: "Test Notification for Cedric" },
-      contents: { en: "This is a simple test notification to verify the system is working!" },
+      contents: { en: "This notification is targeted specifically to cedric.berchier@gmail.com!" },
       url: "https://tennis-captain-app-xz42.vercel.app/",
     }),
   });
@@ -38,9 +38,9 @@ export async function GET() {
       );
     }
 
-    console.log('🧪 Sending test notification to Cedric...');
+    console.log('🧪 Sending test notification to cedric.berchier@gmail.com...');
     const result = await sendTestNotification();
-    console.log('✅ Test notification sent:', result);
+    console.log('✅ Test notification sent to cedric.berchier@gmail.com:', result);
 
     return NextResponse.json({
       success: true,

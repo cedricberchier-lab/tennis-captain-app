@@ -3,12 +3,20 @@
 import { useEffect } from "react";
 import OneSignal from "react-onesignal";
 import { v4 as uuidv4 } from "uuid";
+import { useAuth } from "@/contexts/AuthContext";
 
 const NOTIFS_ENABLED = process.env.NEXT_PUBLIC_NOTIFS_ENABLED === "true";
 const APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || "";
 
-function getOrCreateAnonId(): string {
+function getOrCreateUserId(userEmail?: string): string {
   try {
+    // If user is logged in and has email, use email as external user ID
+    if (userEmail) {
+      console.log('🆔 Using user email as OneSignal external user ID:', userEmail);
+      return userEmail;
+    }
+
+    // Fallback to anonymous UUID
     const key = "tcapp_anon_uid";
     const existing = localStorage.getItem(key);
     if (existing) return existing;
@@ -22,6 +30,8 @@ function getOrCreateAnonId(): string {
 }
 
 export default function OneSignalInit() {
+  const { user } = useAuth();
+
   useEffect(() => {
     if (!NOTIFS_ENABLED) return;
     if (!APP_ID) return;
@@ -34,19 +44,18 @@ export default function OneSignalInit() {
           notifyButton: { enable: false },
         });
 
-        const anonId = getOrCreateAnonId();
-        console.log('🆔 OneSignal User ID set to:', anonId);
+        const userId = getOrCreateUserId(user?.email);
+        console.log('🆔 OneSignal User ID set to:', userId);
 
-        // Set a stable external user id for targeting specific players later.
-        // (If you have a real auth userId, replace anonId with that.)
-        // Older SDKs: OneSignal.setExternalUserId(anonId)
+        // Set external user id for targeting specific users
+        // Use email if available, otherwise fallback to UUID
         if ((OneSignal as any).login) {
           // Newer SDKs support login(userId)
-          await (OneSignal as any).login(anonId);
-          console.log('✅ OneSignal login successful with ID:', anonId);
+          await (OneSignal as any).login(userId);
+          console.log('✅ OneSignal login successful with ID:', userId);
         } else if ((OneSignal as any).setExternalUserId) {
-          await (OneSignal as any).setExternalUserId(anonId);
-          console.log('✅ OneSignal external user ID set:', anonId);
+          await (OneSignal as any).setExternalUserId(userId);
+          console.log('✅ OneSignal external user ID set:', userId);
         }
 
         // Prompt for permission if not subscribed yet
@@ -58,7 +67,7 @@ export default function OneSignalInit() {
         console.error("OneSignal init error:", e);
       }
     })();
-  }, []);
+  }, [user]); // Re-run when user changes
 
   return null;
 }
