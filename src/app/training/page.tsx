@@ -144,7 +144,12 @@ function TrainingModeContent() {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    const result = `${year}-${month}-${day}`;
+
+    // Debug the date conversion
+    console.log(`📅 getLocalDateString: ${date} → ${result} (Year: ${year}, Month: ${date.getMonth() + 1}, Day: ${date.getDate()})`);
+
+    return result;
   };
   
   const { players, loading: playersLoading, refreshPlayers, updatePlayer } = usePlayers();
@@ -422,6 +427,15 @@ function TrainingModeContent() {
 
     const hasAbsence = playerHasAbsenceOnDate(playerId, trainingDate);
     const dateStr = getLocalDateString(trainingDate);
+
+    // Debug timezone and date handling
+    console.log('🗓️ DATE DEBUG:');
+    console.log('  Raw training date:', trainingDate);
+    console.log('  Training date ISO:', trainingDate.toISOString());
+    console.log('  Training date local string:', trainingDate.toLocaleString());
+    console.log('  Generated dateStr:', dateStr);
+    console.log('  User timezone:', Intl.DateTimeFormat().resolvedOptions().timeZone);
+    console.log('  Current player absences:', player.absences);
 
     try {
       if (hasAbsence) {

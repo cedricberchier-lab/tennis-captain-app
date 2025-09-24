@@ -36,12 +36,26 @@ export function useTrainings(): UseTrainingsReturn {
       
       // If we have trainings from database, use them
       if (data.trainings && data.trainings.length > 0) {
-        const trainingsWithDates = data.trainings.map((training: Record<string, unknown>) => ({
-          ...training,
-          date: new Date(training.date as string),
-          createdAt: new Date(training.createdAt as string),
-          updatedAt: new Date(training.updatedAt as string)
-        }));
+        const trainingsWithDates = data.trainings.map((training: Record<string, unknown>) => {
+          const originalDateStr = training.date as string;
+          const convertedDate = new Date(originalDateStr);
+
+          // Debug timezone conversion
+          console.log(`🗓️ TRAINING DATE CONVERSION:`, {
+            original: originalDateStr,
+            converted: convertedDate,
+            convertedISO: convertedDate.toISOString(),
+            convertedLocal: convertedDate.toLocaleString(),
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+          });
+
+          return {
+            ...training,
+            date: convertedDate,
+            createdAt: new Date(training.createdAt as string),
+            updatedAt: new Date(training.updatedAt as string)
+          };
+        });
         setTrainings(trainingsWithDates);
         return;
       }
