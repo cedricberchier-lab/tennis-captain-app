@@ -355,12 +355,14 @@ export default function Home() {
                 <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 text-purple-500 dark:text-purple-400" />
               </h1>
               {user?.name === 'Cedric Berchier' && (
-                <button
-                  onClick={sendTestNotification}
-                  className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded-lg transition-colors"
-                >
-                  Test Notification
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={sendTestNotification}
+                    className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors font-semibold shadow-lg"
+                  >
+                    🔔 Test Notification
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -569,6 +571,42 @@ export default function Home() {
                             </div>
                           );
                         })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Test Notification Section - Only for Cedric */}
+                {user?.name === 'Cedric Berchier' && (
+                  <Card className="p-4 border-2 border-purple-200 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/20">
+                    <CardContent className="p-0">
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-full shrink-0">
+                          <Activity className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-gray-900 dark:text-white text-sm">
+                            🧪 Notification Testing
+                          </h3>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                            Test OneSignal notifications targeting UUID: 69f7a346-64dc-4f3d-bcb8-8e55b30d947c
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <button
+                          onClick={sendTestNotification}
+                          className="w-full px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors font-semibold shadow-lg flex items-center justify-center gap-2"
+                        >
+                          🔔 Send Test Notification
+                        </button>
+
+                        <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                          <div>• Check browser console for detailed logs</div>
+                          <div>• Notification will target specific UUID only</div>
+                          <div>• Verify OneSignal delivery status</div>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
