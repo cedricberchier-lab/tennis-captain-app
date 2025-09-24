@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     // Accept same fields via POST JSON
-    const { sessionId, startsAtISO, sessionUrl, rosterUserIds, testMode } = body || {};
+    const { sessionId, startsAtISO, sessionUrl, rosterUserIds, testMode, immediateNotification } = body || {};
     if (!sessionId || !startsAtISO) {
       return NextResponse.json({ ok: false, error: "sessionId and startsAtISO required" }, { status: 400 });
     }
@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
       sessionUrl: sessionUrl || (process.env.NEXT_PUBLIC_APP_BASE_URL ? `${process.env.NEXT_PUBLIC_APP_BASE_URL}/session/${sessionId}` : `/session/${sessionId}`),
       rosterUserIds: Array.isArray(rosterUserIds) ? rosterUserIds : [],
       testMode: !!testMode,
+      immediateNotification: !!immediateNotification,
     });
     return NextResponse.json(out);
   } catch (e: any) {

@@ -6,6 +6,7 @@ type ScheduleParams = {
   rosterUserIds: string[]; // OneSignal external user ids (we set on login)
   sessionUrl: string; // URL to open on click
   testMode?: boolean; // if true, compress 48/24/6h into ~1/2/3 minutes for quick tests
+  immediateNotification?: boolean; // if true, send immediate unavailability notification
 };
 
 const APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID!;
@@ -45,7 +46,7 @@ async function sendScheduled(body: any) {
 }
 
 export async function scheduleTrainingNotifications(params: ScheduleParams) {
-  const { sessionId, startsAtISO, rosterUserIds, sessionUrl, testMode } = params;
+  const { sessionId, startsAtISO, rosterUserIds, sessionUrl, testMode, immediateNotification } = params;
   if (!APP_ID || !REST_API_KEY) {
     return { ok: false, reason: "OneSignal env not configured" };
   }
@@ -56,6 +57,20 @@ export async function scheduleTrainingNotifications(params: ScheduleParams) {
   }
 
   const topic = topicFor(sessionId);
+
+  // Handle immediate unavailability notification
+  if (immediateNotification && rosterUserIds.length > 0) {
+    const immediateNotificationResult = await sendScheduled({
+      app_id: APP_ID,
+      include_external_user_ids: rosterUserIds,
+      headings: { en: "Training unavailability confirmed" },
+      contents: { en: "You've been marked as unavailable for this training session. Your teammates have been notified." },
+      url: sessionUrl,
+      // Don't use web_push_topic for immediate notifications to avoid replacing scheduled ones
+    });
+
+    return { ok: true, ids: { immediate: immediateNotificationResult } };
+  }
 
   // Compute schedule times
   let t48 = toUTCString(addHours(start, -48));

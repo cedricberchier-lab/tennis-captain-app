@@ -413,29 +413,122 @@ function TrainingModeContent() {
     };
   }, [players, refreshKey]); // Recalculate when players data changes or manual refresh
 
+  // State for tracking delayed notification timeouts
+  const [notificationTimeouts, setNotificationTimeouts] = useState<Map<string, NodeJS.Timeout>>(new Map());
+
+  // Clean up timeouts when component unmounts
+  useEffect(() => {
+    return () => {
+      notificationTimeouts.forEach(timeout => {
+        clearTimeout(timeout);
+      });
+    };
+  }, [notificationTimeouts]);
+
   // Quick absence management functions for participant interaction
   const handleToggleAbsence = async (playerId: string, trainingDate: Date, playerName: string) => {
     const player = players.find(p => p.id === playerId);
     if (!player) return;
 
     const hasAbsence = playerHasAbsenceOnDate(playerId, trainingDate);
+    const dateStr = getLocalDateString(trainingDate);
+    const timeoutKey = `${playerId}-${dateStr}`;
 
     try {
       if (hasAbsence) {
+        // User is switching back to available - cancel any pending notification
+        const existingTimeout = notificationTimeouts.get(timeoutKey);
+        if (existingTimeout) {
+          clearTimeout(existingTimeout);
+          setNotificationTimeouts(prev => {
+            const updated = new Map(prev);
+            updated.delete(timeoutKey);
+            return updated;
+          });
+          console.log(`Cancelled pending notification for ${playerName} on ${dateStr}`);
+        }
+
         // Remove absence using local date string to avoid timezone issues
-        const dateStr = getLocalDateString(trainingDate);
         const updatedAbsences = player.absences.filter(absence =>
           !absence.startsWith(dateStr)
         );
         await updatePlayer(player.id, { absences: updatedAbsences });
         console.log(`Removed absence for ${playerName} on ${dateStr}`);
       } else {
-        // Add absence with default reason using local date string
-        const dateStr = getLocalDateString(trainingDate);
+        // User is marking themselves unavailable - add absence and schedule notification
         const absenceEntry = `${dateStr} - Training unavailable`;
         const updatedAbsences = [...player.absences, absenceEntry];
         await updatePlayer(player.id, { absences: updatedAbsences });
         console.log(`Added absence for ${playerName} on ${dateStr}`);
+
+        // Schedule notification after 15 seconds
+        const timeout = setTimeout(async () => {
+          try {
+            // Double-check that user is still marked as unavailable
+            const currentPlayer = players.find(p => p.id === playerId);
+            const stillUnavailable = currentPlayer?.absences?.some(absence =>
+              absence.startsWith(dateStr)
+            );
+
+            if (stillUnavailable) {
+              console.log(`Sending unavailability notification for ${playerName} on ${dateStr}`);
+
+              // Find the training session to get session details
+              const training = trainings.find(t => getLocalDateString(t.date) === dateStr);
+              if (training) {
+                const sessionUrl = `${window.location.origin}/session/${training.id}`;
+                const startsAtISO = training.date.toISOString();
+
+                // Send notification via API
+                const response = await fetch('/api/notifications/schedule', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({
+                    sessionId: training.id,
+                    startsAtISO: startsAtISO,
+                    sessionUrl: sessionUrl,
+                    rosterUserIds: [playerId], // Only notify the unavailable user
+                    testMode: false,
+                    immediateNotification: true // Custom flag for immediate notification
+                  })
+                });
+
+                if (response.ok) {
+                  console.log(`Notification sent successfully for ${playerName}`);
+                } else {
+                  console.error('Failed to send notification:', await response.text());
+                }
+              }
+            } else {
+              console.log(`User ${playerName} is now available again, skipping notification`);
+            }
+          } catch (error) {
+            console.error('Error sending delayed notification:', error);
+          } finally {
+            // Clean up timeout reference
+            setNotificationTimeouts(prev => {
+              const updated = new Map(prev);
+              updated.delete(timeoutKey);
+              return updated;
+            });
+          }
+        }, 15000); // 15 seconds
+
+        // Store timeout reference
+        setNotificationTimeouts(prev => {
+          const updated = new Map(prev);
+          // Clear any existing timeout for this user/date combination
+          const existing = updated.get(timeoutKey);
+          if (existing) {
+            clearTimeout(existing);
+          }
+          updated.set(timeoutKey, timeout);
+          return updated;
+        });
+
+        console.log(`Scheduled notification for ${playerName} on ${dateStr} in 15 seconds`);
       }
 
       // Refresh data to show updated state across all pages
