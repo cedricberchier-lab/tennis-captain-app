@@ -421,6 +421,8 @@ function TrainingModeContent() {
 
 
   // Quick absence management functions for participant interaction
+  // IMPORTANT: This function is only called when the logged-in user clicks their own name
+  // This ensures the OneSignal UUID in their browser matches the user receiving the notification
   const handleToggleAbsence = async (playerId: string, trainingDate: Date, playerName: string) => {
     const player = players.find(p => p.id === playerId);
     if (!player) return;
@@ -1059,16 +1061,20 @@ function TrainingModeContent() {
                                 return (
                                   <div key={participant.id} className="group relative">
                                     <button
-                                      onClick={() => playerId && handleToggleAbsence(playerId, training.date, participant.playerName)}
-                                      disabled={!playerId}
+                                      onClick={() => playerId && isCurrentUser && handleToggleAbsence(playerId, training.date, participant.playerName)}
+                                      disabled={!playerId || !isCurrentUser}
                                       className={`w-full px-3 py-2 rounded text-sm transition-all duration-200 flex items-center gap-2 justify-between ${
                                         hasAbsence
                                           ? "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-600 hover:bg-red-200 dark:hover:bg-red-800"
                                           : "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-600 hover:bg-green-200 dark:hover:bg-green-800"
                                       } ${
-                                        playerId ? 'cursor-pointer' : 'cursor-default'
+                                        (playerId && isCurrentUser) ? 'cursor-pointer' : 'cursor-default opacity-60'
                                       }`}
-                                      title={playerId ? `Click to toggle availability` : 'Manual entry - cannot toggle'}
+                                      title={
+                                        !playerId ? 'Manual entry - cannot toggle' :
+                                        !isCurrentUser ? 'You can only toggle your own availability' :
+                                        'Click to toggle availability'
+                                      }
                                     >
                                       <div className="flex items-center gap-2">
                                         {hasAbsence ? (
@@ -1088,7 +1094,12 @@ function TrainingModeContent() {
                                     {/* Hover tooltip */}
                                     {playerId && (
                                       <div className="absolute z-10 invisible group-hover:visible bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-gray-800 dark:bg-gray-700 rounded whitespace-nowrap">
-                                        {hasAbsence ? 'Mark as Available' : 'Mark as Unavailable'}
+                                        {!isCurrentUser
+                                          ? 'You can only toggle your own availability'
+                                          : hasAbsence
+                                            ? 'Mark as Available'
+                                            : 'Mark as Unavailable'
+                                        }
                                         <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800 dark:border-t-gray-700"></div>
                                       </div>
                                     )}
