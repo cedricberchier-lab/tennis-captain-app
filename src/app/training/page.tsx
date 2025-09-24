@@ -448,8 +448,24 @@ function TrainingModeContent() {
             const sessionUrl = `${window.location.origin}/session/${training.id}`;
             const startsAtISO = training.date.toISOString();
 
+            // IMPORTANT: OneSignal needs the external user ID, not the player database ID
+            // We need to get the OneSignal user ID from localStorage (same as OneSignalInit)
+            const getOneSignalUserId = () => {
+              try {
+                return localStorage.getItem('tcapp_anon_uid') || 'anon';
+              } catch {
+                return 'anon';
+              }
+            };
+
+            const oneSignalUserId = getOneSignalUserId();
+
             // Send notification via API - ONLY to the user who marked themselves unavailable
-            console.log(`🔔 Sending notification to specific user: ${playerName} (ID: ${playerId})`);
+            console.log(`🔔 Sending notification to specific user: ${playerName}`);
+            console.log(`🆔 Player DB ID: ${playerId}`);
+            console.log(`🆔 OneSignal User ID: ${oneSignalUserId}`);
+            console.log(`📧 Current user email: ${user?.email}`);
+
             const response = await fetch('/api/notifications/schedule', {
               method: 'POST',
               headers: {
@@ -459,16 +475,18 @@ function TrainingModeContent() {
                 sessionId: training.id,
                 startsAtISO: startsAtISO,
                 sessionUrl: sessionUrl,
-                rosterUserIds: [playerId], // ✅ ONLY notify the specific user who clicked their name
+                rosterUserIds: [oneSignalUserId], // ✅ Use OneSignal external user ID, not database player ID
                 testMode: false,
                 immediateNotification: true
               })
             });
 
             if (response.ok) {
-              console.log(`Notification sent successfully for ${playerName}`);
+              const result = await response.json();
+              console.log(`✅ Notification sent successfully for ${playerName}:`, result);
             } else {
-              console.error('Failed to send notification:', await response.text());
+              const errorText = await response.text();
+              console.error('❌ Failed to send notification:', response.status, errorText);
             }
           }
         } catch (error) {

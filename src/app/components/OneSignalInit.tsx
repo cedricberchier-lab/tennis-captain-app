@@ -35,6 +35,7 @@ export default function OneSignalInit() {
         });
 
         const anonId = getOrCreateAnonId();
+        console.log('🆔 OneSignal User ID set to:', anonId);
 
         // Set a stable external user id for targeting specific players later.
         // (If you have a real auth userId, replace anonId with that.)
@@ -42,8 +43,10 @@ export default function OneSignalInit() {
         if ((OneSignal as any).login) {
           // Newer SDKs support login(userId)
           await (OneSignal as any).login(anonId);
+          console.log('✅ OneSignal login successful with ID:', anonId);
         } else if ((OneSignal as any).setExternalUserId) {
           await (OneSignal as any).setExternalUserId(anonId);
+          console.log('✅ OneSignal external user ID set:', anonId);
         }
 
         // Prompt for permission if not subscribed yet
