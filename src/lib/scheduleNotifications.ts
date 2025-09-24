@@ -58,13 +58,13 @@ export async function scheduleTrainingNotifications(params: ScheduleParams) {
 
   const topic = topicFor(sessionId);
 
-  // Handle immediate unavailability notification
+  // Handle immediate unavailability notification - sent ONLY to the specific user
   if (immediateNotification && rosterUserIds.length > 0) {
     const immediateNotificationResult = await sendScheduled({
       app_id: APP_ID,
-      include_external_user_ids: rosterUserIds,
-      headings: { en: "Training unavailability confirmed" },
-      contents: { en: "You've been marked as unavailable for this training session. Your teammates have been notified." },
+      include_external_user_ids: rosterUserIds, // Target only the specific user ID
+      headings: { en: "Training Unavailability Confirmed" },
+      contents: { en: "You've marked yourself as unavailable for this training session. This has been recorded." },
       url: sessionUrl,
       // Don't use web_push_topic for immediate notifications to avoid replacing scheduled ones
     });
