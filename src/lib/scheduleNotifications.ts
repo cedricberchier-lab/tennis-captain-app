@@ -45,6 +45,22 @@ async function sendScheduled(body: any) {
   return res.json();
 }
 
+async function sendImmediate(body: any) {
+  const res = await fetch(BASE_ONE_SIGNAL_API, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Basic ${REST_API_KEY}`,
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`OneSignal error ${res.status}: ${txt}`);
+  }
+  return res.json();
+}
+
 export async function scheduleTrainingNotifications(params: ScheduleParams) {
   const { sessionId, startsAtISO, rosterUserIds, sessionUrl, testMode, immediateNotification } = params;
   if (!APP_ID || !REST_API_KEY) {
@@ -60,15 +76,17 @@ export async function scheduleTrainingNotifications(params: ScheduleParams) {
 
   // Handle immediate unavailability notification - sent ONLY to the specific user
   if (immediateNotification && rosterUserIds.length > 0) {
-    const immediateNotificationResult = await sendScheduled({
+    console.log('🚀 Sending IMMEDIATE notification (no scheduling delay)');
+    const immediateNotificationResult = await sendImmediate({
       app_id: APP_ID,
       include_external_user_ids: rosterUserIds, // Target only the specific user ID
       headings: { en: "Training Unavailability Confirmed" },
       contents: { en: "You've marked yourself as unavailable for this training session. This has been recorded." },
       url: sessionUrl,
-      // Don't use web_push_topic for immediate notifications to avoid replacing scheduled ones
+      // NO send_after parameter = immediate delivery
     });
 
+    console.log('✅ Immediate notification sent:', immediateNotificationResult);
     return { ok: true, ids: { immediate: immediateNotificationResult } };
   }
 
