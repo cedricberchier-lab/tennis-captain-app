@@ -323,6 +323,25 @@ export default function Home() {
   const upcomingEvents = getUserRelevantEvents();
   const upcomingAbsences = getUpcomingAbsences();
 
+  // Test notification function
+  const sendTestNotification = async () => {
+    try {
+      const response = await fetch('/api/notifications/test');
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Test notification sent successfully! Check your device.');
+        console.log('✅ Test notification result:', data);
+      } else {
+        alert(`Error: ${data.error}`);
+        console.error('❌ Test notification error:', data.error);
+      }
+    } catch (error) {
+      alert('Failed to send test notification');
+      console.error('❌ Test notification failed:', error);
+    }
+  };
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 pt-4">
@@ -330,10 +349,20 @@ export default function Home() {
           
           {/* Welcome Header - Mobile Optimized */}
           <div className="mb-8">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
-              Welcome back, {getCurrentPlayerName()}!
-              <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 text-purple-500 dark:text-purple-400" />
-            </h1>
+            <div className="flex items-center justify-between gap-4">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
+                Welcome back, {getCurrentPlayerName()}!
+                <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 text-purple-500 dark:text-purple-400" />
+              </h1>
+              {user?.name === 'Cedric Berchier' && (
+                <button
+                  onClick={sendTestNotification}
+                  className="px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded-lg transition-colors"
+                >
+                  Test Notification
+                </button>
+              )}
+            </div>
           </div>
 
 
