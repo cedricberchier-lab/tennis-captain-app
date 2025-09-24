@@ -323,6 +323,25 @@ export default function Home() {
   const upcomingEvents = getUserRelevantEvents();
   const upcomingAbsences = getUpcomingAbsences();
 
+  // Send broadcast notification to all users
+  const sendBroadcastNotification = async () => {
+    try {
+      const response = await fetch('/api/notifications/broadcast');
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Broadcast notification sent to all users! 📢');
+        console.log('✅ Broadcast notification result:', data);
+      } else {
+        alert(`Error: ${data.error}`);
+        console.error('❌ Broadcast notification error:', data.error);
+      }
+    } catch (error) {
+      alert('Failed to send broadcast notification');
+      console.error('❌ Broadcast notification failed:', error);
+    }
+  };
+
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 pt-4">
@@ -330,10 +349,20 @@ export default function Home() {
           
           {/* Welcome Header - Mobile Optimized */}
           <div className="mb-8">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
-              Welcome back, {getCurrentPlayerName()}!
-              <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 text-purple-500 dark:text-purple-400" />
-            </h1>
+            <div className="flex items-center justify-between gap-4">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
+                Welcome back, {getCurrentPlayerName()}!
+                <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 text-purple-500 dark:text-purple-400" />
+              </h1>
+              {user?.name === 'Cédric Berchier' && (
+                <button
+                  onClick={sendBroadcastNotification}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors font-semibold shadow-lg flex items-center gap-2"
+                >
+                  📢 Broadcast to All
+                </button>
+              )}
+            </div>
           </div>
 
 
