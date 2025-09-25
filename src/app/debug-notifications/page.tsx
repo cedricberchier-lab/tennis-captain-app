@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, AlertTriangle, Send, Settings, Bell } from "lucide-react";
@@ -210,7 +209,8 @@ export default function NotificationDebugPage() {
             value={customTitle}
             onChange={(e) => setCustomTitle(e.target.value)}
           />
-          <Textarea
+          <textarea
+            className="flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
             placeholder="Notification Message"
             value={customMessage}
             onChange={(e) => setCustomMessage(e.target.value)}
