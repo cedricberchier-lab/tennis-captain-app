@@ -21,6 +21,28 @@ function getOrCreateAnonId(): string {
   }
 }
 
+function showIOSInstallPrompt(): void {
+  // Show a custom prompt for iOS Safari users to add to home screen
+  const promptShown = localStorage.getItem('ios-install-prompt-shown');
+  if (promptShown) return;
+
+  const showPrompt = () => {
+    if (confirm(
+      '📱 To receive push notifications on iOS Safari:\n\n' +
+      '1. Tap the Share button (⬆️) below\n' +
+      '2. Scroll down and tap "Add to Home Screen"\n' +
+      '3. Open the app from your home screen\n' +
+      '4. Enable notifications when prompted\n\n' +
+      'Would you like to continue?'
+    )) {
+      localStorage.setItem('ios-install-prompt-shown', 'true');
+    }
+  };
+
+  // Show prompt after a delay to let the page fully load
+  setTimeout(showPrompt, 2000);
+}
+
 export default function OneSignalInit() {
   useEffect(() => {
     if (!NOTIFS_ENABLED) return;
@@ -49,10 +71,31 @@ export default function OneSignalInit() {
           console.log('✅ OneSignal external user ID set:', anonId);
         }
 
+        // Check if we're on iOS Safari
+        const isIOSSafari = /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+                           !window.navigator.standalone &&
+                           navigator.userAgent.indexOf('Safari') > -1 &&
+                           navigator.userAgent.indexOf('Chrome') === -1;
+
+        console.log('🔍 Device detection:', {
+          isIOSSafari,
+          isStandalone: window.navigator.standalone,
+          userAgent: navigator.userAgent
+        });
+
         // Prompt for permission if not subscribed yet
         const isEnabled = await OneSignal.isPushNotificationsEnabled();
+        console.log('🔔 Push notifications enabled:', isEnabled);
+
         if (!isEnabled) {
-          await OneSignal.showSlidedownPrompt();
+          if (isIOSSafari) {
+            console.log('📱 iOS Safari detected - showing PWA install prompt first');
+            // For iOS Safari, show custom install prompt
+            showIOSInstallPrompt();
+          } else {
+            console.log('🖥️ Desktop/other browser - showing OneSignal prompt');
+            await OneSignal.showSlidedownPrompt();
+          }
         }
       } catch (e) {
         console.error("OneSignal init error:", e);
