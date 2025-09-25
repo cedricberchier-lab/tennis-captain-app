@@ -29,13 +29,19 @@ function showIOSInstallPrompt(): void {
   const showPrompt = () => {
     if (confirm(
       '📱 To receive push notifications on iOS Safari:\n\n' +
-      '1. Tap the Share button (⬆️) below\n' +
+      '1. Tap the Share button (⬆️) at the bottom\n' +
       '2. Scroll down and tap "Add to Home Screen"\n' +
-      '3. Open the app from your home screen\n' +
-      '4. Enable notifications when prompted\n\n' +
-      'Would you like to continue?'
+      '3. Tap "Add" to install the app\n' +
+      '4. Open "Tennis Captain" from your home screen\n' +
+      '5. Allow notifications when prompted\n\n' +
+      '⚠️ Notifications only work from the installed app, not Safari!\n\n' +
+      'Install the app now?'
     )) {
       localStorage.setItem('ios-install-prompt-shown', 'true');
+      console.log('📱 User accepted iOS install prompt - they should install the PWA');
+    } else {
+      console.log('📱 User declined iOS install prompt');
+      localStorage.setItem('ios-install-prompt-shown', 'declined');
     }
   };
 
@@ -80,8 +86,44 @@ export default function OneSignalInit() {
         console.log('🔍 Device detection:', {
           isIOSSafari,
           isStandalone: window.navigator.standalone,
-          userAgent: navigator.userAgent
+          userAgent: navigator.userAgent,
+          platform: navigator.platform,
+          maxTouchPoints: navigator.maxTouchPoints
         });
+
+        // Additional iOS Safari debugging
+        if (isIOSSafari) {
+          console.log('📱 iOS Safari detected - checking notification permissions...');
+
+          // Check if service worker is supported
+          if ('serviceWorker' in navigator) {
+            console.log('✅ Service Worker supported');
+
+            // Check if Push is supported
+            if ('PushManager' in window) {
+              console.log('✅ Push Manager supported');
+
+              // Check current permission state
+              const permission = await Notification.requestPermission();
+              console.log('🔔 Notification permission:', permission);
+
+              if (permission === 'denied') {
+                console.log('❌ Notifications denied - user must enable in browser settings');
+              }
+            } else {
+              console.log('❌ Push Manager NOT supported');
+            }
+          } else {
+            console.log('❌ Service Worker NOT supported');
+          }
+
+          // Check if app is installed as PWA
+          if (window.navigator.standalone) {
+            console.log('✅ Running as standalone PWA');
+          } else {
+            console.log('⚠️ Not running as standalone PWA - install required for iOS notifications');
+          }
+        }
 
         // Prompt for permission if not subscribed yet
         const isEnabled = await OneSignal.isPushNotificationsEnabled();
@@ -92,10 +134,23 @@ export default function OneSignalInit() {
             console.log('📱 iOS Safari detected - showing PWA install prompt first');
             // For iOS Safari, show custom install prompt
             showIOSInstallPrompt();
+
+            // If running as standalone app (PWA), try OneSignal prompt
+            if (window.navigator.standalone) {
+              console.log('📱 PWA detected - attempting OneSignal prompt for iOS');
+              try {
+                await OneSignal.showSlidedownPrompt();
+              } catch (e) {
+                console.log('📱 OneSignal prompt failed on iOS PWA:', e);
+                // iOS Safari in PWA mode might still have restrictions
+              }
+            }
           } else {
             console.log('🖥️ Desktop/other browser - showing OneSignal prompt');
             await OneSignal.showSlidedownPrompt();
           }
+        } else {
+          console.log('✅ Push notifications already enabled');
         }
       } catch (e) {
         console.error("OneSignal init error:", e);
