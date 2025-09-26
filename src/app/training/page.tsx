@@ -464,45 +464,29 @@ function TrainingModeContent() {
             const sessionUrl = `${window.location.origin}/session/${training.id}`;
             const startsAtISO = training.date.toISOString();
 
-            // IMPORTANT: OneSignal needs the external user ID, not the player database ID
-            // We need to get the OneSignal user ID from localStorage (same as OneSignalInit)
-            const getOneSignalUserId = () => {
-              try {
-                return localStorage.getItem('tcapp_anon_uid') || 'anon';
-              } catch {
-                return 'anon';
-              }
-            };
-
-            const oneSignalUserId = getOneSignalUserId();
-
-            // Send notification via API - ONLY to the user who marked themselves unavailable
-            console.log(`🔔 Sending notification to specific user: ${playerName}`);
+            // Send broadcast notification to ALL users when someone marks themselves unavailable
+            console.log(`📢 Sending broadcast notification: ${playerName} marked unavailable on ${dateStr}`);
             console.log(`🆔 Player DB ID: ${playerId}`);
-            console.log(`🆔 OneSignal User ID: ${oneSignalUserId}`);
             console.log(`📧 Current user email: ${user?.email}`);
 
-            const response = await fetch('/api/notifications/schedule', {
+            const response = await fetch('/api/notifications/broadcast', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
               },
               body: JSON.stringify({
-                sessionId: training.id,
-                startsAtISO: startsAtISO,
-                sessionUrl: sessionUrl,
-                rosterUserIds: [oneSignalUserId], // ✅ Use OneSignal external user ID, not database player ID
-                testMode: false,
-                immediateNotification: true
+                title: `Training Update - ${dateStr}`,
+                message: `${playerName} has marked themselves as unavailable for training on ${dateStr}`,
+                url: sessionUrl
               })
             });
 
             if (response.ok) {
               const result = await response.json();
-              console.log(`✅ Notification sent successfully for ${playerName}:`, result);
+              console.log(`✅ Broadcast notification sent successfully for ${playerName}:`, result);
             } else {
               const errorText = await response.text();
-              console.error('❌ Failed to send notification:', response.status, errorText);
+              console.error('❌ Failed to send broadcast notification:', response.status, errorText);
             }
           }
         } catch (error) {
