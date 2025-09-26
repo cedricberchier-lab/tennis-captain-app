@@ -51,9 +51,22 @@ function showIOSInstallPrompt(): void {
 }
 
 export default function OneSignalInit() {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  // Safely use auth context with fallback for SSR/prerendering
+  let user, isAuthenticated, isLoading;
+  try {
+    const authContext = useAuth();
+    user = authContext.user;
+    isAuthenticated = authContext.isAuthenticated;
+    isLoading = authContext.isLoading;
+  } catch (error) {
+    // Fallback for SSR or when not wrapped in AuthProvider
+    user = null;
+    isAuthenticated = false;
+    isLoading = true; // Prevent initialization during SSR
+  }
 
   useEffect(() => {
+    if (typeof window === 'undefined') return; // Skip during SSR
     if (!NOTIFS_ENABLED) return;
     if (!APP_ID) return;
     if (isLoading) return; // Wait for auth to load
