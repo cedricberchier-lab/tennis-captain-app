@@ -31,6 +31,7 @@ export default function NotificationDebugPage() {
       const oneSignalLoaded = typeof window !== 'undefined' && (window as any).OneSignal;
       const isPushEnabled = oneSignalLoaded ? await (window as any).OneSignal?.isPushNotificationsEnabled() : false;
       const playerId = oneSignalLoaded ? await (window as any).OneSignal?.getExternalUserId() : null;
+      const isOptedIn = oneSignalLoaded ? (window as any).OneSignal?.User?.PushSubscription?.optedIn : false;
 
       setTestResults(prev => ({
         ...prev,
@@ -38,16 +39,60 @@ export default function NotificationDebugPage() {
           success: true,
           loaded: !!oneSignalLoaded,
           pushEnabled: isPushEnabled,
+          optedIn: isOptedIn,
           playerId: playerId,
           localStorageId: getOneSignalUserId(),
           appId: APP_ID,
-          notifsEnabled: NOTIFS_ENABLED
+          notifsEnabled: NOTIFS_ENABLED,
+          notificationPermission: typeof window !== 'undefined' ? Notification.permission : 'unknown'
         }
       }));
     } catch (error) {
       setTestResults(prev => ({
         ...prev,
         onesignal: {
+          success: false,
+          error: error instanceof Error ? error.message : String(error)
+        }
+      }));
+    }
+    setLoading("");
+  };
+
+  const subscribeToNotifications = async () => {
+    setLoading("subscribe");
+    try {
+      const oneSignal = (window as any).OneSignal;
+      if (!oneSignal) {
+        throw new Error("OneSignal not loaded");
+      }
+
+      // Request notification permission
+      const permission = await Notification.requestPermission();
+      console.log("Notification permission:", permission);
+
+      if (permission === 'granted') {
+        // Try to opt in to push notifications
+        await oneSignal.User.PushSubscription.optIn();
+        console.log("Successfully subscribed to push notifications");
+
+        // Refresh status
+        await testOneSignalConnection();
+      } else {
+        throw new Error(`Notification permission denied: ${permission}`);
+      }
+
+      setTestResults(prev => ({
+        ...prev,
+        subscribe: {
+          success: permission === 'granted',
+          permission: permission
+        }
+      }));
+    } catch (error) {
+      setTestResults(prev => ({
+        ...prev,
+        subscribe: {
           success: false,
           error: error instanceof Error ? error.message : String(error)
         }
@@ -234,6 +279,19 @@ export default function NotificationDebugPage() {
         </Button>
 
         <Button
+          onClick={subscribeToNotifications}
+          disabled={loading === "subscribe"}
+          variant="default"
+          className="h-auto p-4 bg-green-600 hover:bg-green-700"
+        >
+          <div className="text-center">
+            <Bell className="mx-auto mb-2" size={20} />
+            <div>Subscribe to Notifications</div>
+            <div className="text-xs opacity-70">Enable push notifications</div>
+          </div>
+        </Button>
+
+        <Button
           onClick={testBroadcastAPI}
           disabled={loading === "broadcast"}
           variant="outline"
@@ -284,6 +342,9 @@ export default function NotificationDebugPage() {
         {testResults.onesignal && (
           <ResultCard title="OneSignal Status" result={testResults.onesignal} icon={CheckCircle} />
         )}
+        {testResults.subscribe && (
+          <ResultCard title="Notification Subscription" result={testResults.subscribe} icon={Bell} />
+        )}
         {testResults.broadcast && (
           <ResultCard title="Broadcast API (POST)" result={testResults.broadcast} icon={Send} />
         )}
@@ -299,10 +360,11 @@ export default function NotificationDebugPage() {
         <h3 className="font-medium text-yellow-800 mb-2">💡 How to Use</h3>
         <ul className="text-sm text-yellow-700 space-y-1">
           <li>1. Test OneSignal Status first to check SDK loading and permissions</li>
-          <li>2. Try Immediate notification to test user-specific targeting</li>
-          <li>3. Try Broadcast to test sending to all users</li>
-          <li>4. Check browser console for detailed logs</li>
-          <li>5. If tests fail, check Vercel environment variables</li>
+          <li>2. <strong>Subscribe to Notifications</strong> if not already subscribed</li>
+          <li>3. Try Immediate notification to test user-specific targeting</li>
+          <li>4. Try Broadcast to test sending to all users</li>
+          <li>5. Check browser console for detailed logs</li>
+          <li>6. If tests fail, check Vercel environment variables</li>
         </ul>
       </div>
     </div>
