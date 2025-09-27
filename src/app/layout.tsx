@@ -30,6 +30,9 @@ export const metadata: Metadata = {
     "mobile-web-app-capable": "yes",
     "apple-mobile-web-app-capable": "yes",
     "apple-mobile-web-app-status-bar-style": "default",
+    "apple-mobile-web-app-title": "Tennis Captain",
+    "apple-touch-fullscreen": "yes",
+    "format-detection": "telephone=no",
   },
 };
 
@@ -42,8 +45,12 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes" />
-        <meta name="theme-color" content="#7c3aed" />
+        <meta name="theme-color" content="#9333ea" />
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎾</text></svg>" />
+        <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 180 180%22><rect width=%22180%22 height=%22180%22 fill=%22%239333ea%22/><text x=%2290%22 y=%22120%22 font-size=%2290%22 text-anchor=%22middle%22 fill=%22white%22>🎾</text></svg>" />
+        <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 180 180%22><rect width=%22180%22 height=%22180%22 fill=%22%239333ea%22/><text x=%2290%22 y=%22120%22 font-size=%2290%22 text-anchor=%22middle%22 fill=%22white%22>🎾</text></svg>" />
+        <meta name="msapplication-TileColor" content="#9333ea" />
+        <meta name="msapplication-config" content="none" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`}
