@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect } from "react";
 import OneSignal from "react-onesignal";
 
@@ -10,26 +9,22 @@ export default function OneSignalInit() {
   useEffect(() => {
     (async () => {
       if (!NOTIFS_ENABLED || !APP_ID) return;
-
       try {
-        // Initialize SDK first
         await OneSignal.init({
           appId: APP_ID,
           allowLocalhostAsSecureOrigin: true,
           notifyButton: { enable: false },
         });
 
-        // Mark globally that SDK is ready (so debug page can wait)
-        (window as any).__onesignal_ready = true;
-
-        // OPTIONAL: log a stable external id so laptop + phone share the same ID
-        // await OneSignal.login("demo-user"); // replace with your real user id
+        // Show permission prompt if not already enabled
+        const supported = OneSignal.Notifications.isPushSupported();
+        if (supported && OneSignal.Notifications.permission === "default") {
+          await OneSignal.Slidedown.promptPush({ force: true });
+        }
       } catch (e) {
-        console.error("OneSignal init failed:", e);
-        (window as any).__onesignal_ready = false;
+        console.error("OneSignal init error:", e);
       }
     })();
   }, []);
-
   return null;
 }
