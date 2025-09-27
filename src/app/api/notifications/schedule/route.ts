@@ -2,7 +2,7 @@ export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { scheduleTrainingNotifications } from "@/lib/scheduleNotifications";
+import { scheduleTrainingNotifications, sendImmediateNotification } from "@/lib/scheduleNotifications";
 
 const NOTIFS_ENABLED = process.env.NEXT_PUBLIC_NOTIFS_ENABLED === "true";
 
@@ -32,6 +32,21 @@ export async function GET(req: NextRequest) {
 
   const rosterUserIds = roster ? roster.split(",").map((s) => s.trim()).filter(Boolean) : [];
 
+  // Check for immediate notification parameter
+  const immediate = url.searchParams.get("immediate"); // "all" | "roster" | null
+
+  if (immediate === "all" || immediate === "roster") {
+    const out = await sendImmediateNotification({
+      sessionId,
+      sessionUrl: finalUrl,
+      rosterUserIds,
+      target: immediate,
+      title: url.searchParams.get("title") ?? undefined,
+      message: url.searchParams.get("message") ?? undefined,
+    });
+    return NextResponse.json(out, { status: out.ok ? 200 : 400 });
+  }
+
   try {
     const out = await scheduleTrainingNotifications({
       sessionId,
@@ -53,10 +68,32 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     // Accept same fields via POST JSON
-    const { sessionId, startsAtISO, sessionUrl, rosterUserIds, testMode, immediateNotification } = body || {};
-    if (!sessionId || !startsAtISO) {
-      return NextResponse.json({ ok: false, error: "sessionId and startsAtISO required" }, { status: 400 });
+    const { immediate, sessionId, startsAtISO, sessionUrl, rosterUserIds, title, message, testMode, immediateNotification } = body || {};
+
+    if (!sessionId) {
+      return NextResponse.json({ ok: false, error: "sessionId required" }, { status: 400 });
     }
+
+    if (immediate === "all" || immediate === "roster") {
+      const out = await sendImmediateNotification({
+        sessionId,
+        sessionUrl:
+          sessionUrl ||
+          (process.env.NEXT_PUBLIC_APP_BASE_URL
+            ? `${process.env.NEXT_PUBLIC_APP_BASE_URL}/session/${sessionId}`
+            : `/session/${sessionId}`),
+        rosterUserIds: Array.isArray(rosterUserIds) ? rosterUserIds : [],
+        target: immediate,
+        title,
+        message,
+      });
+      return NextResponse.json(out, { status: out.ok ? 200 : 400 });
+    }
+
+    if (!startsAtISO) {
+      return NextResponse.json({ ok: false, error: "startsAtISO required for scheduled notifications" }, { status: 400 });
+    }
+
     const out = await scheduleTrainingNotifications({
       sessionId,
       startsAtISO,

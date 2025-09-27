@@ -61,6 +61,49 @@ async function sendImmediate(body: any) {
   return res.json();
 }
 
+export async function sendImmediateNotification(params: {
+  sessionId: string;
+  sessionUrl: string;
+  rosterUserIds?: string[]; // only used when target = "roster"
+  target: "all" | "roster";
+  title?: string;
+  message?: string;
+}) {
+  if (!APP_ID || !REST_API_KEY) {
+    return { ok: false, reason: "OneSignal env not configured" };
+  }
+
+  const { sessionId, sessionUrl, rosterUserIds = [], target, title, message } = params;
+  const topic = `training-${sessionId}`; // ensures replacements
+
+  const baseBody: any = {
+    app_id: APP_ID,
+    headings: { en: title ?? "Training update" },
+    contents: { en: message ?? "Tap to open the session" },
+    url: sessionUrl,
+    web_push_topic: topic,
+  };
+
+  const body =
+    target === "all"
+      ? { ...baseBody, included_segments: ["Subscribed Users"] }
+      : { ...baseBody, include_external_user_ids: rosterUserIds };
+
+  const res = await fetch("https://onesignal.com/api/v1/notifications", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Basic ${REST_API_KEY}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    return { ok: false, status: res.status, error: await res.text() };
+  }
+  return { ok: true, data: await res.json() };
+}
+
 export async function scheduleTrainingNotifications(params: ScheduleParams) {
   const { sessionId, startsAtISO, rosterUserIds, sessionUrl, testMode, immediateNotification } = params;
   if (!APP_ID || !REST_API_KEY) {
