@@ -122,6 +122,63 @@ export default function DebugPage() {
     }
   };
 
+  const sendNowToAll = async () => {
+    setSending(true);
+    setSendResult("");
+    try {
+      const response = await fetch("/api/notifications/schedule?sessionId=DEBUG&sessionUrl=/&immediate=all", {
+        method: "GET",
+      });
+      const result = await response.json();
+      console.log("Send NOW to ALL result:", result);
+      alert(`Send NOW to ALL: ${JSON.stringify(result, null, 2)}`);
+      setSendResult(JSON.stringify(result, null, 2));
+    } catch (error: any) {
+      console.error("Send NOW to ALL error:", error);
+      alert(`Error: ${error.message}`);
+      setSendResult(`Error: ${error.message}`);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const sendNowToThisDevice = async () => {
+    try {
+      // Get live subscription ID from OneSignal
+      const liveSubscriptionId = OneSignal.User.PushSubscription.id;
+
+      if (!liveSubscriptionId) {
+        alert("No subscription ID available from OneSignal");
+        return;
+      }
+
+      setSending(true);
+      setSendResult("");
+
+      const response = await fetch("/api/notifications/test-sub", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subscriptionId: liveSubscriptionId,
+          title: notifTitle,
+          message: notifMessage,
+          url: "/",
+        }),
+      });
+
+      const result = await response.json();
+      console.log("Send NOW to THIS device result:", result);
+      alert(`Send NOW to THIS device: ${JSON.stringify(result, null, 2)}`);
+      setSendResult(JSON.stringify(result, null, 2));
+    } catch (error: any) {
+      console.error("Send NOW to THIS device error:", error);
+      alert(`Error: ${error.message}`);
+      setSendResult(`Error: ${error.message}`);
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
     <div style={{ padding: 16 }}>
       <h2>Push Debug</h2>
@@ -191,6 +248,37 @@ export default function DebugPage() {
           >
             {sending ? "Sending..." : "Send to This Device Only"}
           </button>
+
+          {/* NEW DIAGNOSTIC BUTTONS */}
+          <button
+            onClick={sendNowToAll}
+            disabled={sending}
+            style={{
+              padding: 12,
+              backgroundColor: sending ? "#ccc" : "#ff6b6b",
+              color: "white",
+              border: "none",
+              borderRadius: 4,
+              cursor: sending ? "not-allowed" : "pointer"
+            }}
+          >
+            {sending ? "Sending..." : "Send NOW to ALL"}
+          </button>
+          <button
+            onClick={sendNowToThisDevice}
+            disabled={sending}
+            style={{
+              padding: 12,
+              backgroundColor: sending ? "#ccc" : "#51cf66",
+              color: "white",
+              border: "none",
+              borderRadius: 4,
+              cursor: sending ? "not-allowed" : "pointer"
+            }}
+          >
+            {sending ? "Sending..." : "Send NOW to THIS device"}
+          </button>
+
           {sendResult && (
             <div style={{ marginTop: 8 }}>
               <strong>Result:</strong>
