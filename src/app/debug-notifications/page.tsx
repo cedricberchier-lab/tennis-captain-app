@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, AlertTriangle, Send, Settings, Bell } from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, Send, Settings, Bell, User } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const NOTIFS_ENABLED = process.env.NEXT_PUBLIC_NOTIFS_ENABLED === "true";
 const APP_ID = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || "";
 
 export default function NotificationDebugPage() {
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [testResults, setTestResults] = useState<any>({});
   const [loading, setLoading] = useState("");
   const [customTitle, setCustomTitle] = useState("Test Notification");
@@ -93,6 +95,61 @@ export default function NotificationDebugPage() {
       setTestResults(prev => ({
         ...prev,
         subscribe: {
+          success: false,
+          error: error instanceof Error ? error.message : String(error)
+        }
+      }));
+    }
+    setLoading("");
+  };
+
+  const testUserIdConsistency = async () => {
+    setLoading("userid");
+    try {
+      // Get current user ID logic (same as OneSignalInit)
+      const expectedUserId = isAuthenticated && user?.id ? user.id : getOneSignalUserId();
+
+      // Get device info
+      const deviceInfo = {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        language: navigator.language,
+        isStandalone: window.navigator.standalone || false,
+        timestamp: new Date().toISOString()
+      };
+
+      // Send to debug endpoint
+      const response = await fetch('/api/debug/user-id', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user?.id || null,
+          userEmail: user?.email || null,
+          deviceInfo: deviceInfo,
+          oneSignalId: expectedUserId,
+          isAuthenticated: isAuthenticated,
+          authStatus: isLoading ? 'loading' : (isAuthenticated ? 'authenticated' : 'not-authenticated')
+        })
+      });
+
+      const result = await response.json();
+
+      setTestResults(prev => ({
+        ...prev,
+        userid: {
+          success: response.ok,
+          expectedUserId: expectedUserId,
+          actualUserId: user?.id,
+          userEmail: user?.email,
+          isAuthenticated: isAuthenticated,
+          deviceInfo: deviceInfo,
+          result: result
+        }
+      }));
+    } catch (error) {
+      setTestResults(prev => ({
+        ...prev,
+        userid: {
           success: false,
           error: error instanceof Error ? error.message : String(error)
         }
@@ -227,13 +284,26 @@ export default function NotificationDebugPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-2">🐛 OneSignal Debug Page</h1>
         <p className="text-gray-600">Test OneSignal connections and notifications</p>
-        <div className="mt-2 flex gap-2">
+        <div className="mt-2 flex flex-wrap gap-2">
           <Badge variant={NOTIFS_ENABLED ? "default" : "secondary"}>
             Notifications: {NOTIFS_ENABLED ? "Enabled" : "Disabled"}
           </Badge>
           <Badge variant="outline">
             App ID: {APP_ID || "Not Set"}
           </Badge>
+          <Badge variant={isAuthenticated ? "default" : "secondary"}>
+            Auth: {isLoading ? "Loading..." : (isAuthenticated ? "Logged In" : "Not Logged In")}
+          </Badge>
+          {user?.email && (
+            <Badge variant="outline">
+              User: {user.email}
+            </Badge>
+          )}
+          {user?.id && (
+            <Badge variant="outline">
+              ID: {user.id}
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -292,6 +362,19 @@ export default function NotificationDebugPage() {
         </Button>
 
         <Button
+          onClick={testUserIdConsistency}
+          disabled={loading === "userid"}
+          variant="outline"
+          className="h-auto p-4 border-blue-200 hover:border-blue-300"
+        >
+          <div className="text-center">
+            <User className="mx-auto mb-2" size={20} />
+            <div>Test User ID Consistency</div>
+            <div className="text-xs opacity-70">Check same ID across devices</div>
+          </div>
+        </Button>
+
+        <Button
           onClick={testBroadcastAPI}
           disabled={loading === "broadcast"}
           variant="outline"
@@ -344,6 +427,9 @@ export default function NotificationDebugPage() {
         )}
         {testResults.subscribe && (
           <ResultCard title="Notification Subscription" result={testResults.subscribe} icon={Bell} />
+        )}
+        {testResults.userid && (
+          <ResultCard title="User ID Consistency Test" result={testResults.userid} icon={User} />
         )}
         {testResults.broadcast && (
           <ResultCard title="Broadcast API (POST)" result={testResults.broadcast} icon={Send} />
