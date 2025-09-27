@@ -93,6 +93,10 @@ export async function sendImmediateAll(params: {
 }) {
   const { sessionUrl, title, message } = params;
 
+  if (!APP_ID || !REST_API_KEY) {
+    return { ok: false, error: "OneSignal env not configured" };
+  }
+
   // Try multiple targeting approaches
   const res = await send({
     app_id: APP_ID,
