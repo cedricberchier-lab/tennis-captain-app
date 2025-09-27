@@ -97,11 +97,6 @@ export async function sendImmediateAll(params: {
   const res = await send({
     app_id: APP_ID,
     included_segments: ["Subscribed Users"],
-    // Explicitly target ALL platforms - this fixes mobile device exclusion
-    isAnyWeb: true,
-    isChrome: true,
-    isSafari: true,
-    isFirefox: true,
     headings: { en: title ?? "Training update" },
     contents: { en: message ?? "Tap to open the session" },
     url: sessionUrl,
@@ -119,11 +114,6 @@ export async function sendToDevice(params: {
   const res = await send({
     app_id: APP_ID,
     include_player_ids: [deviceId],
-    // Explicitly target ALL platforms
-    isAnyWeb: true,
-    isChrome: true,
-    isSafari: true,
-    isFirefox: true,
     headings: { en: title ?? "Training update" },
     contents: { en: message ?? "Tap to open the session" },
     url: sessionUrl,
