@@ -79,6 +79,9 @@ export default function OneSignalInit() {
           notifyButton: { enable: false },
         });
 
+        // Give OneSignal a moment to fully initialize
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
         // Use authenticated user ID or fallback to anonymous ID
         const userId = isAuthenticated && user?.id ? user.id : getOrCreateAnonId();
         console.log('🆔 OneSignal User ID set to:', userId);
@@ -144,10 +147,13 @@ export default function OneSignalInit() {
         }
 
         // Prompt for permission if not subscribed yet
-        const isEnabled = OneSignal.User.PushSubscription.optedIn;
+        const isEnabled = await OneSignal.isPushNotificationsEnabled();
         console.log('🔔 Push notifications enabled:', isEnabled);
 
         if (!isEnabled) {
+          // Check if user has already been prompted before
+          const hasBeenPrompted = localStorage.getItem('onesignal-prompted');
+
           if (isIOSSafari) {
             console.log('📱 iOS Safari detected - showing PWA install prompt first');
             // For iOS Safari, show custom install prompt
@@ -158,14 +164,65 @@ export default function OneSignalInit() {
               console.log('📱 PWA detected - attempting OneSignal prompt for iOS');
               try {
                 await OneSignal.showSlidedownPrompt();
+                localStorage.setItem('onesignal-prompted', 'true');
               } catch (e) {
                 console.log('📱 OneSignal prompt failed on iOS PWA:', e);
                 // iOS Safari in PWA mode might still have restrictions
               }
             }
           } else {
-            console.log('🖥️ Desktop/other browser - showing OneSignal prompt');
-            await OneSignal.showSlidedownPrompt();
+            console.log('🖥️ Desktop/other browser - showing notification prompt');
+
+            if (!hasBeenPrompted) {
+              console.log('🔔 First time user - showing subscription prompt');
+              localStorage.setItem('onesignal-prompted', 'true');
+            }
+
+            try {
+              // Try multiple prompt methods for better compatibility
+              console.log('Attempting OneSignal slidedown prompt...');
+
+              // Method 1: Try newer slidedown API
+              if (OneSignal.Slidedown && OneSignal.Slidedown.promptPush) {
+                await OneSignal.Slidedown.promptPush();
+              }
+              // Method 2: Try older slidedown API
+              else if (OneSignal.showSlidedownPrompt) {
+                await OneSignal.showSlidedownPrompt();
+              }
+              // Method 3: Try direct push subscription
+              else if (OneSignal.User && OneSignal.User.PushSubscription) {
+                await OneSignal.User.PushSubscription.optIn();
+              }
+              // Method 4: Fallback to native browser prompt
+              else {
+                console.log('Using native browser notification prompt');
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                  console.log('✅ Native notification permission granted');
+                  // Try to register with OneSignal after permission granted
+                  if (OneSignal.User && OneSignal.User.PushSubscription) {
+                    await OneSignal.User.PushSubscription.optIn();
+                  }
+                }
+              }
+
+              console.log('✅ Notification prompt completed');
+            } catch (promptError) {
+              console.log('❌ All notification prompt methods failed:', promptError);
+              // Show a custom alert as last resort
+              if (!hasBeenPrompted) {
+                setTimeout(() => {
+                  if (confirm('Would you like to receive tennis training notifications? Click OK to enable notifications.')) {
+                    Notification.requestPermission().then(permission => {
+                      if (permission === 'granted') {
+                        console.log('✅ User manually granted permission');
+                      }
+                    });
+                  }
+                }, 2000);
+              }
+            }
           }
         } else {
           console.log('✅ Push notifications already enabled');
