@@ -104,3 +104,20 @@ export async function sendImmediateAll(params: {
   });
   return { ok: true, data: res };
 }
+
+export async function sendToDevice(params: {
+  deviceId: string;
+  sessionUrl: string;
+  title?: string;
+  message?: string;
+}) {
+  const { deviceId, sessionUrl, title, message } = params;
+  const res = await send({
+    app_id: APP_ID,
+    include_player_ids: [deviceId],
+    headings: { en: title ?? "Training update" },
+    contents: { en: message ?? "Tap to open the session" },
+    url: sessionUrl,
+  });
+  return { ok: true, data: res };
+}

@@ -94,6 +94,34 @@ export default function DebugPage() {
     }
   };
 
+  const sendToThisDevice = async () => {
+    if (!info.onesignalId) {
+      setSendResult("No OneSignal ID available");
+      return;
+    }
+    setSending(true);
+    setSendResult("");
+    try {
+      const response = await fetch("/api/notifications/schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: "debug-test",
+          immediate: "device",
+          deviceId: info.onesignalId,
+          title: notifTitle,
+          message: notifMessage,
+        }),
+      });
+      const result = await response.json();
+      setSendResult(JSON.stringify(result, null, 2));
+    } catch (error: any) {
+      setSendResult(`Error: ${error.message}`);
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
     <div style={{ padding: 16 }}>
       <h2>Push Debug</h2>
@@ -148,6 +176,20 @@ export default function DebugPage() {
             }}
           >
             {sending ? "Sending..." : "Send to All Subscribed Users"}
+          </button>
+          <button
+            onClick={sendToThisDevice}
+            disabled={sending || !info.onesignalId}
+            style={{
+              padding: 12,
+              backgroundColor: sending || !info.onesignalId ? "#ccc" : "#28a745",
+              color: "white",
+              border: "none",
+              borderRadius: 4,
+              cursor: sending || !info.onesignalId ? "not-allowed" : "pointer"
+            }}
+          >
+            {sending ? "Sending..." : "Send to This Device Only"}
           </button>
           {sendResult && (
             <div style={{ marginTop: 8 }}>

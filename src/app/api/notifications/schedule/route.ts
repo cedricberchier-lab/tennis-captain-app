@@ -1,7 +1,7 @@
 export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { scheduleTrainingNotifications, sendImmediateAll } from "@/lib/scheduleNotifications";
+import { scheduleTrainingNotifications, sendImmediateAll, sendToDevice } from "@/lib/scheduleNotifications";
 
 const NOTIFS_ENABLED = process.env.NEXT_PUBLIC_NOTIFS_ENABLED === "true";
 
@@ -61,6 +61,11 @@ export async function POST(req: NextRequest) {
 
     if (immediate === "all") {
       const out = await sendImmediateAll({ sessionId, sessionUrl: finalUrl, title, message });
+      return NextResponse.json(out, { status: out.ok ? 200 : 400 });
+    }
+
+    if (immediate === "device" && body.deviceId) {
+      const out = await sendToDevice({ deviceId: body.deviceId, sessionUrl: finalUrl, title, message });
       return NextResponse.json(out, { status: out.ok ? 200 : 400 });
     }
 
