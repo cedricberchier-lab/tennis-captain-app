@@ -92,9 +92,12 @@ export async function sendImmediateAll(params: {
   message?: string;
 }) {
   const { sessionUrl, title, message } = params;
+
+  // Try multiple targeting approaches
   const res = await send({
     app_id: APP_ID,
-    included_segments: ["Subscribed Users"],
+    // Send to all users - this is the most reliable approach
+    included_segments: ["Total Subscriptions"],
     headings: { en: title ?? "Training update" },
     contents: { en: message ?? "Tap to open the session" },
     url: sessionUrl,
