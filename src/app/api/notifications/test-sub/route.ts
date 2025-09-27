@@ -30,6 +30,11 @@ export async function POST(req: NextRequest) {
     const payload = {
       app_id: APP_ID,
       include_subscription_ids: [subscriptionId],
+      // Explicitly target ALL platforms to fix mobile device exclusion
+      isAnyWeb: true,
+      isChrome: true,
+      isSafari: true,
+      isFirefox: true,
       headings: { en: title || "Direct test" },
       contents: { en: message || "Sent to this device only" },
       url: finalUrl,
