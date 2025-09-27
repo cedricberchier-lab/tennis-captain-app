@@ -91,15 +91,13 @@ export async function sendImmediateAll(params: {
   title?: string;
   message?: string;
 }) {
-  const { sessionId, sessionUrl, title, message } = params;
-  const topic = topicFor(sessionId);
+  const { sessionUrl, title, message } = params;
   const res = await send({
     app_id: APP_ID,
     included_segments: ["Subscribed Users"],
     headings: { en: title ?? "Training update" },
     contents: { en: message ?? "Tap to open the session" },
     url: sessionUrl,
-    web_push_topic: topic,
   });
   return { ok: true, data: res };
 }
