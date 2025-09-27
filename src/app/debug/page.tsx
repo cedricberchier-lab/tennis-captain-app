@@ -18,6 +18,10 @@ type Info = {
 
 export default function DebugPage() {
   const [info, setInfo] = useState<Info>({ ready: false, hasSDK: false, notes: [] });
+  const [notifTitle, setNotifTitle] = useState("Test Notification");
+  const [notifMessage, setNotifMessage] = useState("This is a test notification to all subscribed users");
+  const [sending, setSending] = useState(false);
+  const [sendResult, setSendResult] = useState<string>("");
 
   const refresh = () => {
     const notes: string[] = [];
@@ -67,6 +71,29 @@ export default function DebugPage() {
     }
   };
 
+  const sendNotificationToAll = async () => {
+    setSending(true);
+    setSendResult("");
+    try {
+      const response = await fetch("/api/notifications/schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: "debug-test",
+          immediate: "all",
+          title: notifTitle,
+          message: notifMessage,
+        }),
+      });
+      const result = await response.json();
+      setSendResult(JSON.stringify(result, null, 2));
+    } catch (error: any) {
+      setSendResult(`Error: ${error.message}`);
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
     <div style={{ padding: 16 }}>
       <h2>Push Debug</h2>
@@ -84,6 +111,62 @@ export default function DebugPage() {
         </button>
         <button onClick={refresh}>Refresh</button>
       </div>
+
+      <div style={{ marginTop: 24, padding: 16, border: "1px solid #ccc", borderRadius: 8 }}>
+        <h3>Send Notification to All Subscribed Users</h3>
+        <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
+          <div>
+            <label htmlFor="title">Title:</label>
+            <input
+              id="title"
+              type="text"
+              value={notifTitle}
+              onChange={(e) => setNotifTitle(e.target.value)}
+              style={{ width: "100%", padding: 8, marginTop: 4 }}
+            />
+          </div>
+          <div>
+            <label htmlFor="message">Message:</label>
+            <textarea
+              id="message"
+              value={notifMessage}
+              onChange={(e) => setNotifMessage(e.target.value)}
+              rows={3}
+              style={{ width: "100%", padding: 8, marginTop: 4, resize: "vertical" }}
+            />
+          </div>
+          <button
+            onClick={sendNotificationToAll}
+            disabled={sending}
+            style={{
+              padding: 12,
+              backgroundColor: sending ? "#ccc" : "#007bff",
+              color: "white",
+              border: "none",
+              borderRadius: 4,
+              cursor: sending ? "not-allowed" : "pointer"
+            }}
+          >
+            {sending ? "Sending..." : "Send to All Subscribed Users"}
+          </button>
+          {sendResult && (
+            <div style={{ marginTop: 8 }}>
+              <strong>Result:</strong>
+              <pre style={{
+                whiteSpace: "pre-wrap",
+                fontSize: 12,
+                backgroundColor: "#f5f5f5",
+                padding: 8,
+                borderRadius: 4,
+                marginTop: 4
+              }}>
+                {sendResult}
+              </pre>
+            </div>
+          )}
+        </div>
+      </div>
+
       <p style={{ marginTop: 8, fontSize: 12, opacity: 0.8 }}>
         If <code>hasSDK</code> is false, check that <code>&lt;OneSignalInit /&gt;</code> runs on this page and reload the PWA.
       </p>
