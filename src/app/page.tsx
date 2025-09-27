@@ -323,24 +323,6 @@ export default function Home() {
   const upcomingEvents = getUserRelevantEvents();
   const upcomingAbsences = getUpcomingAbsences();
 
-  // Send broadcast notification to all users
-  const sendBroadcastNotification = async () => {
-    try {
-      const response = await fetch('/api/notifications/broadcast');
-      const data = await response.json();
-
-      if (response.ok) {
-        alert('Broadcast notification sent to all users! 📢');
-        console.log('✅ Broadcast notification result:', data);
-      } else {
-        alert(`Error: ${data.error}`);
-        console.error('❌ Broadcast notification error:', data.error);
-      }
-    } catch (error) {
-      alert('Failed to send broadcast notification');
-      console.error('❌ Broadcast notification failed:', error);
-    }
-  };
 
   return (
     <ProtectedRoute>
@@ -355,12 +337,12 @@ export default function Home() {
                 <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 text-purple-500 dark:text-purple-400" />
               </h1>
               {user?.name === 'Cédric Berchier' && (
-                <button
-                  onClick={sendBroadcastNotification}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors font-semibold shadow-lg flex items-center gap-2"
+                <a
+                  href="/debug"
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors font-semibold shadow-lg flex items-center gap-2 no-underline"
                 >
-                  📢 Broadcast to All
-                </button>
+                  🐛 Debug Page
+                </a>
               )}
             </div>
           </div>
