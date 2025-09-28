@@ -19,6 +19,10 @@ export default function OneSignalInit() {
         // Show permission prompt if not already enabled
         const supported = OneSignal.Notifications.isPushSupported();
         if (supported && OneSignal.Notifications.permission === "default") {
+          // For Chrome, request native permission first
+          if (navigator.userAgent.includes('Chrome')) {
+            await OneSignal.Notifications.requestPermission();
+          }
           await OneSignal.Slidedown.promptPush({ force: true });
         }
       } catch (e) {

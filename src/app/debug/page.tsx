@@ -143,7 +143,12 @@ export default function DebugPage() {
   };
 
   const sendNowToThisDevice = async () => {
+    console.log("=== Send NOW to THIS device clicked ===");
     try {
+      console.log("OneSignal object:", OneSignal);
+      console.log("OneSignal.User:", OneSignal?.User);
+      console.log("OneSignal.User.PushSubscription:", OneSignal?.User?.PushSubscription);
+
       // Get live subscription ID from OneSignal
       const liveSubscriptionId = OneSignal.User.PushSubscription.id;
 
