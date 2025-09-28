@@ -147,6 +147,9 @@ export default function DebugPage() {
       // Get live subscription ID from OneSignal
       const liveSubscriptionId = OneSignal.User.PushSubscription.id;
 
+      console.log("Debug info subscription ID:", info.subscriptionId);
+      console.log("Live OneSignal subscription ID:", liveSubscriptionId);
+
       if (!liveSubscriptionId) {
         alert("No subscription ID available from OneSignal");
         return;
