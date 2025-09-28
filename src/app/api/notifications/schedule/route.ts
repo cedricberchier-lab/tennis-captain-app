@@ -21,8 +21,15 @@ export async function GET(req: NextRequest) {
   if (!parse.success) return NextResponse.json({ ok: false, error: parse.error.flatten() }, { status: 400 });
 
   const { sessionId, startsAtISO, sessionUrl, testMode, immediate } = parse.data;
-  const base = process.env.NEXT_PUBLIC_APP_BASE_URL || "";
-  const finalUrl = sessionUrl || (base ? `${base}/session/${sessionId}` : `/session/${sessionId}`);
+  const base = process.env.NEXT_PUBLIC_APP_BASE_URL || "https://tennis-captain-app-xz42.vercel.app";
+
+  // Ensure we always have a full URL
+  let finalUrl: string;
+  if (sessionUrl) {
+    finalUrl = sessionUrl.startsWith('http') ? sessionUrl : `${base}${sessionUrl}`;
+  } else {
+    finalUrl = `${base}/session/${sessionId}`;
+  }
 
   try {
     if (immediate === "all") {
@@ -55,9 +62,15 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { sessionId, startsAtISO, sessionUrl, immediate, title, message, testMode } = body || {};
-    const finalUrl =
-      sessionUrl ||
-      (process.env.NEXT_PUBLIC_APP_BASE_URL ? `${process.env.NEXT_PUBLIC_APP_BASE_URL}/session/${sessionId}` : `/session/${sessionId}`);
+    const base = process.env.NEXT_PUBLIC_APP_BASE_URL || "https://tennis-captain-app-xz42.vercel.app";
+
+    // Ensure we always have a full URL
+    let finalUrl: string;
+    if (sessionUrl) {
+      finalUrl = sessionUrl.startsWith('http') ? sessionUrl : `${base}${sessionUrl}`;
+    } else {
+      finalUrl = `${base}/session/${sessionId}`;
+    }
 
     if (immediate === "all") {
       const out = await sendImmediateAll({ sessionId, sessionUrl: finalUrl, title, message });
