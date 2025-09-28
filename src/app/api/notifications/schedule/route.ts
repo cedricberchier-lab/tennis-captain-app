@@ -8,7 +8,7 @@ const NOTIFS_ENABLED = process.env.NEXT_PUBLIC_NOTIFS_ENABLED === "true";
 const QuerySchema = z.object({
   sessionId: z.string().min(1),
   startsAtISO: z.string().min(1).optional(), // not needed for immediate
-  sessionUrl: z.string().url().optional(),
+  sessionUrl: z.string().optional(), // Remove .url() validation - we handle URL formatting manually
   testMode: z.enum(["0", "1"]).optional(),
   immediate: z.enum(["all"]).optional(),     // simplified
 });
