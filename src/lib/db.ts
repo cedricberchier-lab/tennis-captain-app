@@ -33,16 +33,6 @@ export async function initializeDatabase() {
       )
     `;
 
-    // Create password reset tokens table
-    await sql`
-      CREATE TABLE IF NOT EXISTS password_reset_tokens (
-        user_id VARCHAR(255) PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-        token VARCHAR(255) UNIQUE NOT NULL,
-        expires_at TIMESTAMP NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `;
-
     // Migrate existing users table to add missing columns
     await migrateUsersTableSchema();
 
@@ -546,50 +536,6 @@ export async function deleteUser(id: string): Promise<boolean> {
   return result.rowCount > 0;
 }
 
-
-// Password reset functionality
-export async function createPasswordResetToken(userId: string): Promise<string> {
-  const token = crypto.randomUUID();
-  const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
-
-  await sql`
-    INSERT INTO password_reset_tokens (user_id, token, expires_at)
-    VALUES (${userId}, ${token}, ${expiresAt})
-    ON CONFLICT (user_id)
-    DO UPDATE SET
-      token = EXCLUDED.token,
-      expires_at = EXCLUDED.expires_at,
-      created_at = CURRENT_TIMESTAMP
-  `;
-
-  return token;
-}
-
-export async function validatePasswordResetToken(token: string): Promise<string | null> {
-  const { rows } = await sql`
-    SELECT user_id FROM password_reset_tokens
-    WHERE token = ${token} AND expires_at > CURRENT_TIMESTAMP
-  `;
-
-  return rows.length > 0 ? rows[0].user_id : null;
-}
-
-export async function deletePasswordResetToken(token: string): Promise<void> {
-  await sql`DELETE FROM password_reset_tokens WHERE token = ${token}`;
-}
-
-export async function updateUserPassword(userId: string, newPassword: string): Promise<boolean> {
-  const hashedPassword = await bcrypt.hash(newPassword, 12);
-  const now = new Date();
-
-  const result = await sql`
-    UPDATE users
-    SET password = ${hashedPassword}, updated_at = ${now}
-    WHERE id = ${userId}
-  `;
-
-  return result.rowCount > 0;
-}
 
 // Database cleanup functions
 export async function cleanupMatchTables(): Promise<{ success: boolean; tablesRemoved: string[] }> {
