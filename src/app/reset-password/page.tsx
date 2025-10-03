@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Target, CheckCircle, AlertCircle } from 'lucide-react';
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -216,5 +216,27 @@ export default function ResetPasswordPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 flex items-center justify-center p-4">
+        <div className="w-full max-w-sm sm:max-w-md">
+          <Card className="shadow-2xl border-0 sm:border-2">
+            <CardHeader className="text-center px-6 sm:px-8 py-6 sm:py-8">
+              <CardTitle className="text-2xl sm:text-3xl font-bold mb-2 flex items-center justify-center gap-3">
+                <Target className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
+                Tennis Captain
+              </CardTitle>
+              <CardDescription className="text-base">Loading...</CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      </div>
+    }>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
