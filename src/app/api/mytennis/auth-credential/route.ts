@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = "nodejs";
+
 const B2C_DOMAIN = "swisstennisch.b2clogin.com";
 const B2C_TENANT = "swisstennisch.onmicrosoft.com";
 const B2C_POLICY = "B2C_1A_B2C_1_SIGNUP-SIGNIN";
@@ -28,7 +30,6 @@ class CookieJar {
   private jar = new Map<string, string>();
 
   absorb(headers: Headers) {
-    // getSetCookie() is available in Node 18+ / Edge runtime
     const all: string[] =
       typeof (headers as any).getSetCookie === "function"
         ? (headers as any).getSetCookie()
@@ -48,51 +49,92 @@ class CookieJar {
   }
 }
 
+// ── Safely resolve a potentially-relative URL against a base ──────────────────
+
+function resolveUrl(loc: string, base: string): string | null {
+  if (!loc) return null;
+  // Already absolute
+  if (loc.startsWith("http://") || loc.startsWith("https://")) return loc;
+  // Root-relative
+  if (loc.startsWith("/")) {
+    try {
+      const u = new URL(base);
+      return `${u.protocol}//${u.host}${loc}`;
+    } catch {
+      return null;
+    }
+  }
+  // Protocol-relative
+  if (loc.startsWith("//")) {
+    try {
+      const u = new URL(base);
+      return `${u.protocol}${loc}`;
+    } catch {
+      return null;
+    }
+  }
+  // Relative path — resolve against base directory
+  try {
+    return new URL(loc, base).toString();
+  } catch {
+    return null;
+  }
+}
+
 // ── Follow HTTP redirects manually (collect cookies, stop at a prefix) ────────
+
+type RedirectResult = { html: string; url: string; error?: string };
 
 async function followRedirects(
   startUrl: string,
   cookies: CookieJar,
   stopPrefix?: string
-): Promise<{ html: string; url: string }> {
+): Promise<RedirectResult> {
   let url = startUrl;
 
-  for (let i = 0; i < 10; i++) {
-    const res = await fetch(url, {
-      method: "GET",
-      redirect: "manual",
-      headers: {
-        Accept: "text/html,application/xhtml+xml,*/*;q=0.8",
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
-        Cookie: cookies.toString(),
-      },
-    });
+  for (let i = 0; i < 15; i++) {
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: "GET",
+        redirect: "manual",
+        headers: {
+          Accept: "text/html,application/xhtml+xml,*/*;q=0.8",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+          Cookie: cookies.toString(),
+        },
+      });
+    } catch (e: any) {
+      return { html: "", url, error: `fetch failed at step ${i}: ${e.message}` };
+    }
 
     cookies.absorb(res.headers);
 
-    if (res.status === 301 || res.status === 302 || res.status === 303) {
-      let loc = res.headers.get("location") ?? "";
-      if (!loc) break;
-      if (loc.startsWith("/")) {
-        const u = new URL(url);
-        loc = `${u.protocol}//${u.host}${loc}`;
+    if (res.status === 301 || res.status === 302 || res.status === 303 || res.status === 307 || res.status === 308) {
+      const rawLoc = res.headers.get("location") ?? "";
+      if (!rawLoc) break;
+
+      const resolved = resolveUrl(rawLoc, url);
+      if (!resolved) {
+        return { html: "", url, error: `Could not resolve redirect location: "${rawLoc}" from base "${url}"` };
       }
-      if (stopPrefix && loc.startsWith(stopPrefix)) {
-        return { html: "", url: loc };
+
+      if (stopPrefix && resolved.startsWith(stopPrefix)) {
+        return { html: "", url: resolved };
       }
-      url = loc;
+      url = resolved;
     } else {
-      const html = await res.text();
+      let html = "";
+      try { html = await res.text(); } catch { /* ignore */ }
       return { html, url };
     }
   }
 
-  return { html: "", url };
+  return { html: "", url, error: "Too many redirects" };
 }
 
 // ── Extract a JSON object from a JS variable assignment in HTML ───────────────
-// Handles nested objects correctly by counting balanced braces.
 
 function extractJsonVar(html: string, varName: string): string | null {
   const marker = `var ${varName} = `;
@@ -161,23 +203,25 @@ export async function POST(req: NextRequest) {
     const cookies = new CookieJar();
 
     // ── Step 1: Load the Azure B2C login page ──────────────────────────────
-    const { html: loginHtml, url: loginUrl } = await followRedirects(authUrl, cookies);
+    const step1 = await followRedirects(authUrl, cookies);
 
-    if (!loginHtml) {
-      return NextResponse.json(
-        { error: "Could not load Azure B2C login page" },
-        { status: 502 }
-      );
+    if (step1.error) {
+      return NextResponse.json({ error: `Step 1: ${step1.error}` }, { status: 502 });
+    }
+    if (!step1.html) {
+      return NextResponse.json({ error: "Step 1: Could not load Azure B2C login page", url: step1.url }, { status: 502 });
     }
 
+    const loginHtml = step1.html;
+    const loginUrl = step1.url;
+
     // ── Step 2: Parse SETTINGS from the page JS ────────────────────────────
-    // Azure B2C embeds:  var SETTINGS = { "csrf": "...", "transId": "...", ... };
     const settingsJson = extractJsonVar(loginHtml, "SETTINGS");
     if (!settingsJson) {
       return NextResponse.json(
         {
-          error: "Could not find SETTINGS variable in Azure B2C page — structure may have changed.",
-          hint: loginHtml.slice(0, 1000),
+          error: "Step 2: Could not find SETTINGS in Azure B2C page",
+          hint: loginHtml.slice(0, 500),
         },
         { status: 502 }
       );
@@ -188,23 +232,29 @@ export async function POST(req: NextRequest) {
       settings = JSON.parse(settingsJson);
     } catch {
       return NextResponse.json(
-        { error: "Failed to parse SETTINGS JSON", raw: settingsJson.slice(0, 500) },
+        { error: "Step 2: Failed to parse SETTINGS JSON", raw: settingsJson.slice(0, 500) },
         { status: 502 }
       );
     }
 
-    const csrf = settings.csrf as string ?? "";
-    const transId = settings.transId as string ?? "";
-    const apiName = settings.api as string ?? "selfasserted";
+    const csrf = (settings.csrf as string) ?? "";
+    const transId = (settings.transId as string) ?? "";
+    const apiName = (settings.api as string) ?? "selfasserted";
 
     // tx can be in the SETTINGS transId or in the login URL query params
-    const loginUrlObj = new URL(loginUrl);
-    const tx = loginUrlObj.searchParams.get("tx") ?? transId;
-    const p = loginUrlObj.searchParams.get("p") ?? B2C_POLICY;
+    let tx = transId;
+    let p = B2C_POLICY;
+    try {
+      const loginUrlObj = new URL(loginUrl);
+      tx = loginUrlObj.searchParams.get("tx") ?? transId;
+      p = loginUrlObj.searchParams.get("p") ?? B2C_POLICY;
+    } catch {
+      // loginUrl might not be a valid absolute URL — keep defaults
+    }
 
     if (!csrf || !tx) {
       return NextResponse.json(
-        { error: "Missing csrf or tx from login page", settings },
+        { error: "Step 2: Missing csrf or tx", csrf: !!csrf, tx: !!tx, settings },
         { status: 502 }
       );
     }
@@ -214,24 +264,28 @@ export async function POST(req: NextRequest) {
       `https://${B2C_DOMAIN}/${B2C_TENANT}/${p}/api/SelfAsserted` +
       `?tx=${encodeURIComponent(tx)}&p=${encodeURIComponent(p)}`;
 
-    const credRes = await fetch(selfAssertedUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        "X-CSRF-TOKEN": csrf,
-        Cookie: cookies.toString(),
-        Referer: loginUrl,
-        Origin: `https://${B2C_DOMAIN}`,
-        "X-Requested-With": "XMLHttpRequest",
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
-      },
-      body: new URLSearchParams({
-        request_type: "RESPONSE",
-        logonIdentifier: username,
-        password,
-      }),
-    });
+    let credRes: Response;
+    try {
+      credRes = await fetch(selfAssertedUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+          "X-CSRF-TOKEN": csrf,
+          Cookie: cookies.toString(),
+          Referer: loginUrl,
+          "X-Requested-With": "XMLHttpRequest",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+        },
+        body: new URLSearchParams({
+          request_type: "RESPONSE",
+          logonIdentifier: username,
+          password,
+        }),
+      });
+    } catch (e: any) {
+      return NextResponse.json({ error: `Step 3: fetch failed: ${e.message}` }, { status: 502 });
+    }
 
     cookies.absorb(credRes.headers);
 
@@ -254,18 +308,30 @@ export async function POST(req: NextRequest) {
       `https://${B2C_DOMAIN}/${B2C_TENANT}/${p}/api/${apiName}/confirmed` +
       `?csrf_token=${encodeURIComponent(csrf)}&tx=${encodeURIComponent(tx)}&p=${encodeURIComponent(p)}`;
 
-    const { url: codeUrl } = await followRedirects(confirmedUrl, cookies, redirectUri);
+    const step4 = await followRedirects(confirmedUrl, cookies, redirectUri);
+
+    if (step4.error) {
+      return NextResponse.json({ error: `Step 4: ${step4.error}` }, { status: 502 });
+    }
+
+    const codeUrl = step4.url;
 
     if (!codeUrl.startsWith(redirectUri)) {
       return NextResponse.json(
-        { error: "Auth flow did not return to callback URL", got: codeUrl },
+        { error: "Step 4: Auth flow did not return to callback URL", got: codeUrl },
         { status: 502 }
       );
     }
 
-    const code = new URL(codeUrl).searchParams.get("code");
+    let code: string | null = null;
+    try {
+      code = new URL(codeUrl).searchParams.get("code");
+    } catch (e: any) {
+      return NextResponse.json({ error: `Step 4: Could not parse code URL: ${codeUrl}` }, { status: 502 });
+    }
+
     if (!code) {
-      return NextResponse.json({ error: "No authorization code in callback" }, { status: 502 });
+      return NextResponse.json({ error: "Step 4: No authorization code in callback", url: codeUrl }, { status: 502 });
     }
 
     // ── Step 5: Exchange code for tokens ───────────────────────────────────
@@ -284,7 +350,7 @@ export async function POST(req: NextRequest) {
     if (!tokenRes.ok) {
       const err = await tokenRes.json().catch(() => ({}));
       const msg = err.error_description?.split("\r\n")[0] ?? "Token exchange failed";
-      return NextResponse.json({ error: msg }, { status: 401 });
+      return NextResponse.json({ error: `Step 5: ${msg}` }, { status: 401 });
     }
 
     const tokens = await tokenRes.json();
@@ -312,6 +378,6 @@ export async function POST(req: NextRequest) {
 
     return response;
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: e.message, stack: e.stack?.slice(0, 500) }, { status: 500 });
   }
 }
