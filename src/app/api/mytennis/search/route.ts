@@ -24,7 +24,12 @@ export async function POST(req: NextRequest) {
         "Origin": "https://www.mytennis.ch",
         "Referer": "https://www.mytennis.ch/",
       },
-      body: JSON.stringify({ query: query.trim() }),
+      body: JSON.stringify({
+        keyword: query.trim(),
+        filters: { licenseStatus: "1,2" },
+        offset: 0,
+        limit: 50,
+      }),
     });
 
     if (!res.ok) {
