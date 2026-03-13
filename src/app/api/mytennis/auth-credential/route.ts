@@ -98,6 +98,7 @@ async function followRedirects(
       res = await fetch(url, {
         method: "GET",
         redirect: "manual",
+        signal: AbortSignal.timeout(15_000),
         headers: {
           Accept: "text/html,application/xhtml+xml,*/*;q=0.8",
           "User-Agent":
@@ -106,7 +107,7 @@ async function followRedirects(
         },
       });
     } catch (e: any) {
-      return { html: "", url, error: `fetch failed at step ${i}: ${e.message}` };
+      return { html: "", url, error: `fetch failed at redirect step ${i} for "${url}": ${e.message}` };
     }
 
     cookies.absorb(res.headers);
@@ -273,6 +274,7 @@ export async function POST(req: NextRequest) {
     try {
       credRes = await fetch(selfAssertedUrl, {
         method: "POST",
+        signal: AbortSignal.timeout(15_000),
         headers: {
           "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
           "X-CSRF-TOKEN": csrf,
