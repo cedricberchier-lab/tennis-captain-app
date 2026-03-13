@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 const B2C_DOMAIN = "swisstennisch.b2clogin.com";
 const B2C_TENANT = "swisstennisch.onmicrosoft.com";
-const B2C_POLICY = "b2c_1a_b2c_1_signup-signin";
-const CLIENT_ID = "5c8c6e4e-a017-49d4-a9c0-f89fe08614f3";
+const B2C_POLICY = "B2C_1A_B2C_1_SIGNUP-SIGNIN";
+const CLIENT_ID = "05437a81-854a-4cbb-826a-0aed542be8d0";
 
 function generateCodeVerifier(): string {
   const array = new Uint8Array(32);
