@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import OneSignal from "react-onesignal";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Bug, RefreshCw, Bell, Send, Smartphone, Users } from "lucide-react";
 
 type Info = {
   ready: boolean;
@@ -26,7 +28,6 @@ export default function DebugPage() {
   const refresh = () => {
     const notes: string[] = [];
     try {
-      // Guard against undefined SDK surface
       const hasSDK =
         !!(OneSignal as any) &&
         !!(OneSignal as any).Notifications &&
@@ -44,7 +45,7 @@ export default function DebugPage() {
         hasSDK: true,
         notes,
         isPushSupported: OneSignal.Notifications.isPushSupported(),
-        permission: OneSignal.Notifications.permission,
+        permission: OneSignal.Notifications.permission as unknown as "default" | "granted" | "denied" | undefined,
         subscribed: OneSignal.User.PushSubscription.optedIn === true,
         onesignalId: OneSignal.User.onesignalId ?? null,
         externalId: OneSignal.User.externalId ?? null,
@@ -58,7 +59,6 @@ export default function DebugPage() {
   };
 
   useEffect(() => {
-    // Wait a tick to let init finish, especially on iOS PWA
     const t = setTimeout(refresh, 300);
     return () => clearTimeout(t);
   }, []);
@@ -149,7 +149,6 @@ export default function DebugPage() {
       console.log("OneSignal.User:", OneSignal?.User);
       console.log("OneSignal.User.PushSubscription:", OneSignal?.User?.PushSubscription);
 
-      // Get live subscription ID from OneSignal
       const liveSubscriptionId = OneSignal.User.PushSubscription.id;
 
       console.log("Debug info subscription ID:", info.subscriptionId);
@@ -187,127 +186,214 @@ export default function DebugPage() {
     }
   };
 
+  const permissionColor = {
+    granted: "text-green-600 dark:text-green-400",
+    denied: "text-red-600 dark:text-red-400",
+    default: "text-yellow-600 dark:text-yellow-400",
+  }[info.permission ?? "default"];
+
   return (
-    <div style={{ padding: 16 }}>
-      <h2>Push Debug</h2>
-      <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(info, null, 2)}</pre>
-      <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
-        <button onClick={request}>Show Push Prompt (force)</button>
-        <button onClick={() => OneSignal.Notifications.requestPermission().finally(refresh)}>
-          Request Native Permission
-        </button>
-        <button onClick={() => OneSignal.User.PushSubscription.optIn().finally(refresh)}>
-          Opt-In (this device)
-        </button>
-        <button onClick={() => OneSignal.User.PushSubscription.optOut().finally(refresh)}>
-          Opt-Out (this device)
-        </button>
-        <button onClick={refresh}>Refresh</button>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 pt-4">
+      <div className="max-w-2xl mx-auto px-4 pb-8 space-y-6">
 
-      <div style={{ marginTop: 24, padding: 16, border: "1px solid #ccc", borderRadius: 8 }}>
-        <h3>Send Notification to All Subscribed Users</h3>
-        <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
-          <div>
-            <label htmlFor="title">Title:</label>
-            <input
-              id="title"
-              type="text"
-              value={notifTitle}
-              onChange={(e) => setNotifTitle(e.target.value)}
-              style={{ width: "100%", padding: 8, marginTop: 4 }}
-            />
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-full">
+            <Bug className="h-6 w-6 text-purple-600 dark:text-purple-400" />
           </div>
-          <div>
-            <label htmlFor="message">Message:</label>
-            <textarea
-              id="message"
-              value={notifMessage}
-              onChange={(e) => setNotifMessage(e.target.value)}
-              rows={3}
-              style={{ width: "100%", padding: 8, marginTop: 4, resize: "vertical" }}
-            />
-          </div>
-          <button
-            onClick={sendNotificationToAll}
-            disabled={sending}
-            style={{
-              padding: 12,
-              backgroundColor: sending ? "#ccc" : "#007bff",
-              color: "white",
-              border: "none",
-              borderRadius: 4,
-              cursor: sending ? "not-allowed" : "pointer"
-            }}
-          >
-            {sending ? "Sending..." : "Send to All Subscribed Users"}
-          </button>
-          <button
-            onClick={sendToThisDevice}
-            disabled={sending || !info.onesignalId}
-            style={{
-              padding: 12,
-              backgroundColor: sending || !info.onesignalId ? "#ccc" : "#28a745",
-              color: "white",
-              border: "none",
-              borderRadius: 4,
-              cursor: sending || !info.onesignalId ? "not-allowed" : "pointer"
-            }}
-          >
-            {sending ? "Sending..." : "Send to This Device Only"}
-          </button>
-
-          {/* NEW DIAGNOSTIC BUTTONS */}
-          <button
-            onClick={sendNowToAll}
-            disabled={sending}
-            style={{
-              padding: 12,
-              backgroundColor: sending ? "#ccc" : "#ff6b6b",
-              color: "white",
-              border: "none",
-              borderRadius: 4,
-              cursor: sending ? "not-allowed" : "pointer"
-            }}
-          >
-            {sending ? "Sending..." : "Send NOW to ALL"}
-          </button>
-          <button
-            onClick={sendNowToThisDevice}
-            disabled={sending}
-            style={{
-              padding: 12,
-              backgroundColor: sending ? "#ccc" : "#51cf66",
-              color: "white",
-              border: "none",
-              borderRadius: 4,
-              cursor: sending ? "not-allowed" : "pointer"
-            }}
-          >
-            {sending ? "Sending..." : "Send NOW to THIS device"}
-          </button>
-
-          {sendResult && (
-            <div style={{ marginTop: 8 }}>
-              <strong>Result:</strong>
-              <pre style={{
-                whiteSpace: "pre-wrap",
-                fontSize: 12,
-                backgroundColor: "#f5f5f5",
-                padding: 8,
-                borderRadius: 4,
-                marginTop: 4
-              }}>
-                {sendResult}
-              </pre>
-            </div>
-          )}
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Push Debug</h1>
         </div>
-      </div>
 
-      <p style={{ marginTop: 8, fontSize: 12, opacity: 0.8 }}>
-        If <code>hasSDK</code> is false, check that <code>&lt;OneSignalInit /&gt;</code> runs on this page and reload the PWA.
-      </p>
+        {/* Status Card */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center justify-between">
+              <span>OneSignal Status</span>
+              <button
+                onClick={refresh}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Refresh
+              </button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">SDK Ready</div>
+                <div className={`font-semibold ${info.ready ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                  {info.ready ? "Yes" : "No"}
+                </div>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Has SDK</div>
+                <div className={`font-semibold ${info.hasSDK ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                  {info.hasSDK ? "Yes" : "No"}
+                </div>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Push Supported</div>
+                <div className={`font-semibold ${info.isPushSupported ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                  {info.isPushSupported == null ? "—" : info.isPushSupported ? "Yes" : "No"}
+                </div>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Permission</div>
+                <div className={`font-semibold capitalize ${permissionColor}`}>
+                  {info.permission ?? "—"}
+                </div>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Subscribed</div>
+                <div className={`font-semibold ${info.subscribed ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                  {info.subscribed == null ? "—" : info.subscribed ? "Yes" : "No"}
+                </div>
+              </div>
+            </div>
+            {info.onesignalId && (
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">OneSignal ID</div>
+                <div className="font-mono text-xs text-gray-900 dark:text-white break-all">{info.onesignalId}</div>
+              </div>
+            )}
+            {info.subscriptionId && (
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Subscription ID</div>
+                <div className="font-mono text-xs text-gray-900 dark:text-white break-all">{info.subscriptionId}</div>
+              </div>
+            )}
+            {info.notes && info.notes.length > 0 && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                {info.notes.map((note, i) => (
+                  <p key={i} className="text-xs text-yellow-800 dark:text-yellow-300">{note}</p>
+                ))}
+              </div>
+            )}
+            {info.ts && (
+              <p className="text-xs text-gray-400 dark:text-gray-500">Last updated: {info.ts}</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Permission Actions Card */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Bell className="h-4 w-4 text-purple-500" />
+              Permission Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 gap-2">
+            <button
+              onClick={request}
+              className="w-full px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              Show Push Prompt (force)
+            </button>
+            <button
+              onClick={() => OneSignal.Notifications.requestPermission().finally(refresh)}
+              className="w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              Request Native Permission
+            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => OneSignal.User.PushSubscription.optIn().finally(refresh)}
+                className="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                Opt-In
+              </button>
+              <button
+                onClick={() => OneSignal.User.PushSubscription.optOut().finally(refresh)}
+                className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                Opt-Out
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Send Notification Card */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Send className="h-4 w-4 text-purple-500" />
+              Send Test Notification
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Title</label>
+              <input
+                type="text"
+                value={notifTitle}
+                onChange={(e) => setNotifTitle(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Message</label>
+              <textarea
+                value={notifMessage}
+                onChange={(e) => setNotifMessage(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 resize-vertical"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-2">
+              <button
+                onClick={sendNotificationToAll}
+                disabled={sending}
+                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                <Users className="h-4 w-4" />
+                {sending ? "Sending..." : "Send to All Subscribed Users"}
+              </button>
+              <button
+                onClick={sendToThisDevice}
+                disabled={sending || !info.onesignalId}
+                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                <Smartphone className="h-4 w-4" />
+                {sending ? "Sending..." : "Send to This Device Only"}
+              </button>
+              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={sendNowToAll}
+                  disabled={sending}
+                  className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-orange-600 hover:bg-orange-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  {sending ? "..." : "NOW → All"}
+                </button>
+                <button
+                  onClick={sendNowToThisDevice}
+                  disabled={sending}
+                  className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-teal-600 hover:bg-teal-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  <Smartphone className="h-3.5 w-3.5" />
+                  {sending ? "..." : "NOW → Me"}
+                </button>
+              </div>
+            </div>
+
+            {sendResult && (
+              <div className="mt-2">
+                <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Result:</p>
+                <pre className="text-xs bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 overflow-auto whitespace-pre-wrap text-gray-900 dark:text-gray-100">
+                  {sendResult}
+                </pre>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
+          If <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">hasSDK</code> is false, check that <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">&lt;OneSignalInit /&gt;</code> runs on this page and reload the PWA.
+        </p>
+      </div>
     </div>
   );
 }
