@@ -22,8 +22,6 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`,
         "X-DP-Access-Token": token,
-        "Origin": "https://www.mytennis.ch",
-        "Referer": "https://www.mytennis.ch/",
       },
       body: JSON.stringify({
         keyword: query.trim(),
@@ -33,12 +31,21 @@ export async function POST(req: NextRequest) {
       }),
     });
 
-    if (!res.ok) {
-      const text = await res.text();
-      return NextResponse.json({ error: `Search failed (${res.status}): ${text}` }, { status: res.status });
+    const rawText = await res.text();
+    let data: any;
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      data = rawText;
     }
 
-    const data = await res.json();
+    if (!res.ok) {
+      return NextResponse.json({
+        error: `API error ${res.status}`,
+        raw: data,
+      }, { status: res.status });
+    }
+
     const players = normalizeResponse(data);
     return NextResponse.json({ players, raw: data });
   } catch (e: any) {

@@ -78,7 +78,11 @@ export default function SearchPage() {
         setAuthenticated(false);
         return;
       }
-      if (!res.ok) throw new Error(data.error ?? "Search failed");
+      if (!res.ok) {
+        setSearchError(data.error ?? "Search failed");
+        setRawResponse(data.raw ?? null);
+        return;
+      }
       setResults(data.players ?? []);
       setRawResponse(data.raw ?? null);
     } catch (e: any) {
