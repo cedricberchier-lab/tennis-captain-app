@@ -178,6 +178,8 @@ function TrainingModeContent() {
   const [csvUploading, setCsvUploading] = useState(false);
   const [csvResults, setCsvResults] = useState<{success: number, failed: number, errors: string[]} | null>(null);
   const [showMyTrainings, setShowMyTrainings] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [trainingToDelete, setTrainingToDelete] = useState<Training | null>(null);
 
   // Load custom horizon settings and filter preference from localStorage
   useEffect(() => {
@@ -586,10 +588,22 @@ function TrainingModeContent() {
   };
 
   // Handle training deletion
-  const handleDeleteTraining = async (trainingId: string) => {
-    if (confirm("Are you sure you want to delete this training session?")) {
-      await deleteTraining(trainingId);
+  const handleDeleteTraining = (training: Training) => {
+    setTrainingToDelete(training);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (trainingToDelete) {
+      await deleteTraining(trainingToDelete.id);
+      setShowDeleteConfirm(false);
+      setTrainingToDelete(null);
     }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteConfirm(false);
+    setTrainingToDelete(null);
   };
 
   // Handle CSV upload
@@ -1008,7 +1022,7 @@ function TrainingModeContent() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleDeleteTraining(training.id)}
+                              onClick={() => handleDeleteTraining(training)}
                               className="text-red-500 hover:text-red-700 border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors h-[24px] w-[24px] p-0"
                               title="Delete training"
                             >
@@ -1730,6 +1744,38 @@ function TrainingModeContent() {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Training Session</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this training session? This action cannot be undone.
+              {trainingToDelete && (
+                <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded">
+                  <strong>
+                    {new Date(trainingToDelete.date).toLocaleDateString()} at {trainingToDelete.start_time}
+                  </strong>
+                  {trainingToDelete.comment && (
+                    <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                      {trainingToDelete.comment}
+                    </div>
+                  )}
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end space-x-3 mt-4">
+            <Button variant="outline" onClick={cancelDelete}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete}>
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </ProtectedRoute>
   );
 }

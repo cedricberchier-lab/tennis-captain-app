@@ -3,11 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 const SEARCH_ENDPOINT = "https://high-scalability.microservices.swisstennis.ch/player-autocomplete-query";
 
 export async function POST(req: NextRequest) {
-  const { query, token } = await req.json();
+  const token = req.cookies.get("mytennis_token")?.value;
 
   if (!token) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
+
+  const { query } = await req.json();
 
   if (!query?.trim()) {
     return NextResponse.json({ error: "Search query required" }, { status: 400 });
@@ -20,7 +22,6 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`,
         "X-DP-Access-Token": token,
-        // mytennis.ch origin required for CORS (server-side so not enforced, but mirrors real client)
         "Origin": "https://www.mytennis.ch",
         "Referer": "https://www.mytennis.ch/",
       },
@@ -38,8 +39,6 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await res.json();
-
-    // Normalize response — shape TBD once we see the actual response
     const players = normalizeResponse(data);
     return NextResponse.json({ players, raw: data });
   } catch (e: any) {
@@ -47,14 +46,11 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Normalize whatever shape the API returns into our Player type
 function normalizeResponse(data: any): any[] {
-  // Try common response shapes
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.players)) return data.players;
   if (Array.isArray(data?.data?.players)) return data.data.players;
   if (Array.isArray(data?.results)) return data.results;
   if (Array.isArray(data?.data)) return data.data;
-  // Return raw so we can inspect in the UI
   return [];
 }

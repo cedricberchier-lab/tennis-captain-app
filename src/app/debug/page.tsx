@@ -1,74 +1,83 @@
 "use client";
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Loader2, LogIn, LogOut, User, Trophy, MapPin } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Card, CardContent } from "@/components/ui/card";
+import { Search, Loader2, LogIn, LogOut, User, Trophy, MapPin, AlertCircle } from "lucide-react";
 
 type Player = {
   id: string;
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string;
   ranking?: number | string;
   club?: string;
+  [key: string]: any;
 };
 
 export default function SearchPage() {
-  // Auth state
-  const [token, setToken] = useState<string | null>(null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [authLoading, setAuthLoading] = useState(false);
-  const [authError, setAuthError] = useState("");
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
-  // Search state
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Player[]>([]);
   const [rawResponse, setRawResponse] = useState<any>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [searched, setSearched] = useState(false);
+  const [logoutLoading, setLogoutLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthLoading(true);
-    setAuthError("");
-    try {
-      const res = await fetch("/api/mytennis/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Login failed");
-      setToken(data.access_token);
-      setPassword("");
-    } catch (e: any) {
-      setAuthError(e.message);
-    } finally {
-      setAuthLoading(false);
+  const authError = searchParams.get("auth_error");
+
+  // Check session on mount
+  const checkSession = useCallback(async () => {
+    const res = await fetch("/api/mytennis/session");
+    const data = await res.json();
+    setAuthenticated(data.authenticated);
+  }, []);
+
+  useEffect(() => {
+    checkSession();
+  }, [checkSession]);
+
+  // Clear auth_error from URL once displayed
+  useEffect(() => {
+    if (authError) {
+      const t = setTimeout(() => router.replace("/debug"), 5000);
+      return () => clearTimeout(t);
     }
-  };
+  }, [authError, router]);
 
-  const handleLogout = () => {
-    setToken(null);
+  const handleLogout = async () => {
+    setLogoutLoading(true);
+    await fetch("/api/mytennis/logout", { method: "POST" });
+    setAuthenticated(false);
     setResults([]);
     setQuery("");
     setSearched(false);
+    setRawResponse(null);
+    setLogoutLoading(false);
   };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query.trim() || !token) return;
+    if (!query.trim()) return;
     setSearchLoading(true);
     setSearchError("");
     setSearched(true);
+    setRawResponse(null);
     try {
       const res = await fetch("/api/mytennis/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, token }),
+        body: JSON.stringify({ query }),
       });
       const data = await res.json();
+      if (res.status === 401) {
+        setAuthenticated(false);
+        return;
+      }
       if (!res.ok) throw new Error(data.error ?? "Search failed");
       setResults(data.players ?? []);
       setRawResponse(data.raw ?? null);
@@ -79,6 +88,9 @@ export default function SearchPage() {
       setSearchLoading(false);
     }
   };
+
+  const playerName = (p: Player) =>
+    p.name ?? [p.firstName, p.lastName].filter(Boolean).join(" ") ?? "—";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 pt-8">
@@ -95,69 +107,60 @@ export default function SearchPage() {
               <p className="text-xs text-gray-500 dark:text-gray-400">via mytennis.ch</p>
             </div>
           </div>
-          {token && (
+          {authenticated && (
             <button
               onClick={handleLogout}
+              disabled={logoutLoading}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
             >
-              <LogOut className="h-4 w-4" />
+              {logoutLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
               Sign out
             </button>
           )}
         </div>
 
-        {/* Sign-in form */}
-        {!token ? (
+        {/* Auth error banner */}
+        {authError && (
+          <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
+            <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
+            <p className="text-sm text-red-700 dark:text-red-300">{authError}</p>
+          </div>
+        )}
+
+        {/* Loading state */}
+        {authenticated === null && (
+          <div className="flex justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-purple-400" />
+          </div>
+        )}
+
+        {/* Not authenticated */}
+        {authenticated === false && (
           <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
-                <LogIn className="h-4 w-4 text-purple-500" />
+            <CardContent className="p-8 flex flex-col items-center gap-4 text-center">
+              <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-full">
+                <LogIn className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <p className="font-medium text-gray-900 dark:text-white mb-1">Sign in to search players</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  You&apos;ll be redirected to the official mytennis.ch login page.
+                </p>
+              </div>
+              <a
+                href="/api/mytennis/login"
+                className="flex items-center gap-2 px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm"
+              >
+                <LogIn className="h-4 w-4" />
                 Sign in with mytennis.ch
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleLogin} className="space-y-3">
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your@email.com"
-                    required
-                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-                {authError && (
-                  <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">
-                    {authError}
-                  </p>
-                )}
-                <button
-                  type="submit"
-                  disabled={authLoading}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white text-sm font-medium rounded-lg transition-colors"
-                >
-                  {authLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
-                  {authLoading ? "Signing in..." : "Sign in"}
-                </button>
-              </form>
+              </a>
             </CardContent>
           </Card>
-        ) : (
+        )}
+
+        {/* Authenticated — search UI */}
+        {authenticated === true && (
           <>
-            {/* Search bar */}
             <form onSubmit={handleSearch} className="flex gap-2">
               <input
                 type="text"
@@ -176,10 +179,10 @@ export default function SearchPage() {
               </button>
             </form>
 
-            {/* Results */}
             {searchError && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
-                <p className="text-sm text-red-600 dark:text-red-400">{searchError}</p>
+              <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl px-4 py-3">
+                <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
+                <p className="text-sm text-red-700 dark:text-red-300">{searchError}</p>
               </div>
             )}
 
@@ -194,9 +197,11 @@ export default function SearchPage() {
 
             {results.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs text-gray-500 dark:text-gray-400 px-1">{results.length} player{results.length !== 1 ? "s" : ""} found</p>
-                {results.map((player) => (
-                  <Card key={player.id} className="hover:shadow-md transition-shadow">
+                <p className="text-xs text-gray-500 dark:text-gray-400 px-1">
+                  {results.length} player{results.length !== 1 ? "s" : ""} found
+                </p>
+                {results.map((player, i) => (
+                  <Card key={player.id ?? i} className="hover:shadow-md transition-shadow">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-3">
                         <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-full shrink-0">
@@ -204,13 +209,13 @@ export default function SearchPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-gray-900 dark:text-white text-sm">
-                            {player.firstName} {player.lastName}
+                            {playerName(player)}
                           </p>
-                          <div className="flex items-center gap-3 mt-0.5">
+                          <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                             {player.ranking != null && (
                               <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                                 <Trophy className="h-3 w-3" />
-                                Ranking: {player.ranking}
+                                {player.ranking}
                               </span>
                             )}
                             {player.club && (
@@ -228,7 +233,6 @@ export default function SearchPage() {
               </div>
             )}
 
-            {/* Raw API response — helps identify actual data shape */}
             {rawResponse != null && (
               <details className="mt-2">
                 <summary className="text-xs text-gray-400 dark:text-gray-500 cursor-pointer hover:text-gray-600 dark:hover:text-gray-300">
