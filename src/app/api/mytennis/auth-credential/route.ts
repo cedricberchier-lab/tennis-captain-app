@@ -218,10 +218,15 @@ export async function POST(req: NextRequest) {
     // ── Step 2: Parse SETTINGS from the page JS ────────────────────────────
     const settingsJson = extractJsonVar(loginHtml, "SETTINGS");
     if (!settingsJson) {
+      // Try to find any JS variable names to understand the page structure
+      const varMatches = loginHtml.match(/var\s+\w+\s*=/g)?.slice(0, 10) ?? [];
       return NextResponse.json(
         {
           error: "Step 2: Could not find SETTINGS in Azure B2C page",
-          hint: loginHtml.slice(0, 500),
+          loginUrl,
+          htmlLength: loginHtml.length,
+          htmlStart: loginHtml.slice(0, 800),
+          jsVarsFound: varMatches,
         },
         { status: 502 }
       );
