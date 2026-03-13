@@ -92,12 +92,12 @@ export default function SearchPage() {
               </div>
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">License number</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Nom d&apos;utilisateur</label>
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Your mytennis.ch license number"
+                    placeholder="Nom d'utilisateur mytennis.ch"
                     required
                     autoFocus
                     autoComplete="username"
@@ -105,7 +105,7 @@ export default function SearchPage() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Mot de passe</label>
                   <div className="relative">
                     <input
                       type={showPassword ? "text" : "password"}

@@ -4,8 +4,10 @@ export const runtime = "nodejs";
 
 const B2C_DOMAIN = "swisstennisch.b2clogin.com";
 const B2C_TENANT = "swisstennisch.onmicrosoft.com";
-const B2C_POLICY = "B2C_1A_B2C_1_SIGNUP-SIGNIN";
-const CLIENT_ID = "05437a81-854a-4cbb-826a-0aed542be8d0";
+const B2C_POLICY = "b2c_1a_b2c_1_signup-signin";
+// mytennis PWA client — redirect_uri https://www.mytennis.ch/ is registered for this client
+const CLIENT_ID = "5c8c6e4e-a017-49d4-a9c0-f89fe08614f3";
+const REDIRECT_URI = "https://www.mytennis.ch/";
 const TOKEN_ENDPOINT = `https://${B2C_DOMAIN}/${B2C_TENANT}/${B2C_POLICY}/oauth2/v2.0/token`;
 
 // ── PKCE helpers ──────────────────────────────────────────────────────────────
@@ -53,35 +55,20 @@ class CookieJar {
 
 function resolveUrl(loc: string, base: string): string | null {
   if (!loc) return null;
-  // Already absolute
   if (loc.startsWith("http://") || loc.startsWith("https://")) return loc;
-  // Root-relative
+  if (loc.startsWith("//")) {
+    try { return `${new URL(base).protocol}${loc}`; } catch { return null; }
+  }
   if (loc.startsWith("/")) {
     try {
       const u = new URL(base);
       return `${u.protocol}//${u.host}${loc}`;
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   }
-  // Protocol-relative
-  if (loc.startsWith("//")) {
-    try {
-      const u = new URL(base);
-      return `${u.protocol}${loc}`;
-    } catch {
-      return null;
-    }
-  }
-  // Relative path — resolve against base directory
-  try {
-    return new URL(loc, base).toString();
-  } catch {
-    return null;
-  }
+  try { return new URL(loc, base).toString(); } catch { return null; }
 }
 
-// ── Follow HTTP redirects manually (collect cookies, stop at a prefix) ────────
+// ── Follow HTTP redirects manually, stop when location starts with stopPrefix ──
 
 type RedirectResult = { html: string; url: string; error?: string };
 
@@ -107,7 +94,7 @@ async function followRedirects(
         },
       });
     } catch (e: any) {
-      return { html: "", url, error: `fetch failed at redirect step ${i} for "${url}": ${e.message}` };
+      return { html: "", url, error: `fetch failed at step ${i} for "${url}": ${e.message}` };
     }
 
     cookies.absorb(res.headers);
@@ -118,7 +105,7 @@ async function followRedirects(
 
       const resolved = resolveUrl(rawLoc, url);
       if (!resolved) {
-        return { html: "", url, error: `Could not resolve redirect location: "${rawLoc}" from base "${url}"` };
+        return { html: "", url, error: `Cannot resolve redirect: "${rawLoc}" from "${url}"` };
       }
 
       if (stopPrefix && resolved.startsWith(stopPrefix)) {
@@ -151,19 +138,35 @@ function extractJsonVar(html: string, varName: string): string | null {
 
   for (let i = jsonStart; i < html.length; i++) {
     const ch = html[i];
-
     if (escape) { escape = false; continue; }
     if (ch === "\\" && inString) { escape = true; continue; }
     if (ch === '"') { inString = !inString; continue; }
     if (inString) continue;
-
     if (ch === "{") depth++;
     else if (ch === "}") {
       depth--;
       if (depth === 0) return html.slice(jsonStart, i + 1);
     }
   }
+  return null;
+}
 
+// ── Parse authorization code from fragment or query params ────────────────────
+
+function extractCode(url: string): string | null {
+  // Fragment: https://www.mytennis.ch/#code=xxx  (response_mode=fragment)
+  const hashIdx = url.indexOf("#");
+  if (hashIdx !== -1) {
+    const fragment = url.slice(hashIdx + 1);
+    const params = new URLSearchParams(fragment);
+    const code = params.get("code");
+    if (code) return code;
+  }
+  // Query: https://example.com/?code=xxx  (response_mode=query)
+  try {
+    const code = new URL(url).searchParams.get("code");
+    if (code) return code;
+  } catch { /* ignore */ }
   return null;
 }
 
@@ -180,24 +183,23 @@ export async function POST(req: NextRequest) {
   }
 
   const host = req.headers.get("host") ?? "localhost:3000";
-  const protocol = host.includes("localhost") ? "http" : "https";
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? `${protocol}://${host}`;
-  const redirectUri = `${appUrl}/api/mytennis/callback`;
+  const isSecure = !host.includes("localhost");
 
   try {
     const codeVerifier = generateCodeVerifier();
     const codeChallenge = await generateCodeChallenge(codeVerifier);
 
+    // Use the mytennis PWA's client_id + redirect_uri — these are registered with B2C
     const authUrl =
       `https://${B2C_DOMAIN}/${B2C_TENANT}/${B2C_POLICY}/oauth2/v2.0/authorize?` +
       new URLSearchParams({
         client_id: CLIENT_ID,
         response_type: "code",
-        redirect_uri: redirectUri,
+        redirect_uri: REDIRECT_URI,
         scope: "openid profile offline_access",
         code_challenge: codeChallenge,
         code_challenge_method: "S256",
-        response_mode: "query",
+        response_mode: "fragment",
         ui_locales: "fr",
       });
 
@@ -210,7 +212,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Step 1: ${step1.error}` }, { status: 502 });
     }
     if (!step1.html) {
-      return NextResponse.json({ error: "Step 1: Could not load Azure B2C login page", url: step1.url }, { status: 502 });
+      return NextResponse.json({ error: "Step 1: Empty response from B2C", url: step1.url }, { status: 502 });
     }
 
     const loginHtml = step1.html;
@@ -219,7 +221,6 @@ export async function POST(req: NextRequest) {
     // ── Step 2: Parse SETTINGS from the page JS ────────────────────────────
     const settingsJson = extractJsonVar(loginHtml, "SETTINGS");
     if (!settingsJson) {
-      // Try to find any JS variable names to understand the page structure
       const varMatches = loginHtml.match(/var\s+\w+\s*=/g)?.slice(0, 10) ?? [];
       return NextResponse.json(
         {
@@ -247,16 +248,13 @@ export async function POST(req: NextRequest) {
     const transId = (settings.transId as string) ?? "";
     const apiName = (settings.api as string) ?? "selfasserted";
 
-    // tx can be in the SETTINGS transId or in the login URL query params
     let tx = transId;
     let p = B2C_POLICY;
     try {
       const loginUrlObj = new URL(loginUrl);
       tx = loginUrlObj.searchParams.get("tx") ?? transId;
       p = loginUrlObj.searchParams.get("p") ?? B2C_POLICY;
-    } catch {
-      // loginUrl might not be a valid absolute URL — keep defaults
-    }
+    } catch { /* keep defaults */ }
 
     if (!csrf || !tx) {
       return NextResponse.json(
@@ -291,17 +289,13 @@ export async function POST(req: NextRequest) {
         }),
       });
     } catch (e: any) {
-      return NextResponse.json({ error: `Step 3: fetch failed: ${e.message}` }, { status: 502 });
+      return NextResponse.json({ error: `Step 3: ${e.message}` }, { status: 502 });
     }
 
     cookies.absorb(credRes.headers);
 
     let credData: any = {};
-    try {
-      credData = await credRes.json();
-    } catch {
-      /* non-JSON response */
-    }
+    try { credData = await credRes.json(); } catch { /* non-JSON */ }
 
     if (credData.status !== "200" && credData.status !== 200) {
       return NextResponse.json(
@@ -310,12 +304,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── Step 4: Navigate to confirmed endpoint to get auth code ────────────
+    // ── Step 4: Follow confirmed → mytennis.ch redirect to capture auth code ──
+    // With response_mode=fragment the code lands in the URL fragment:
+    //   https://www.mytennis.ch/#code=xxx&...
+    // The fragment IS present in the HTTP Location header, so we can read it.
     const confirmedUrl =
       `https://${B2C_DOMAIN}/${B2C_TENANT}/${p}/api/${apiName}/confirmed` +
       `?csrf_token=${encodeURIComponent(csrf)}&tx=${encodeURIComponent(tx)}&p=${encodeURIComponent(p)}`;
 
-    const step4 = await followRedirects(confirmedUrl, cookies, redirectUri);
+    const step4 = await followRedirects(confirmedUrl, cookies, REDIRECT_URI);
 
     if (step4.error) {
       return NextResponse.json({ error: `Step 4: ${step4.error}` }, { status: 502 });
@@ -323,33 +320,31 @@ export async function POST(req: NextRequest) {
 
     const codeUrl = step4.url;
 
-    if (!codeUrl.startsWith(redirectUri)) {
+    if (!codeUrl.startsWith(REDIRECT_URI)) {
       return NextResponse.json(
-        { error: "Step 4: Auth flow did not return to callback URL", got: codeUrl },
+        { error: "Step 4: Did not reach expected redirect URI", got: codeUrl },
         { status: 502 }
       );
     }
 
-    let code: string | null = null;
-    try {
-      code = new URL(codeUrl).searchParams.get("code");
-    } catch (e: any) {
-      return NextResponse.json({ error: `Step 4: Could not parse code URL: ${codeUrl}` }, { status: 502 });
-    }
-
+    const code = extractCode(codeUrl);
     if (!code) {
-      return NextResponse.json({ error: "Step 4: No authorization code in callback", url: codeUrl }, { status: 502 });
+      return NextResponse.json(
+        { error: "Step 4: No authorization code found", url: codeUrl },
+        { status: 502 }
+      );
     }
 
     // ── Step 5: Exchange code for tokens ───────────────────────────────────
     const tokenRes = await fetch(TOKEN_ENDPOINT, {
       method: "POST",
+      signal: AbortSignal.timeout(15_000),
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         grant_type: "authorization_code",
         client_id: CLIENT_ID,
         code,
-        redirect_uri: redirectUri,
+        redirect_uri: REDIRECT_URI,
         code_verifier: codeVerifier,
       }),
     });
@@ -361,7 +356,6 @@ export async function POST(req: NextRequest) {
     }
 
     const tokens = await tokenRes.json();
-    const isSecure = !host.includes("localhost");
 
     const response = NextResponse.json({ ok: true });
 
