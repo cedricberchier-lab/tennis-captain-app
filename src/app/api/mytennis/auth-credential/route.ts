@@ -91,6 +91,39 @@ async function followRedirects(
   return { html: "", url };
 }
 
+// ── Extract a JSON object from a JS variable assignment in HTML ───────────────
+// Handles nested objects correctly by counting balanced braces.
+
+function extractJsonVar(html: string, varName: string): string | null {
+  const marker = `var ${varName} = `;
+  const markerIdx = html.indexOf(marker);
+  if (markerIdx === -1) return null;
+
+  const jsonStart = html.indexOf("{", markerIdx);
+  if (jsonStart === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+
+  for (let i = jsonStart; i < html.length; i++) {
+    const ch = html[i];
+
+    if (escape) { escape = false; continue; }
+    if (ch === "\\" && inString) { escape = true; continue; }
+    if (ch === '"') { inString = !inString; continue; }
+    if (inString) continue;
+
+    if (ch === "{") depth++;
+    else if (ch === "}") {
+      depth--;
+      if (depth === 0) return html.slice(jsonStart, i + 1);
+    }
+  }
+
+  return null;
+}
+
 // ── Main handler ──────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -138,13 +171,13 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Step 2: Parse SETTINGS from the page JS ────────────────────────────
-    // Azure B2C pages embed:  var SETTINGS = { "csrf": "...", "transId": "...", ... };
-    const settingsMatch = loginHtml.match(/var SETTINGS\s*=\s*(\{[\s\S]*?\});\s*(?:\/\/|var |$)/m);
-    if (!settingsMatch) {
+    // Azure B2C embeds:  var SETTINGS = { "csrf": "...", "transId": "...", ... };
+    const settingsJson = extractJsonVar(loginHtml, "SETTINGS");
+    if (!settingsJson) {
       return NextResponse.json(
         {
-          error: "Could not parse Azure B2C SETTINGS — page structure may have changed.",
-          hint: loginHtml.slice(0, 800),
+          error: "Could not find SETTINGS variable in Azure B2C page — structure may have changed.",
+          hint: loginHtml.slice(0, 1000),
         },
         { status: 502 }
       );
@@ -152,10 +185,10 @@ export async function POST(req: NextRequest) {
 
     let settings: Record<string, any>;
     try {
-      settings = JSON.parse(settingsMatch[1]);
+      settings = JSON.parse(settingsJson);
     } catch {
       return NextResponse.json(
-        { error: "Failed to parse SETTINGS JSON from login page" },
+        { error: "Failed to parse SETTINGS JSON", raw: settingsJson.slice(0, 500) },
         { status: 502 }
       );
     }
