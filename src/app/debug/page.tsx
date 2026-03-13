@@ -148,7 +148,8 @@ export default function SearchPage() {
               <div>
                 <p className="font-medium text-gray-900 dark:text-white mb-1">Sign in to search players</p>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  You&apos;ll be redirected to the official mytennis.ch login page.
+                  You&apos;ll be redirected to the official mytennis.ch login page.<br />
+                  <span className="text-xs">Use your license number, not your email.</span>
                 </p>
               </div>
               <a
