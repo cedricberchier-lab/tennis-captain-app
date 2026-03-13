@@ -1,22 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// TODO: Fill this in from browser devtools (Network tab while searching a player on mytennis.ch)
-// Look for a POST request to a GraphQL endpoint — URL will contain /graphql or /v1/graphql
-const GRAPHQL_ENDPOINT = process.env.MYTENNIS_GRAPHQL_ENDPOINT ?? "TODO";
-
-// TODO: Replace with the actual GraphQL query captured from devtools
-// (look at the "Payload" tab of the search request in Network)
-const PLAYER_SEARCH_QUERY = `
-  query SearchPlayers($search: String!) {
-    players(where: { name: { _ilike: $search } }, limit: 20) {
-      id
-      firstName
-      lastName
-      ranking
-      club
-    }
-  }
-`;
+const SEARCH_ENDPOINT = "https://high-scalability.microservices.swisstennis.ch/player-autocomplete-query";
 
 export async function POST(req: NextRequest) {
   const { query, token } = await req.json();
@@ -29,37 +13,43 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Search query required" }, { status: 400 });
   }
 
-  if (GRAPHQL_ENDPOINT === "TODO") {
-    return NextResponse.json({
-      error: "GraphQL endpoint not configured. See src/app/api/mytennis/search/route.ts for instructions.",
-    }, { status: 501 });
-  }
-
   try {
-    const res = await fetch(GRAPHQL_ENDPOINT, {
+    const res = await fetch(SEARCH_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        "Authorization": `Bearer ${token}`,
+        "X-DP-Access-Token": token,
+        // mytennis.ch origin required for CORS (server-side so not enforced, but mirrors real client)
+        "Origin": "https://www.mytennis.ch",
+        "Referer": "https://www.mytennis.ch/",
       },
-      body: JSON.stringify({
-        query: PLAYER_SEARCH_QUERY,
-        variables: { search: `%${query}%` },
-      }),
+      body: JSON.stringify({ query: query.trim() }),
     });
 
     if (!res.ok) {
-      return NextResponse.json({ error: "Search failed" }, { status: res.status });
+      const text = await res.text();
+      return NextResponse.json({ error: `Search failed (${res.status}): ${text}` }, { status: res.status });
     }
 
     const data = await res.json();
 
-    if (data.errors) {
-      return NextResponse.json({ error: data.errors[0]?.message ?? "GraphQL error" }, { status: 400 });
-    }
-
-    return NextResponse.json({ players: data.data?.players ?? [] });
+    // Normalize response — shape TBD once we see the actual response
+    const players = normalizeResponse(data);
+    return NextResponse.json({ players, raw: data });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
+}
+
+// Normalize whatever shape the API returns into our Player type
+function normalizeResponse(data: any): any[] {
+  // Try common response shapes
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.players)) return data.players;
+  if (Array.isArray(data?.data?.players)) return data.data.players;
+  if (Array.isArray(data?.results)) return data.results;
+  if (Array.isArray(data?.data)) return data.data;
+  // Return raw so we can inspect in the UI
+  return [];
 }

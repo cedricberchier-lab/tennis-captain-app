@@ -23,6 +23,7 @@ export default function SearchPage() {
   // Search state
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Player[]>([]);
+  const [rawResponse, setRawResponse] = useState<any>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [searched, setSearched] = useState(false);
@@ -70,6 +71,7 @@ export default function SearchPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Search failed");
       setResults(data.players ?? []);
+      setRawResponse(data.raw ?? null);
     } catch (e: any) {
       setSearchError(e.message);
       setResults([]);
@@ -224,6 +226,18 @@ export default function SearchPage() {
                   </Card>
                 ))}
               </div>
+            )}
+
+            {/* Raw API response — helps identify actual data shape */}
+            {rawResponse != null && (
+              <details className="mt-2">
+                <summary className="text-xs text-gray-400 dark:text-gray-500 cursor-pointer hover:text-gray-600 dark:hover:text-gray-300">
+                  Raw API response
+                </summary>
+                <pre className="mt-2 text-xs bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 overflow-auto whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+                  {JSON.stringify(rawResponse, null, 2)}
+                </pre>
+              </details>
             )}
           </>
         )}
