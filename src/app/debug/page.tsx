@@ -32,7 +32,7 @@ export default function SearchPage() {
 
   // Check session on mount
   const checkSession = useCallback(async () => {
-    const res = await fetch("/api/mytennis/session");
+    const res = await fetch("/api/mytennis/session", { cache: "no-store" });
     const data = await res.json();
     setAuthenticated(data.authenticated);
   }, []);

@@ -62,8 +62,11 @@ export async function GET(req: NextRequest) {
   const tokens = await tokenRes.json();
   const res = NextResponse.redirect(returnUrl);
 
+  const isSecure = !req.headers.get("host")?.includes("localhost");
+
   res.cookies.set("mytennis_token", tokens.access_token, {
     httpOnly: true,
+    secure: isSecure,
     sameSite: "lax",
     maxAge: tokens.expires_in ?? 3600,
     path: "/",
@@ -72,6 +75,7 @@ export async function GET(req: NextRequest) {
   if (tokens.refresh_token) {
     res.cookies.set("mytennis_refresh", tokens.refresh_token, {
       httpOnly: true,
+      secure: isSecure,
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 30, // 30 days
       path: "/",
