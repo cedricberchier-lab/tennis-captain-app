@@ -18,7 +18,8 @@ import {
   Activity,
   Clock,
   Target,
-  Database
+  Database,
+  Search
 } from "lucide-react";
 
 const navigationItems = [
@@ -39,6 +40,12 @@ const navigationItems = [
     label: "Team",
     icon: Users,
     description: "Players & rankings"
+  },
+  {
+    href: "/search",
+    label: "Search",
+    icon: Search,
+    description: "Find players"
   },
   {
     href: "/absence",

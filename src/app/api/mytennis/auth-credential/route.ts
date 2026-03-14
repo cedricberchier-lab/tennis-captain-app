@@ -122,6 +122,25 @@ async function followRedirects(
   return { html: "", url, error: "Too many redirects" };
 }
 
+// ── Azure B2C requires = signs to stay unencoded in tx / csrf_token params ────
+
+function b2cQS(params: Record<string, string>): string {
+  return Object.entries(params)
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v).replace(/%3D/gi, "=")}`)
+    .join("&");
+}
+
+// ── Detect the username input field name from the B2C HTML ────────────────────
+
+function detectUsernameField(html: string): string {
+  // Azure B2C uses either signInName or logonIdentifier depending on the policy
+  const candidates = ["signInName", "logonIdentifier", "email"];
+  for (const name of candidates) {
+    if (html.includes(`id="${name}"`)) return name;
+  }
+  return "signInName"; // safe default for Swiss Tennis B2C
+}
+
 // ── Extract a JSON object from a JS variable assignment in HTML ───────────────
 
 function extractJsonVar(html: string, varName: string): string | null {
@@ -264,9 +283,12 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Step 3: Submit credentials to SelfAsserted ─────────────────────────
+    const usernameField = detectUsernameField(loginHtml);
+
+    // Keep = signs unencoded in tx — B2C parses StateProperties=base64 literally
     const selfAssertedUrl =
-      `https://${B2C_DOMAIN}/${B2C_TENANT}/${p}/api/SelfAsserted` +
-      `?tx=${encodeURIComponent(tx)}&p=${encodeURIComponent(p)}`;
+      `https://${B2C_DOMAIN}/${B2C_TENANT}/${p}/api/SelfAsserted?` +
+      b2cQS({ tx, p });
 
     let credRes: Response;
     try {
@@ -284,7 +306,7 @@ export async function POST(req: NextRequest) {
         },
         body: new URLSearchParams({
           request_type: "RESPONSE",
-          logonIdentifier: username,
+          [usernameField]: username,
           password,
         }),
       });
@@ -299,7 +321,10 @@ export async function POST(req: NextRequest) {
 
     if (credData.status !== "200" && credData.status !== 200) {
       return NextResponse.json(
-        { error: credData.message ?? "Invalid credentials" },
+        {
+          error: credData.message ?? "Invalid credentials",
+          debug: { usernameField, credStatus: credData.status },
+        },
         { status: 401 }
       );
     }
@@ -309,8 +334,8 @@ export async function POST(req: NextRequest) {
     //   https://www.mytennis.ch/#code=xxx&...
     // The fragment IS present in the HTTP Location header, so we can read it.
     const confirmedUrl =
-      `https://${B2C_DOMAIN}/${B2C_TENANT}/${p}/api/${apiName}/confirmed` +
-      `?csrf_token=${encodeURIComponent(csrf)}&tx=${encodeURIComponent(tx)}&p=${encodeURIComponent(p)}`;
+      `https://${B2C_DOMAIN}/${B2C_TENANT}/${p}/api/${apiName}/confirmed?` +
+      b2cQS({ csrf_token: csrf, tx, p });
 
     const step4 = await followRedirects(confirmedUrl, cookies, REDIRECT_URI);
 
