@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Menu, ChevronRight, Dumbbell, Swords } from "lucide-react";
+import { ChevronRight, Dumbbell, Swords } from "lucide-react";
 import Link from "next/link";
 
 // ── Placeholder data ──────────────────────────────────────────────────────────
@@ -104,14 +104,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col max-w-md mx-auto">
-
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-5 pt-10 pb-2">
-        <button className="p-1">
-          <Menu className="h-7 w-7 text-gray-900 stroke-[2.5px]" />
-        </button>
-        <Link href="/login" className="font-bold text-gray-900 text-base">Login</Link>
-      </div>
 
       {/* Welcome */}
       <div className="px-5 pt-4 pb-6">
