@@ -2,29 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@vercel/postgres';
 import { Training } from '@/types';
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const updates = await request.json();
-    const { id } = params;
+    const { id } = await params;
     const now = new Date().toISOString();
 
     await sql`
-      UPDATE trainings 
-      SET 
-        date = COALESCE(${updates.date}, date),
-        day_name = COALESCE(${updates.dayName}, day_name),
-        time_start = COALESCE(${updates.timeStart}, time_start),
-        time_end = COALESCE(${updates.timeEnd}, time_end),
-        court_number = COALESCE(${updates.courtNumber}, court_number),
+      UPDATE events SET
+        date         = COALESCE(${updates.date},                       date),
+        day_name     = COALESCE(${updates.dayName},                    day_name),
+        time_start   = COALESCE(${updates.timeStart},                  time_start),
+        time_end     = COALESCE(${updates.timeEnd},                    time_end),
+        court_number = COALESCE(${updates.courtNumber},                court_number),
         participants = COALESCE(${JSON.stringify(updates.participants)}, participants),
-        comment = COALESCE(${updates.comment}, comment),
-        updated_at = ${now}
-      WHERE id = ${id}
+        comment      = COALESCE(${updates.comment},                    comment),
+        updated_at   = ${now}
+      WHERE id = ${id} AND event_type = 'training'
     `;
 
-    // Get the updated training
     const result = await sql`
-      SELECT * FROM trainings WHERE id = ${id}
+      SELECT * FROM events WHERE id = ${id} AND event_type = 'training'
     `;
 
     if (result.rows.length === 0) {
@@ -42,25 +40,22 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       participants: row.participants || [],
       comment: row.comment || '',
       createdAt: new Date(row.created_at),
-      updatedAt: new Date(row.updated_at)
+      updatedAt: new Date(row.updated_at),
     };
 
     return NextResponse.json({ training: updatedTraining });
   } catch (error) {
     console.error('Database error:', error);
-    return NextResponse.json(
-      { error: 'Failed to update training' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update training' }, { status: 500 });
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const result = await sql`
-      DELETE FROM trainings WHERE id = ${id}
+      DELETE FROM events WHERE id = ${id} AND event_type = 'training'
     `;
 
     if (result.rowCount === 0) {
@@ -70,9 +65,6 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Database error:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete training' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete training' }, { status: 500 });
   }
 }

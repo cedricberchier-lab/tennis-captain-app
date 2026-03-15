@@ -100,6 +100,31 @@ export interface TrainingParticipant {
   phone?: string;
 }
 
+export type EventType = 'training' | 'match' | 'meeting';
+
+export interface AppEvent {
+  id: string;
+  eventType: EventType;
+  title?: string;
+  date: Date;
+  dayName?: string;
+  timeStart: string;
+  timeEnd?: string;
+  // Training-specific
+  courtNumber?: string;
+  // Match-specific
+  opponent?: string;
+  location?: string;
+  isHome?: boolean;
+  scoreUs?: number | null;
+  scoreThem?: number | null;
+  // Shared
+  participants: TrainingParticipant[];
+  comment: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface Training {
   id: string;
   date: Date;
