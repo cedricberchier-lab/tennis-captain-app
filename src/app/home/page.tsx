@@ -2,98 +2,117 @@
 
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import GradientHeader from "@/components/home/GradientHeader";
-import SegmentControl from "@/components/home/SegmentControl";
-import DayCard from "@/components/home/DayCard";
-import ActionPill from "@/components/home/ActionPill";
-import BottomNavigation from "@/components/home/BottomNavigation";
+import { useTrainings } from "@/hooks/useTrainings";
+import { Menu } from "lucide-react";
+import Link from "next/link";
 
-const TABS = [
-  { label: "All",       value: "all" },
-  { label: "Training",  value: "training" },
-  { label: "Match",     value: "match" },
-];
-
-// Placeholder schedule rows — replace with real data
-const UPCOMING = [
-  { day: "Mon", date: 17, type: "training", label: "Training", sublabel: "19:00 · Court 2",  tag: "Upcoming", tagColor: "bg-blue-100 text-blue-600" },
-  { day: "Wed", date: 19, type: "match",    label: "Match",    sublabel: "14:00 · Away",      tag: "Match",    tagColor: "bg-green-100 text-green-600" },
-  { day: "Sat", date: 22, type: "training", label: "Training", sublabel: "10:00 · Court 1",   tag: "Upcoming", tagColor: "bg-blue-100 text-blue-600" },
+// ── Placeholder data — replace with real DB queries ──────────────────────────
+const UPCOMING_EVENTS = [
+  { type: "Training", date: "17/03", time: "19:00" },
+  { type: "Match",    date: "19/03", time: "14:00" },
 ];
 
 const LAST_MATCHES = [
-  { day: "Sat", date: 8,  type: "past", label: "TC Lausanne vs TC Fribourg", sublabel: "3 – 0  ·  Win",  tag: "W", tagColor: "bg-green-100 text-green-600" },
-  { day: "Sat", date: 1,  type: "past", label: "TC Fribourg vs TC Berne",    sublabel: "1 – 2  ·  Loss", tag: "L", tagColor: "bg-red-100 text-red-500"   },
-  { day: "Sat", date: 22, type: "past", label: "TC Sion vs TC Fribourg",     sublabel: "2 – 1  ·  Win",  tag: "W", tagColor: "bg-green-100 text-green-600" },
+  { label: "TC Fribourg vs TC Lausanne", date: "08/03", time: "14:00" },
+  { label: "TC Berne vs TC Fribourg",    date: "01/03", time: "14:00" },
 ];
+
+// ── Small reusable pieces ─────────────────────────────────────────────────────
+
+function EventCard({ title, date, time }: { title: string; date: string; time: string }) {
+  return (
+    <div className="bg-gray-100 rounded-2xl p-4 flex flex-col gap-1 min-h-[110px]">
+      <p className="font-bold text-gray-900 text-sm">{title}</p>
+      <p className="text-gray-500 text-sm">{date} {time}</p>
+    </div>
+  );
+}
+
+function MatchCard({ label, date, time }: { label: string; date: string; time: string }) {
+  return (
+    <div className="bg-gray-100 rounded-2xl p-4 flex flex-col gap-1 min-h-[110px]">
+      <p className="font-bold text-gray-900 text-sm">{label}</p>
+      <p className="text-gray-500 text-sm">{date} {time}</p>
+    </div>
+  );
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("all");
-
   const firstName = user?.name?.split(" ")[0] ?? user?.username ?? "Captain";
-
-  const filteredUpcoming = activeTab === "all"
-    ? UPCOMING
-    : UPCOMING.filter((r) => r.type === activeTab);
+  const [activeNav, setActiveNav] = useState("home");
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-24">
-      {/* Header */}
-      <GradientHeader
-        subtitle="Welcome back"
-        title={firstName}
-      />
+    <div className="min-h-screen bg-white flex flex-col max-w-md mx-auto">
 
-      {/* Content */}
-      <div className="px-4 pt-2 space-y-6">
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-5 pt-10 pb-2">
+        <button className="p-1">
+          <Menu className="h-7 w-7 text-gray-900 stroke-[2.5px]" />
+        </button>
+        <Link href="/login" className="font-bold text-gray-900 text-base">
+          Login
+        </Link>
+      </div>
 
-        {/* Segment control */}
-        <SegmentControl tabs={TABS} active={activeTab} onChange={setActiveTab} />
+      {/* Welcome */}
+      <div className="px-5 pt-4 pb-6">
+        <p className="text-2xl font-bold text-gray-900 leading-tight">
+          Welcome back,<br />{firstName}
+        </p>
+      </div>
+
+      {/* Scrollable content */}
+      <div className="flex-1 px-5 space-y-7 pb-32">
 
         {/* Upcoming events */}
         <section>
-          <h2 className="text-base font-bold text-gray-800 mb-3">Upcoming events</h2>
-          <div className="space-y-3">
-            {filteredUpcoming.length === 0 && (
-              <p className="text-sm text-gray-400 text-center py-6">No upcoming events</p>
-            )}
-            {filteredUpcoming.map((row, i) => (
-              <div key={i} className="grid grid-cols-[72px_1fr] gap-3 items-center">
-                <DayCard dayLabel={row.day} dateNumber={row.date} status={row.type as "training" | "match"} />
-                <ActionPill
-                  label={row.label}
-                  sublabel={row.sublabel}
-                  tag={row.tag}
-                  tagColor={row.tagColor}
-                />
-              </div>
+          <h2 className="text-lg font-bold text-gray-900 mb-3">Up coming events</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {UPCOMING_EVENTS.map((ev, i) => (
+              <EventCard key={i} title={ev.type} date={ev.date} time={ev.time} />
             ))}
           </div>
         </section>
 
         {/* Last matches */}
-        {(activeTab === "all" || activeTab === "match") && (
-          <section>
-            <h2 className="text-base font-bold text-gray-800 mb-3">Last Matches</h2>
-            <div className="space-y-3">
-              {LAST_MATCHES.map((row, i) => (
-                <div key={i} className="grid grid-cols-[72px_1fr] gap-3 items-center">
-                  <DayCard dayLabel={row.day} dateNumber={row.date} status="past" />
-                  <ActionPill
-                    label={row.label}
-                    sublabel={row.sublabel}
-                    tag={row.tag}
-                    tagColor={row.tagColor}
-                  />
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+        <section>
+          <h2 className="text-lg font-bold text-gray-900 mb-3">Last Matchs</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {LAST_MATCHES.map((m, i) => (
+              <MatchCard key={i} label={m.label} date={m.date} time={m.time} />
+            ))}
+          </div>
+        </section>
+
       </div>
 
-      <BottomNavigation />
+      {/* Bottom nav — 3 pill buttons */}
+      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto">
+        <div className="flex items-center justify-center gap-4 px-6 py-5 bg-white border-t border-gray-100">
+          {[
+            { label: "Train", value: "train",  href: "/training" },
+            { label: "Home",  value: "home",   href: "/home"     },
+            { label: "Match", value: "match",  href: "/team"     },
+          ].map(({ label, value, href }) => (
+            <Link
+              key={value}
+              href={href}
+              onClick={() => setActiveNav(value)}
+              className={`flex-1 text-center py-3 rounded-2xl border-2 font-semibold text-sm transition-all ${
+                activeNav === value
+                  ? "border-gray-900 text-gray-900 bg-white"
+                  : "border-gray-300 text-gray-500 bg-white"
+              }`}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+      </div>
+
     </div>
   );
 }
