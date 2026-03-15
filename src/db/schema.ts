@@ -4,13 +4,13 @@
  * Run via /api/tennis-players/init-db (or call initTennisPlayersSchema() directly).
  *
  * Tables:
- *   tennis_players      — normalised cache of players fetched from mytennis
- *   tennis_player_clubs — one-to-many clubs per player
- *   tennis_sync_logs    — lightweight audit log for search/fetch operations
+ *   players      — normalised cache of players fetched from mytennis
+ *   player_clubs — one-to-many clubs per player
+ *   sync_logs    — lightweight audit log for search/fetch operations
  */
 
 export const CREATE_TENNIS_PLAYERS = `
-CREATE TABLE IF NOT EXISTS tennis_players (
+CREATE TABLE IF NOT EXISTS players (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   external_source     VARCHAR(50)  NOT NULL DEFAULT 'mytennis',
   external_id         INTEGER      NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS tennis_players (
 `;
 
 export const CREATE_TENNIS_PLAYER_CLUBS = `
-CREATE TABLE IF NOT EXISTS tennis_player_clubs (
+CREATE TABLE IF NOT EXISTS player_clubs (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   player_external_id  INTEGER      NOT NULL,
   club_name           VARCHAR(255) NOT NULL DEFAULT '',
@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS tennis_player_clubs (
 `;
 
 export const CREATE_TENNIS_SYNC_LOGS = `
-CREATE TABLE IF NOT EXISTS tennis_sync_logs (
+CREATE TABLE IF NOT EXISTS sync_logs (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   operation     VARCHAR(50)  NOT NULL,
   keyword       VARCHAR(255),

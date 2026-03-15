@@ -18,7 +18,7 @@ export async function initTennisPlayersTables(): Promise<void> {
 
 export async function upsertTennisPlayer(player: TennisPlayer): Promise<void> {
   await sql`
-    INSERT INTO tennis_players (
+    INSERT INTO players (
       external_source, external_id,
       first_name, last_name, full_name,
       licence_number, classification, classification_value,
@@ -43,18 +43,18 @@ export async function upsertTennisPlayer(player: TennisPlayer): Promise<void> {
       first_name          = EXCLUDED.first_name,
       last_name           = EXCLUDED.last_name,
       full_name           = EXCLUDED.full_name,
-      licence_number      = COALESCE(EXCLUDED.licence_number, tennis_players.licence_number),
-      classification      = COALESCE(EXCLUDED.classification, tennis_players.classification),
-      classification_value= COALESCE(EXCLUDED.classification_value, tennis_players.classification_value),
-      competition_value   = COALESCE(EXCLUDED.competition_value, tennis_players.competition_value),
-      ranking             = COALESCE(EXCLUDED.ranking, tennis_players.ranking),
-      best_classification = COALESCE(EXCLUDED.best_classification, tennis_players.best_classification),
-      best_ranking        = COALESCE(EXCLUDED.best_ranking, tennis_players.best_ranking),
-      last_classification = COALESCE(EXCLUDED.last_classification, tennis_players.last_classification),
-      last_ranking        = COALESCE(EXCLUDED.last_ranking, tennis_players.last_ranking),
-      age_category        = COALESCE(EXCLUDED.age_category, tennis_players.age_category),
-      license_status      = COALESCE(EXCLUDED.license_status, tennis_players.license_status),
-      interclub_status    = COALESCE(EXCLUDED.interclub_status, tennis_players.interclub_status),
+      licence_number      = COALESCE(EXCLUDED.licence_number, players.licence_number),
+      classification      = COALESCE(EXCLUDED.classification, players.classification),
+      classification_value= COALESCE(EXCLUDED.classification_value, players.classification_value),
+      competition_value   = COALESCE(EXCLUDED.competition_value, players.competition_value),
+      ranking             = COALESCE(EXCLUDED.ranking, players.ranking),
+      best_classification = COALESCE(EXCLUDED.best_classification, players.best_classification),
+      best_ranking        = COALESCE(EXCLUDED.best_ranking, players.best_ranking),
+      last_classification = COALESCE(EXCLUDED.last_classification, players.last_classification),
+      last_ranking        = COALESCE(EXCLUDED.last_ranking, players.last_ranking),
+      age_category        = COALESCE(EXCLUDED.age_category, players.age_category),
+      license_status      = COALESCE(EXCLUDED.license_status, players.license_status),
+      interclub_status    = COALESCE(EXCLUDED.interclub_status, players.interclub_status),
       fetched_at          = EXCLUDED.fetched_at,
       updated_at          = NOW()
   `;
@@ -69,11 +69,11 @@ export async function upsertTennisPlayerClubs(
 
   // Delete existing clubs for this player then re-insert
   const externalId = clubs[0].playerExternalId;
-  await sql`DELETE FROM tennis_player_clubs WHERE player_external_id = ${externalId}`;
+  await sql`DELETE FROM player_clubs WHERE player_external_id = ${externalId}`;
 
   for (const club of clubs) {
     await sql`
-      INSERT INTO tennis_player_clubs (player_external_id, club_name, member_relationship)
+      INSERT INTO player_clubs (player_external_id, club_name, member_relationship)
       VALUES (${club.playerExternalId}, ${club.clubName}, ${club.memberRelationship ?? null})
     `;
   }
@@ -86,7 +86,7 @@ export async function getTennisPlayerByExternalId(externalId: number): Promise<{
   clubs: TennisPlayerClub[];
 }> {
   const { rows: playerRows } = await sql`
-    SELECT * FROM tennis_players
+    SELECT * FROM players
     WHERE external_source = 'mytennis' AND external_id = ${externalId}
     LIMIT 1
   `;
@@ -117,7 +117,7 @@ export async function getTennisPlayerByExternalId(externalId: number): Promise<{
   };
 
   const { rows: clubRows } = await sql`
-    SELECT * FROM tennis_player_clubs WHERE player_external_id = ${externalId}
+    SELECT * FROM player_clubs WHERE player_external_id = ${externalId}
   `;
 
   const clubs: TennisPlayerClub[] = clubRows.map((r) => ({
@@ -138,8 +138,8 @@ export async function searchTennisPlayers(
   const like = `%${keyword}%`;
   const { rows } = await sql`
     SELECT tp.*, STRING_AGG(tpc.club_name, ', ' ORDER BY tpc.club_name) AS clubs
-    FROM tennis_players tp
-    LEFT JOIN tennis_player_clubs tpc ON tpc.player_external_id = tp.external_id
+    FROM players tp
+    LEFT JOIN player_clubs tpc ON tpc.player_external_id = tp.external_id
     WHERE tp.full_name ILIKE ${like}
        OR tp.first_name ILIKE ${like}
        OR tp.last_name  ILIKE ${like}
@@ -184,7 +184,7 @@ export async function logTennisSync(entry: {
   errorMessage?: string;
 }): Promise<void> {
   await sql`
-    INSERT INTO tennis_sync_logs
+    INSERT INTO sync_logs
       (operation, keyword, external_id, status, record_count, error_message)
     VALUES (
       ${entry.operation},
