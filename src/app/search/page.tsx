@@ -77,7 +77,7 @@ export default function SearchPage() {
   const [results, setResults] = useState<TennisPlayer[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [usingMock, setUsingMock] = useState(false);
+  const [searchSource, setSearchSource] = useState<"live" | "cache" | "empty" | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<TennisPlayer | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -106,7 +106,7 @@ export default function SearchPage() {
       if (!res.ok) throw new Error(data.error ?? "Search failed");
 
       setResults(data.players ?? []);
-      setUsingMock(data.usingMock ?? false);
+      setSearchSource(data.source ?? null);
     } catch (e: unknown) {
       if (e instanceof Error && e.name === "AbortError") return;
       setSearchError(e instanceof Error ? e.message : "Search failed");
@@ -188,21 +188,30 @@ export default function SearchPage() {
           )}
         </div>
 
-        {/* Mock data / sign-in banner */}
-        {usingMock && (
-          <div className="flex items-center gap-2 px-3 py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl">
-            <Info className="h-4 w-4 text-amber-500 shrink-0" />
-            <p className="text-xs text-amber-700 dark:text-amber-300">
-              Showing demo data.{" "}
+        {/* Cache / source banner */}
+        {searchSource === "cache" && (
+          <div className="flex items-center gap-2 px-3 py-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl">
+            <Info className="h-4 w-4 text-blue-500 shrink-0" />
+            <p className="text-xs text-blue-700 dark:text-blue-300">
+              Showing cached results.{" "}
               {authenticated === false && (
-                <button
-                  onClick={() => setShowLoginForm(true)}
-                  className="underline font-medium"
-                >
+                <button onClick={() => setShowLoginForm(true)} className="underline font-medium">
                   Sign in to mytennis.ch
                 </button>
               )}{" "}
-              {authenticated === false && "to search real players."}
+              {authenticated === false && "to search all players live."}
+            </p>
+          </div>
+        )}
+        {searchSource === "empty" && authenticated === false && (
+          <div className="flex items-center gap-2 px-3 py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl">
+            <Info className="h-4 w-4 text-amber-500 shrink-0" />
+            <p className="text-xs text-amber-700 dark:text-amber-300">
+              No cached players yet.{" "}
+              <button onClick={() => setShowLoginForm(true)} className="underline font-medium">
+                Sign in to mytennis.ch
+              </button>{" "}
+              to populate the cache.
             </p>
           </div>
         )}

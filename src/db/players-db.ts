@@ -129,6 +129,50 @@ export async function getTennisPlayerByExternalId(externalId: number): Promise<{
   return { player, clubs };
 }
 
+// ─── Search ─────────────────────────────────────────────────────────────────
+
+export async function searchTennisPlayers(
+  keyword: string,
+  limit = 30
+): Promise<TennisPlayer[]> {
+  const like = `%${keyword}%`;
+  const { rows } = await sql`
+    SELECT tp.*, STRING_AGG(tpc.club_name, ', ' ORDER BY tpc.club_name) AS clubs
+    FROM tennis_players tp
+    LEFT JOIN tennis_player_clubs tpc ON tpc.player_external_id = tp.external_id
+    WHERE tp.full_name ILIKE ${like}
+       OR tp.first_name ILIKE ${like}
+       OR tp.last_name  ILIKE ${like}
+    GROUP BY tp.id
+    ORDER BY tp.full_name ASC
+    LIMIT ${limit}
+  `;
+
+  return rows.map((row) => ({
+    id: `mytennis:${row.external_id}`,
+    externalSource: "mytennis" as const,
+    externalId: Number(row.external_id),
+    firstName: row.first_name ?? "",
+    lastName: row.last_name ?? "",
+    fullName: row.full_name ?? "",
+    licenceNumber: row.licence_number ?? null,
+    classification: row.classification ?? null,
+    classificationValue: row.classification_value != null ? Number(row.classification_value) : null,
+    competitionValue: row.competition_value != null ? Number(row.competition_value) : null,
+    ranking: row.ranking != null ? Number(row.ranking) : null,
+    bestClassification: row.best_classification ?? null,
+    bestRanking: row.best_ranking != null ? Number(row.best_ranking) : null,
+    lastClassification: row.last_classification ?? null,
+    lastRanking: row.last_ranking != null ? Number(row.last_ranking) : null,
+    ageCategory: row.age_category ?? null,
+    licenseStatus: row.license_status ?? null,
+    interclubStatus: row.interclub_status ?? null,
+    fetchedAt: row.fetched_at ? String(row.fetched_at) : null,
+    // surface the joined club names on the player object for card display
+    clubs: row.clubs ?? null,
+  }));
+}
+
 // ─── Sync log ───────────────────────────────────────────────────────────────
 
 export async function logTennisSync(entry: {
