@@ -2,15 +2,9 @@
 
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTrainings } from "@/hooks/useTrainings";
 import { ChevronRight, Dumbbell, Swords } from "lucide-react";
 import Link from "next/link";
-
-// ── Placeholder data ──────────────────────────────────────────────────────────
-const UPCOMING_EVENTS = [
-  { type: "Training", subtitle: "Evening session", date: "17/03", time: "19:00", court: "Court 2" },
-  { type: "Match",    subtitle: "Interclub R2",    date: "19/03", time: "14:00", court: "Away"    },
-  { type: "Training", subtitle: "Morning session", date: "22/03", time: "10:00", court: "Court 1" },
-];
 
 const LAST_MATCHES = [
   { home: "TC Fribourg", away: "TC Lausanne", scoreHome: 3, scoreAway: 0, date: "08/03", result: "W", minute: "FT" },
@@ -99,8 +93,17 @@ function MatchCard({ home, away, scoreHome, scoreAway, date, result, minute }: t
 
 export default function HomePage() {
   const { user } = useAuth();
+  const { getUpcomingTrainings } = useTrainings();
   const firstName = user?.name?.split(" ")[0] ?? user?.username ?? "Captain";
   const [activeNav, setActiveNav] = useState("home");
+
+  const upcomingTrainings = getUpcomingTrainings(5).map((t) => ({
+    type: "Training" as const,
+    subtitle: t.comment || t.dayName,
+    date: t.date.toLocaleDateString("fr-CH", { day: "2-digit", month: "2-digit" }),
+    time: t.timeStart,
+    court: `Court ${t.courtNumber}`,
+  }));
 
   return (
     <div className="min-h-screen bg-white flex flex-col max-w-md mx-auto">
@@ -119,7 +122,10 @@ export default function HomePage() {
         <div>
           <h2 className="text-lg font-bold text-gray-900 px-5 mb-3">Up coming events</h2>
           <div className="flex gap-3 overflow-x-auto pb-2 px-5 snap-x snap-mandatory scrollbar-hide">
-            {UPCOMING_EVENTS.map((ev, i) => (
+            {upcomingTrainings.length === 0 && (
+              <p className="text-sm text-gray-400 px-1 py-4">No upcoming training sessions</p>
+            )}
+            {upcomingTrainings.map((ev, i) => (
               <div key={i} className="snap-start shrink-0 w-[58vw] max-w-[210px]">
                 <EventCard {...ev} />
               </div>
