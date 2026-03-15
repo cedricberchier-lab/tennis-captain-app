@@ -23,7 +23,7 @@ const LAST_MATCHES = [
 function EventCard({ type, subtitle, date, time, court }: typeof UPCOMING_EVENTS[0]) {
   const isMatch = type === "Match";
   return (
-    <div className="relative rounded-3xl overflow-hidden min-h-[160px] flex flex-col justify-between p-4"
+    <div className="relative rounded-xl overflow-hidden min-h-[160px] flex flex-col justify-between p-4"
       style={{ background: "linear-gradient(135deg, #6d28d9 0%, #4f46e5 50%, #7c3aed 100%)" }}>
 
       {/* Subtle background circle decoration */}
@@ -60,7 +60,7 @@ function EventCard({ type, subtitle, date, time, court }: typeof UPCOMING_EVENTS
 function MatchCard({ home, away, scoreHome, scoreAway, date, result, minute }: typeof LAST_MATCHES[0]) {
   const won = result === "W";
   return (
-    <div className="relative rounded-3xl overflow-hidden min-h-[160px] flex flex-col justify-between p-4"
+    <div className="relative rounded-xl overflow-hidden min-h-[160px] flex flex-col justify-between p-4"
       style={{ background: "linear-gradient(135deg, #5b21b6 0%, #4338ca 60%, #6d28d9 100%)" }}>
 
       <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/5" />
