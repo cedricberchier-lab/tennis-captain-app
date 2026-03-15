@@ -19,8 +19,7 @@ import {
   Clock,
   Target,
   Database,
-  Search,
-  SplitSquareHorizontal
+  Search
 } from "lucide-react";
 
 const navigationItems = [
@@ -47,12 +46,6 @@ const navigationItems = [
     label: "Search",
     icon: Search,
     description: "Find players"
-  },
-  {
-    href: "/companion",
-    label: "Companion",
-    icon: SplitSquareHorizontal,
-    description: "Side-by-side view"
   },
   {
     href: "/absence",

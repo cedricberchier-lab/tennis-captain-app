@@ -140,9 +140,16 @@ export async function searchTennisPlayers(
     SELECT tp.*, STRING_AGG(tpc.club_name, ', ' ORDER BY tpc.club_name) AS clubs
     FROM players tp
     LEFT JOIN player_clubs tpc ON tpc.player_external_id = tp.external_id
-    WHERE tp.full_name ILIKE ${like}
-       OR tp.first_name ILIKE ${like}
-       OR tp.last_name  ILIKE ${like}
+    WHERE tp.full_name          ILIKE ${like}
+       OR tp.first_name         ILIKE ${like}
+       OR tp.last_name          ILIKE ${like}
+       OR tp.licence_number     ILIKE ${like}
+       OR tp.classification     ILIKE ${like}
+       OR tp.best_classification ILIKE ${like}
+       OR tp.last_classification ILIKE ${like}
+       OR tp.age_category       ILIKE ${like}
+       OR tp.license_status     ILIKE ${like}
+       OR tp.interclub_status   ILIKE ${like}
     GROUP BY tp.id
     ORDER BY tp.full_name ASC
     LIMIT ${limit}
