@@ -1,4 +1,8 @@
 @import "tailwindcss";
+
+/* Hide scrollbar while keeping scroll behaviour */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));

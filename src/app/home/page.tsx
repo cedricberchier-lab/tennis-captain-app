@@ -70,22 +70,26 @@ export default function HomePage() {
         {/* Upcoming events */}
         <section>
           <h2 className="text-lg font-bold text-gray-900 mb-3">Up coming events</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {UPCOMING_EVENTS.map((ev, i) => (
-              <EventCard key={i} title={ev.type} date={ev.date} time={ev.time} />
-            ))}
-          </div>
         </section>
+        <div className="flex gap-3 overflow-x-auto pb-1 -mx-5 px-5 snap-x snap-mandatory scrollbar-hide">
+          {UPCOMING_EVENTS.map((ev, i) => (
+            <div key={i} className="snap-start shrink-0 w-[60vw] max-w-[220px]">
+              <EventCard title={ev.type} date={ev.date} time={ev.time} />
+            </div>
+          ))}
+        </div>
 
         {/* Last matches */}
         <section>
           <h2 className="text-lg font-bold text-gray-900 mb-3">Last Matchs</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {LAST_MATCHES.map((m, i) => (
-              <MatchCard key={i} label={m.label} date={m.date} time={m.time} />
-            ))}
-          </div>
         </section>
+        <div className="flex gap-3 overflow-x-auto pb-1 -mx-5 px-5 snap-x snap-mandatory scrollbar-hide">
+          {LAST_MATCHES.map((m, i) => (
+            <div key={i} className="snap-start shrink-0 w-[60vw] max-w-[220px]">
+              <MatchCard label={m.label} date={m.date} time={m.time} />
+            </div>
+          ))}
+        </div>
 
       </div>
 
